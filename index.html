@@ -24,10 +24,16 @@
   </section>
 
   <section class="view" data-view="calendar">
-    <header class="top"><div><div class="ey">КАЛЕНДАРЬ</div><h1>Сентябрь</h1><p>Ваши планы, приглашения и созданные события.</p></div><button class="avatar js-profile">В</button></header>
-    <div class="week"><div><span>ПН</span><b>14</b></div><div class="selected"><span>ВТ</span><b>15</b></div><div><span>СР</span><b>16</b></div><div><span>ЧТ</span><b>17</b></div><div><span>ПТ</span><b>18</b></div><div><span>СБ</span><b>19</b></div><div><span>ВС</span><b>20</b></div></div>
-    <div class="timeline"><div class="time">20:00</div><div class="timelineCard"><span class="ey">СЕГОДНЯ</span><h3>Кино во дворе</h3><p>Набережная · 500 ₽</p></div></div>
-    <div class="sectionHead"><div><span class="ey">МОИ СОБЫТИЯ</span></div></div><div id="my-events"><p class="muted">Войдите, чтобы увидеть свои события.</p></div>
+    <header class="top"><div><div class="ey">КАЛЕНДАРЬ</div><h1 id="calendar-title">Календарь</h1><p>Ваши планы, приглашения и созданные события.</p></div><button class="avatar js-profile">В</button></header>
+    <div class="calendarModes" id="calendar-modes">
+      <button class="active" data-cal-mode="month">Месяц</button>
+      <button data-cal-mode="week">Неделя</button>
+      <button data-cal-mode="day">День</button>
+    </div>
+    <div class="calendarNav"><button id="calendar-prev">←</button><button id="calendar-today">Сегодня</button><button id="calendar-next">→</button></div>
+    <div id="calendar-grid" class="calendarGrid"></div>
+    <div class="sectionHead dayHead"><div><span class="ey" id="selected-date-label">ВЫБРАННЫЙ ДЕНЬ</span><h2 id="selected-date-title">Сегодня</h2></div></div>
+    <div id="day-events"><p class="muted">Войдите, чтобы увидеть события.</p></div>
   </section>
 
   <section class="view" data-view="create">
