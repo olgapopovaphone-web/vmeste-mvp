@@ -1,18 +1,21 @@
 (function(){
   ['/home-discovery.css?v=20260915-2','/place-detail.css?v=20260915-2','/my-events.css?v=20260915-2'].forEach(function(href){var l=document.createElement('link');l.rel='stylesheet';l.href=href;document.head.appendChild(l)});
 
-  function compactHeader(view,eyText){
-    var top=document.querySelector('[data-view="'+view+'"] .top');if(!top)return;
-    var ey=top.querySelector('.ey'),title=top.querySelector('h1'),text=top.querySelector('p');
-    if(ey){ey.hidden=false;if(eyText)ey.textContent=eyText}
-    if(title)title.hidden=true;
-    if(text)text.hidden=true;
-  }
   function simplifyTabHeaders(){
-    compactHeader('home','ВМЕСТЕ · АФИША');
-    compactHeader('create','СОЗДАТЬ');
-    var eventsSection=document.querySelector('[data-view="calendar"]');
-    compactHeader('calendar',eventsSection&&eventsSection.classList.contains('mode-calendar')?'КАЛЕНДАРЬ':'МОИ СОБЫТИЯ');
+    var createTop=document.querySelector('[data-view="create"] .top');
+    if(createTop){
+      var createEy=createTop.querySelector('.ey'),createTitle=createTop.querySelector('h1'),createText=createTop.querySelector('p');
+      if(createEy)createEy.hidden=true;
+      if(createText)createText.hidden=true;
+      if(createTitle)createTitle.textContent='Создать';
+    }
+    var eventsSection=document.querySelector('[data-view="calendar"]'),eventsTop=eventsSection&&eventsSection.querySelector('.top');
+    if(eventsTop){
+      var eventsEy=eventsTop.querySelector('.ey'),eventsTitle=eventsTop.querySelector('h1'),eventsText=eventsTop.querySelector('p');
+      if(eventsEy)eventsEy.hidden=true;
+      if(eventsText)eventsText.hidden=true;
+      if(eventsTitle)eventsTitle.textContent=eventsSection.classList.contains('mode-calendar')?'Календарь':'Мои события';
+    }
   }
 
   var eventsNav=document.querySelector('.nav[data-go="calendar"]');if(eventsNav){var label=eventsNav.querySelector('span');if(label)label.textContent='События';eventsNav.childNodes.forEach(function(n){if(n.nodeType===3&&n.textContent.trim())n.textContent='▤'})}
