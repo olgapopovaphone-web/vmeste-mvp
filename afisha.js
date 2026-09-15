@@ -1,4 +1,6 @@
 const AFISHA_API='https://nmeoakrpafxhpdrplsuo.supabase.co/functions/v1/vmeste-afisha-api';
+const SUPABASE_REST='https://nmeoakrpafxhpdrplsuo.supabase.co/rest/v1';
+const SUPABASE_PUBLISHABLE_KEY='sb_publishable_44_6dVen8Hq25CDywZKLwA_8PWV4-24';
 const PENDING_AFISHA_KEY='vmeste_pending_afisha_action_v1';
 let afishaEvents=[];
 let afishaLiked=new Set();
@@ -17,15 +19,31 @@ function afDateKey(v){const p=new Intl.DateTimeFormat('en-CA',{year:'numeric',mo
 function afTodayKey(){return afDateKey(new Date())}
 function afEndOfWeek(){const d=new Date();d.setDate(d.getDate()+7);return d}
 function afToast(text){const old=document.querySelector('.afishaToast');if(old)old.remove();const el=document.createElement('div');el.className='afishaToast';el.textContent=text;document.body.appendChild(el);setTimeout(()=>el.remove(),2200)}
+function afTimeout(ms=6500){return new Promise((_,reject)=>setTimeout(()=>reject(new Error('Сервис Афиши отвечает слишком долго')),ms))}
 
 async function afRaw(action,payload={},needsAuth=false,retry=true){
   const headers={'Content-Type':'application/json'};
   if(session?.access_token)headers.Authorization='Bearer '+session.access_token;
-  const r=await fetch(AFISHA_API,{method:'POST',headers,body:JSON.stringify({action,...payload})});
+  const r=await Promise.race([
+    fetch(AFISHA_API,{method:'POST',headers,body:JSON.stringify({action,...payload})}),
+    afTimeout()
+  ]);
   let data={};try{data=await r.json()}catch{data={error:'Некорректный ответ сервера'}}
   if(r.status===401&&needsAuth&&retry&&await refreshSession())return afRaw(action,payload,needsAuth,false);
   if(!r.ok)throw new Error(data.error||'Ошибка запроса');
   return data;
+}
+
+async function loadPublicAfishaFeed(city){
+  const select='id,city,title,description,category,starts_at,ends_at,timezone,venue,source_name,source_url,cover_url,price_text,is_free';
+  const qs=new URLSearchParams({select,city:`eq.${city}`,published:'eq.true',starts_at:`gte.${new Date().toISOString()}`,order:'starts_at.asc',limit:'60'});
+  const response=await Promise.race([
+    fetch(`${SUPABASE_REST}/afisha_events?${qs.toString()}`,{headers:{apikey:SUPABASE_PUBLISHABLE_KEY}}),
+    afTimeout(6500)
+  ]);
+  if(!response.ok)throw new Error('Не удалось загрузить Афишу');
+  const events=await response.json();
+  return {city,events:Array.isArray(events)?events:[],profile:account?{city,interests:[],preferred_times:[]}:null,liked:[],compared:[]};
 }
 
 function filteredAfisha(){
@@ -94,8 +112,30 @@ async function openAfishaComparison(){
 }
 
 async function loadAfisha(){
-  const root=document.querySelector('#afisha-root');if(!root)return;root.innerHTML='<div class="afishaLoading">Загружаю настоящую афишу…</div>';
-  try{const data=await afRaw('feed',{city:afishaCity},false);afishaEvents=data.events||[];afishaProfile=data.profile||null;if(afishaProfile?.city)afishaCity=afishaProfile.city;afishaLiked=new Set(data.liked||[]);afishaCompared=new Set(data.compared||[]);renderAfisha()}catch(err){root.innerHTML=`<div class="status error">${afEsc(err.message)}</div>`}
+  const root=document.querySelector('#afisha-root');if(!root)return;
+  root.innerHTML='<div class="afishaLoading">Загружаю настоящую афишу…</div>';
+  try{
+    let data;
+    if(account){
+      try{
+        data=await afRaw('feed',{city:afishaCity},false);
+      }catch(personalError){
+        console.warn('Personal Afisha feed unavailable, using public fallback',personalError);
+        data=await loadPublicAfishaFeed(afishaCity);
+      }
+    }else{
+      data=await loadPublicAfishaFeed(afishaCity);
+    }
+    afishaEvents=data.events||[];
+    afishaProfile=data.profile||null;
+    if(afishaProfile?.city)afishaCity=afishaProfile.city;
+    afishaLiked=new Set(data.liked||[]);
+    afishaCompared=new Set(data.compared||[]);
+    renderAfisha();
+  }catch(err){
+    root.innerHTML=`<div class="status error">${afEsc(err.message||'Не удалось загрузить Афишу')}</div><button class="primary" id="afisha-retry" style="margin-top:12px">Попробовать ещё раз</button>`;
+    document.querySelector('#afisha-retry')?.addEventListener('click',loadAfisha);
+  }
 }
 
 async function processPendingAfishaAction(){
