@@ -91,3 +91,11 @@
   setInterval(()=>{if(account)fetchNotifications();else{notificationCount=0;refreshBadges()}},30000);
   document.addEventListener('visibilitychange',()=>{if(!document.hidden&&account)fetchNotifications()});
 })();
+
+(function(){
+  if(document.querySelector('script[data-calendar-reminders]'))return;
+  const script=document.createElement('script');
+  script.src='/calendar-reminders.js?v=20260915-1';
+  script.dataset.calendarReminders='1';
+  document.head.appendChild(script);
+})();
