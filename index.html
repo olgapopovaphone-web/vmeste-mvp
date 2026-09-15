@@ -6,15 +6,15 @@
   <meta name="theme-color" content="#f4f0e8">
   <title>Вместе — события и люди</title>
   <meta name="description" content="Вместе — здесь встречаются события и люди">
-  <link rel="stylesheet" href="/styles.css?v=20260915-3">
-  <link rel="stylesheet" href="/event-detail.css?v=20260915-3">
-  <link rel="stylesheet" href="/event-redesign.css?v=20260915-3">
-  <link rel="stylesheet" href="/event-management.css?v=20260915-3">
-  <link rel="stylesheet" href="/event-preferences.css?v=20260915-3">
-  <link rel="stylesheet" href="/afisha.css?v=20260915-3">
-  <link rel="stylesheet" href="/auth-easy.css?v=20260915-3">
-  <link rel="stylesheet" href="/avatar-profile.css?v=20260915-3">
-  <link rel="stylesheet" href="/home-tools.css?v=20260915-3">
+  <link rel="stylesheet" href="/styles.css?v=20260915-4">
+  <link rel="stylesheet" href="/event-detail.css?v=20260915-4">
+  <link rel="stylesheet" href="/event-redesign.css?v=20260915-4">
+  <link rel="stylesheet" href="/event-management.css?v=20260915-4">
+  <link rel="stylesheet" href="/event-preferences.css?v=20260915-4">
+  <link rel="stylesheet" href="/afisha.css?v=20260915-4">
+  <link rel="stylesheet" href="/auth-easy.css?v=20260915-4">
+  <link rel="stylesheet" href="/avatar-profile.css?v=20260915-4">
+  <link rel="stylesheet" href="/home-tools.css?v=20260915-4">
 </head>
 <body>
 <div class="app">
@@ -27,16 +27,12 @@
       <button data-af-filter="week">На неделе</button>
       <button data-af-filter="free">Бесплатно</button>
     </div>
-    <div id="afisha-root"><div class="afishaLoading">Запускаю афишу…</div></div>
+    <div id="afisha-root"></div>
   </section>
 
   <section class="view" data-view="calendar">
     <header class="top"><div><div class="ey">КАЛЕНДАРЬ</div><h1 id="calendar-title">Календарь</h1><p>Ваши планы, приглашения и созданные события.</p></div><button class="avatar js-profile">В</button></header>
-    <div class="calendarModes" id="calendar-modes">
-      <button class="active" data-cal-mode="month">Месяц</button>
-      <button data-cal-mode="week">Неделя</button>
-      <button data-cal-mode="day">День</button>
-    </div>
+    <div class="calendarModes" id="calendar-modes"><button class="active" data-cal-mode="month">Месяц</button><button data-cal-mode="week">Неделя</button><button data-cal-mode="day">День</button></div>
     <div class="calendarNav"><button id="calendar-prev">←</button><button id="calendar-today">Сегодня</button><button id="calendar-next">→</button></div>
     <div id="calendar-grid" class="calendarGrid"></div>
     <div class="sectionHead dayHead"><div><span class="ey" id="selected-date-label">ВЫБРАННЫЙ ДЕНЬ</span><h2 id="selected-date-title">Сегодня</h2></div></div>
@@ -47,83 +43,78 @@
     <header class="top"><div><div class="ey">СОЗДАТЬ</div><h1>Какое это событие?</h1><p>В тестовой версии начинаем с личных событий по приглашению.</p></div><button class="avatar js-profile">В</button></header>
     <button class="choice" id="private-choice"><b>01</b><span><h3>По приглашению</h3><p>Личное событие. Его видят только приглашённые.</p></span></button>
     <button class="choice disabled"><b>02</b><span><h3>Открытое</h3><p>Позже подключим события внутри сообществ.</p></span></button>
-    <form class="panel" id="event-form" hidden>
-      <span class="ey">НОВОЕ ЛИЧНОЕ СОБЫТИЕ</span><h3>Черновик</h3>
-      <label>Название<input id="event-title" required placeholder="Например, спа-девичник"></label>
-      <div class="two"><label>Дата<input id="event-date" type="date" required></label><label>Время<input id="event-time" type="time" required></label></div>
-      <label>Место<input id="event-place" placeholder="Где встречаемся"></label>
-      <label>Ссылка на реальное мероприятие<input id="event-source" type="url" placeholder="https://..."></label>
-      <p class="muted" style="margin:-4px 0 12px">Если встреча связана с афишей, сайтом или бронированием — ссылка будет доступна участникам в карточке события.</p>
-      <div id="event-status" class="status" hidden></div><button class="primary">Сохранить черновик</button>
-    </form>
+    <form class="panel" id="event-form" hidden><span class="ey">НОВОЕ ЛИЧНОЕ СОБЫТИЕ</span><h3>Черновик</h3><label>Название<input id="event-title" required placeholder="Например, спа-девичник"></label><div class="two"><label>Дата<input id="event-date" type="date" required></label><label>Время<input id="event-time" type="time" required></label></div><label>Место<input id="event-place" placeholder="Где встречаемся"></label><label>Ссылка на реальное мероприятие<input id="event-source" type="url" placeholder="https://..."></label><p class="muted" style="margin:-4px 0 12px">Если встреча связана с афишей, сайтом или бронированием — ссылка будет доступна участникам в карточке события.</p><div id="event-status" class="status" hidden></div><button class="primary">Сохранить черновик</button></form>
   </section>
 
-  <section class="view" data-view="communities">
-    <header class="top"><div><div class="ey">СООБЩЕСТВА</div><h1>Люди вокруг интереса</h1><p>Здесь появятся реальные сообщества и их открытые события.</p></div><button class="avatar js-profile">В</button></header>
-    <div class="callout"><span class="ey">ПОКА ТИХО</span><h2>Не будем придумывать людей.</h2><p>В тестовой версии сообщества подключим после проверки главного сценария: найти событие → собрать компанию → встретиться.</p></div>
-  </section>
-
-  <section class="view" data-view="chronicle">
-    <header class="top"><div><div class="ey">ХРОНИКА</div><h1>То, что уже было</h1><p>Завершённые события остаются здесь и их можно повторить позже.</p></div><button class="avatar js-profile">В</button></header>
-    <div id="chronicle-list"><p class="muted">Загружаю хронику…</p></div>
-  </section>
-
-  <section class="view standalone eventView" data-view="event">
-    <button class="eventBack" id="event-back">← Назад</button>
-    <div id="event-detail-root"><p class="muted">Загружаю событие…</p></div>
-  </section>
-
+  <section class="view" data-view="communities"><header class="top"><div><div class="ey">СООБЩЕСТВА</div><h1>Люди вокруг интереса</h1><p>Здесь появятся реальные сообщества и их открытые события.</p></div><button class="avatar js-profile">В</button></header><div class="callout"><span class="ey">ПОКА ТИХО</span><h2>Не будем придумывать людей.</h2><p>В тестовой версии сообщества подключим после проверки главного сценария: найти событие → собрать компанию → встретиться.</p></div></section>
+  <section class="view" data-view="chronicle"><header class="top"><div><div class="ey">ХРОНИКА</div><h1>То, что уже было</h1><p>Завершённые события остаются здесь и их можно повторить позже.</p></div><button class="avatar js-profile">В</button></header><div id="chronicle-list"><p class="muted">Загружаю хронику…</p></div></section>
+  <section class="view standalone eventView" data-view="event"><button class="eventBack" id="event-back">← Назад</button><div id="event-detail-root"><p class="muted">Загружаю событие…</p></div></section>
   <section class="view standalone" data-view="profile"><button class="back js-home">← Главная</button><div id="profile-root"></div></section>
   <section class="view standalone" data-view="login"><button class="back js-home">← Посмотреть приложение</button><div class="auth"><span class="ey">ВМЕСТЕ · ТЕСТ</span><h2>Вход в MVP</h2><div class="tabs"><button id="signup-tab" class="active">Регистрация</button><button id="login-tab">Вход</button></div><form id="auth-form"><label id="name-field">Имя<input id="auth-name" required></label><label>Email<input id="auth-email" type="email" required></label><label>Пароль<input id="auth-password" type="password" minlength="6" required></label><div id="auth-status" class="status" hidden></div><button id="auth-submit" class="primary">Создать аккаунт</button></form></div></section>
 
   <div class="afishaCompareBar" id="afisha-compare-bar" hidden></div>
   <div class="afishaModal" id="afisha-compare-modal" hidden><div class="afishaSheet"><div class="afishaSheetHead"><h2>Сравнение</h2><button id="close-afisha-compare">×</button></div><div id="afisha-compare-body"></div></div></div>
-
   <nav class="bottom" id="bottom-nav"><button class="nav active" data-go="home">⌂<span>Главная</span></button><button class="nav" data-go="calendar">▣<span>Календарь</span></button><button class="nav plus" data-go="create">＋<span>Создать</span></button><button class="nav" data-go="communities">○○<span>Сообщества</span></button><button class="nav" data-go="chronicle">◷<span>Хроника</span></button></nav>
 </div>
+
 <script>
 (function(){
   var root=document.getElementById('afisha-root');
-  if(!root)return;
-  root.innerHTML='<div class="afishaLoading">Подключаю афишу…</div>';
+  var seed=[
+    {id:'65dd3d87-e1dd-4ab9-bc2b-0fb452de02c6',title:'Ани Лорак. Шоу «Аура»',description:'Большой концерт в Ростове-на-Дону.',category:'music',starts_at:'2026-09-16T18:00:00Z',venue:'Embargo',source_name:'Афиша',source_url:'https://www.afisha.ru/rostov-na-donu/events/na-sentyabr/exhibitions/concerts/',price_text:'от 4 800 ₽',is_free:false},
+    {id:'cd24d55d-d829-48f0-be0d-594b1ee0fa69',title:'Найка Казиева. Сольный стендап-концерт',description:'Сольный стендап-концерт.',category:'humor',starts_at:'2026-09-17T17:00:00Z',venue:'Пересвет-арена',source_name:'Афиша',source_url:'https://www.afisha.ru/rostov-na-donu/events/17-sentyabrya/concerts/',price_text:'от 1 500 ₽',is_free:false},
+    {id:'4fa73a69-ea56-487a-a6e2-849b9fff98de',title:'Б.А.У.',description:'Концерт тяжёлой музыки.',category:'music',starts_at:'2026-09-18T17:00:00Z',venue:'Кроп Арена',source_name:'Афиша',source_url:'https://www.afisha.ru/rostov-na-donu/schedule_concert/na-sentyabr/s-biletami/',price_text:'от 1 800 ₽',is_free:false},
+    {id:'b82e0574-f443-4dae-b992-54e400b35d00',title:'Хор русского рока при свечах. Оркестр CAGMO',description:'Русский рок в оркестровом исполнении при свечах.',category:'music',starts_at:'2026-09-19T15:00:00Z',venue:'ДК «Ростсельмаш»',source_name:'Афиша',source_url:'https://www.afisha.ru/rostov-na-donu/events/19-sentyabrya/concerts/',price_text:'от 2 300 ₽',is_free:false},
+    {id:'ec60b4fb-8b98-4995-8624-c53c23b94a65',title:'Шоу виртуозов: Yanni Symphony',description:'Оркестровое шоу в арт-пространстве.',category:'music',starts_at:'2026-09-20T14:00:00Z',venue:'Арт-пространство «Особняк 1898»',source_name:'Афиша',source_url:'https://www.afisha.ru/rostov-na-donu/schedule_concert/na-sentyabr/',price_text:'от 2 000 ₽',is_free:false},
+    {id:'eb5d9e67-e95a-4659-8b0e-6d66e35a5558',title:'Марина Девятова',description:'Концерт Марины Девятовой.',category:'music',starts_at:'2026-09-23T16:00:00Z',venue:'ДК «Фестивальный»',source_name:'Афиша',source_url:'https://www.afisha.ru/rostov-na-donu/schedule_concert/na-sentyabr/',price_text:'от 1 800 ₽',is_free:false},
+    {id:'50af5285-501d-432e-aea9-411eb2d60b4c',title:'Не все коту масленица',description:'Комедия по пьесе А.Н. Островского.',category:'theatre',starts_at:'2026-09-24T16:00:00Z',venue:'Ростовский театр драмы им. Горького',source_name:'Афиша',source_url:'https://www.afisha.ru/rostov-na-donu/events/na-sentyabr/',price_text:'от 1 700 ₽',is_free:false},
+    {id:'7ef31da4-55a1-4fa3-8c60-0227659ec0b5',title:'Симфония Майкла Джексона при свечах. Оркестр CAGMO',description:'Симфоническая программа музыки Майкла Джексона.',category:'music',starts_at:'2026-09-25T16:00:00Z',venue:'ДК «Ростсельмаш»',source_name:'Афиша',source_url:'https://www.afisha.ru/rostov-na-donu/events/25-sentyabrya/',price_text:'от 1 900 ₽',is_free:false},
+    {id:'2e4a9c0e-139e-4727-ab38-49ab5d0e5060',title:'Магия свечей. Queen Symphony',description:'Симфоническая программа музыки Queen.',category:'music',starts_at:'2026-09-26T14:00:00Z',venue:'Арт-пространство «Особняк 1898»',source_name:'Афиша',source_url:'https://www.afisha.ru/rostov-na-donu/schedule_concert/na-sentyabr/s-biletami/',price_text:'от 1 500 ₽',is_free:false},
+    {id:'db42a8b3-b591-4dd9-9dd1-224eaeab8b6e',title:'Кипелов',description:'Концерт группы «Кипелов».',category:'music',starts_at:'2026-09-30T16:00:00Z',venue:'КСК «Экспресс»',source_name:'Афиша',source_url:'https://www.afisha.ru/rostov-na-donu/events/30-sentyabrya/',price_text:'от 3 000 ₽',is_free:false}
+  ];
+  var current=seed.slice();
   function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
-  function category(c){var x={music:'Музыка',theatre:'Театр',humor:'Юмор',exhibition:'Выставки',kids:'С детьми',walks:'Прогулки',food:'Еда',sport:'Спорт'};return x[c]||'Событие'}
-  function day(v){try{return new Intl.DateTimeFormat('ru-RU',{day:'2-digit',timeZone:'Europe/Moscow'}).format(new Date(v))}catch(e){return ''}}
-  function mon(v){try{return new Intl.DateTimeFormat('ru-RU',{month:'short',timeZone:'Europe/Moscow'}).format(new Date(v)).replace('.','').toUpperCase()}catch(e){return ''}}
-  function time(v){try{return new Intl.DateTimeFormat('ru-RU',{hour:'2-digit',minute:'2-digit',timeZone:'Europe/Moscow'}).format(new Date(v))}catch(e){return ''}}
+  function cat(c){var x={music:'Музыка',theatre:'Театр',humor:'Юмор',exhibition:'Выставки',kids:'С детьми',walks:'Прогулки',food:'Еда',sport:'Спорт'};return x[c]||'Событие'}
+  function dt(v,o){try{return new Intl.DateTimeFormat('ru-RU',o).format(new Date(v))}catch(e){return ''}}
+  function dateKey(v){var p=new Intl.DateTimeFormat('en-CA',{year:'numeric',month:'2-digit',day:'2-digit',timeZone:'Europe/Moscow'}).formatToParts(new Date(v));var a={};for(var i=0;i<p.length;i++)a[p[i].type]=p[i].value;return a.year+'-'+a.month+'-'+a.day}
   function render(items){
-    if(!items||!items.length){root.innerHTML='<div class="afishaEmpty">Ближайших событий пока нет.</div>';return}
-    var html='<div class="afishaFeed">';
-    for(var i=0;i<items.length;i++){
-      var e=items[i];
-      html+='<article class="afishaCard" data-afisha-id="'+esc(e.id)+'"><div class="afishaVisual '+esc(e.category)+'"><span class="afishaCategory">'+esc(category(e.category))+'</span><div class="afishaDateArt">'+day(e.starts_at)+'<span>'+mon(e.starts_at)+' · '+time(e.starts_at)+'</span></div></div><div class="afishaBody"><h2>'+esc(e.title)+'</h2>'+(e.description?'<p>'+esc(e.description)+'</p>':'')+'<div class="afishaFacts"><span>'+esc(e.venue||'Место уточняется')+'</span><span>'+esc(e.is_free?'Бесплатно':e.price_text||'Цена у организатора')+'</span></div><div class="afishaActions"><button class="af-like" data-id="'+esc(e.id)+'">♡ Нравится</button><button class="af-compare" data-id="'+esc(e.id)+'">⇄ Сравнить</button><button class="collectCompany" data-id="'+esc(e.id)+'">Собрать компанию</button></div><a class="afishaSource" href="'+esc(e.source_url)+'" target="_blank" rel="noopener">Источник: '+esc(e.source_name)+' ↗</a></div></article>';
-    }
-    root.innerHTML=html+'</div>';
+    if(!root)return;
+    if(!items.length){root.innerHTML='<div class="afishaEmpty">По этому фильтру пока ничего нет.</div>';return}
+    var h='<div class="afishaFeed">';
+    for(var i=0;i<items.length;i++){var e=items[i];h+='<article class="afishaCard" data-afisha-id="'+esc(e.id)+'" data-free="'+(e.is_free?'1':'0')+'" data-start="'+esc(e.starts_at)+'"><div class="afishaVisual '+esc(e.category)+'"><span class="afishaCategory">'+esc(cat(e.category))+'</span><div class="afishaDateArt">'+dt(e.starts_at,{day:'2-digit',timeZone:'Europe/Moscow'})+'<span>'+dt(e.starts_at,{month:'short',timeZone:'Europe/Moscow'}).replace('.','').toUpperCase()+' · '+dt(e.starts_at,{hour:'2-digit',minute:'2-digit',timeZone:'Europe/Moscow'})+'</span></div></div><div class="afishaBody"><h2>'+esc(e.title)+'</h2>'+(e.description?'<p>'+esc(e.description)+'</p>':'')+'<div class="afishaFacts"><span>'+esc(e.venue||'Место уточняется')+'</span><span>'+esc(e.is_free?'Бесплатно':e.price_text||'Цена у организатора')+'</span></div><div class="afishaActions"><button class="af-like" data-id="'+esc(e.id)+'">♡ Нравится</button><button class="af-compare" data-id="'+esc(e.id)+'">⇄ Сравнить</button><button class="collectCompany" data-id="'+esc(e.id)+'">Собрать компанию</button></div><a class="afishaSource" href="'+esc(e.source_url)+'" target="_blank" rel="noopener">Источник: '+esc(e.source_name)+' ↗</a></div></article>'}
+    root.innerHTML=h+'</div>';
   }
-  function fail(){root.innerHTML='<div class="status error">Не удалось загрузить Афишу. Проверьте соединение и обновите страницу.</div>'}
-  try{
-    var now=encodeURIComponent(new Date().toISOString());
-    var city=encodeURIComponent('Ростов-на-Дону');
-    var url='https://nmeoakrpafxhpdrplsuo.supabase.co/rest/v1/afisha_events?select=id,city,title,description,category,starts_at,ends_at,timezone,venue,source_name,source_url,cover_url,price_text,is_free&city=eq.'+city+'&published=eq.true&starts_at=gte.'+now+'&order=starts_at.asc&limit=60';
-    var xhr=new XMLHttpRequest();
-    xhr.open('GET',url,true);
-    xhr.setRequestHeader('apikey','sb_publishable_44_6dVen8Hq25CDywZKLwA_8PWV4-24');
-    xhr.timeout=8000;
-    xhr.onreadystatechange=function(){if(xhr.readyState!==4)return;if(xhr.status>=200&&xhr.status<300){try{render(JSON.parse(xhr.responseText))}catch(e){fail()}}else{fail()}};
-    xhr.onerror=fail;xhr.ontimeout=fail;xhr.send();
-  }catch(e){fail()}
+  function fallbackView(name){var views=document.querySelectorAll('.view');for(var i=0;i<views.length;i++)views[i].classList.toggle('active',views[i].getAttribute('data-view')===name);var nav=document.querySelectorAll('.nav');for(var j=0;j<nav.length;j++)nav[j].classList.toggle('active',nav[j].getAttribute('data-go')===name);var bottom=document.getElementById('bottom-nav');if(bottom)bottom.style.display=(name==='profile'||name==='login')?'none':'grid';window.scrollTo(0,0)}
+  function session(){try{return JSON.parse(localStorage.getItem('vmeste_session_v1')||'null')}catch(e){return null}}
+  function sheet(title,body){var old=document.querySelector('.homeToolsOverlay');if(old)old.remove();var o=document.createElement('div');o.className='homeToolsOverlay';o.innerHTML='<div class="homeToolsSheet"><div class="homeToolsHead"><h2>'+esc(title)+'</h2><button class="homeToolsClose">×</button></div><div class="homeToolsBody">'+body+'</div></div>';document.body.appendChild(o);o.querySelector('.homeToolsClose').onclick=function(){o.remove()};o.onclick=function(e){if(e.target===o)o.remove()};return o}
+  function needLogin(){if(typeof window.openView==='function')window.openView('login');else fallbackView('login')}
+  function api(url,action,payload,token,done){var x=new XMLHttpRequest();x.open('POST',url,true);x.setRequestHeader('Content-Type','application/json');if(token)x.setRequestHeader('Authorization','Bearer '+token);x.timeout=6500;x.onreadystatechange=function(){if(x.readyState!==4)return;var d={};try{d=JSON.parse(x.responseText||'{}')}catch(e){}done(x.status>=200&&x.status<300,d)};x.onerror=function(){done(false,{})};x.ontimeout=function(){done(false,{})};var b={action:action};for(var k in payload)b[k]=payload[k];x.send(JSON.stringify(b))}
+  function topFallback(kind){var s=session();if(!s||!s.access_token){needLogin();return}if(kind==='notifications'){var o=sheet('Оповещения','<div class="homeToolsEmpty">Загружаю…</div>');api('https://nmeoakrpafxhpdrplsuo.supabase.co/functions/v1/vmeste-api','list_events',{},s.access_token,function(ok,d){var b=o.querySelector('.homeToolsBody');if(!ok){b.innerHTML='<div class="homeToolsEmpty">Не удалось загрузить оповещения.</div>';return}var a=(d.invited_events||[]).filter(function(e){return e.invitation_status==='pending'});b.innerHTML=a.length?a.map(function(e){return '<article class="homeNotification"><small>ПРИГЛАШЕНИЕ</small><h3>'+esc(e.title)+'</h3><p>'+esc(e.location_name||'')+'</p></article>'}).join(''):'<div class="homeToolsEmpty">Новых уведомлений пока нет.</div>'})}else if(kind==='liked'){var o2=sheet('Понравилось','<div class="homeToolsEmpty">Загружаю…</div>');api('https://nmeoakrpafxhpdrplsuo.supabase.co/functions/v1/vmeste-afisha-api','feed',{city:'Ростов-на-Дону'},s.access_token,function(ok,d){var b=o2.querySelector('.homeToolsBody');if(!ok){b.innerHTML='<div class="homeToolsEmpty">Не удалось загрузить понравившиеся.</div>';return}var ids=d.liked||[], a=(d.events||[]).filter(function(e){return ids.indexOf(e.id)>=0});b.innerHTML=a.length?a.map(function(e){return '<article class="homeLikedItem"><h3>'+esc(e.title)+'</h3><p>'+esc(e.venue||'')+'</p></article>'}).join(''):'<div class="homeToolsEmpty">Понравившихся мероприятий пока нет.</div>'})}else{var o3=sheet('Сравнение','<div class="homeToolsEmpty">Загружаю…</div>');api('https://nmeoakrpafxhpdrplsuo.supabase.co/functions/v1/vmeste-afisha-api','compare',{},s.access_token,function(ok,d){var b=o3.querySelector('.homeToolsBody');var a=d.events||[];b.innerHTML=ok&&a.length?a.map(function(e){return '<article class="homeLikedItem"><h3>'+esc(e.title)+'</h3><p>'+esc(e.venue||'')+'</p></article>'}).join(''):'<div class="homeToolsEmpty">Для сравнения пока ничего не выбрано.</div>'})}}
+  function applyFilter(f){var items=current.slice(), today=dateKey(new Date()), end=new Date();end.setDate(end.getDate()+7);if(f==='today')items=items.filter(function(e){return dateKey(e.starts_at)===today});if(f==='week')items=items.filter(function(e){return new Date(e.starts_at)<=end});if(f==='free')items=items.filter(function(e){return e.is_free});render(items)}
+
+  render(seed);
+  document.addEventListener('click',function(e){
+    var nav=e.target.closest&&e.target.closest('[data-go]');if(nav&&typeof window.openView!=='function'){e.preventDefault();fallbackView(nav.getAttribute('data-go'));return}
+    var prof=e.target.closest&&e.target.closest('.js-profile');if(prof&&typeof window.openView!=='function'){e.preventDefault();fallbackView('profile');return}
+    var home=e.target.closest&&e.target.closest('.js-home');if(home&&typeof window.openView!=='function'){e.preventDefault();fallbackView('home');return}
+    var filter=e.target.closest&&e.target.closest('[data-af-filter]');if(filter&&typeof window.loadAfisha!=='function'){var fs=document.querySelectorAll('[data-af-filter]');for(var i=0;i<fs.length;i++)fs[i].classList.toggle('active',fs[i]===filter);applyFilter(filter.getAttribute('data-af-filter'));return}
+    var top=e.target.closest&&e.target.closest('.homeToolButton');if(top){var wrap=document.getElementById('home-top-actions');if(!wrap||wrap.getAttribute('data-bound')!=='1'){e.preventDefault();topFallback(top.classList.contains('homeNotifications')?'notifications':top.classList.contains('homeLiked')?'liked':'compare');return}}
+  },true);
+
+  try{var now=encodeURIComponent(new Date().toISOString()),city=encodeURIComponent('Ростов-на-Дону'),url='https://nmeoakrpafxhpdrplsuo.supabase.co/rest/v1/afisha_events?select=id,city,title,description,category,starts_at,ends_at,timezone,venue,source_name,source_url,cover_url,price_text,is_free&city=eq.'+city+'&published=eq.true&starts_at=gte.'+now+'&order=starts_at.asc&limit=60';var x=new XMLHttpRequest();x.open('GET',url,true);x.setRequestHeader('apikey','sb_publishable_44_6dVen8Hq25CDywZKLwA_8PWV4-24');x.timeout=6000;x.onreadystatechange=function(){if(x.readyState===4&&x.status>=200&&x.status<300){try{var d=JSON.parse(x.responseText);if(d&&d.length){current=d;render(d)}}catch(e){}}};x.send()}catch(e){}
 })();
 </script>
-<script src="/app.js?v=20260915-3"></script>
-<script src="/auth-easy.js?v=20260915-3"></script>
-<script src="/private-event-overrides.js?v=20260915-3"></script>
-<script src="/event-detail.js?v=20260915-3"></script>
-<script src="/rsvp-two-state.js?v=20260915-3"></script>
-<script src="/event-preferences.js?v=20260915-3"></script>
-<script src="/event-redesign.js?v=20260915-3"></script>
-<script src="/event-management.js?v=20260915-3"></script>
-<script src="/afisha.js?v=20260915-3"></script>
-<script src="/avatar-profile.js?v=20260915-3"></script>
-<script src="/home-tools.js?v=20260915-3"></script>
+
+<script defer src="/app.js?v=20260915-4"></script>
+<script defer src="/auth-easy.js?v=20260915-4"></script>
+<script defer src="/private-event-overrides.js?v=20260915-4"></script>
+<script defer src="/event-detail.js?v=20260915-4"></script>
+<script defer src="/rsvp-two-state.js?v=20260915-4"></script>
+<script defer src="/event-preferences.js?v=20260915-4"></script>
+<script defer src="/event-redesign.js?v=20260915-4"></script>
+<script defer src="/event-management.js?v=20260915-4"></script>
+<script defer src="/afisha.js?v=20260915-4"></script>
+<script defer src="/avatar-profile.js?v=20260915-4"></script>
+<script defer src="/home-tools.js?v=20260915-4"></script>
 </body>
 </html>
