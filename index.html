@@ -6,27 +6,22 @@
   <meta name="theme-color" content="#f4f0e8">
   <title>Вместе — события и люди</title>
   <meta name="description" content="Вместе — здесь встречаются события и люди">
-  <link rel="stylesheet" href="/styles.css?v=20260915-4">
-  <link rel="stylesheet" href="/event-detail.css?v=20260915-4">
-  <link rel="stylesheet" href="/event-redesign.css?v=20260915-4">
-  <link rel="stylesheet" href="/event-management.css?v=20260915-4">
-  <link rel="stylesheet" href="/event-preferences.css?v=20260915-4">
-  <link rel="stylesheet" href="/afisha.css?v=20260915-4">
-  <link rel="stylesheet" href="/auth-easy.css?v=20260915-4">
-  <link rel="stylesheet" href="/avatar-profile.css?v=20260915-4">
-  <link rel="stylesheet" href="/home-tools.css?v=20260915-4">
+  <link rel="stylesheet" href="/styles.css?v=20260915-5">
+  <link rel="stylesheet" href="/event-detail.css?v=20260915-5">
+  <link rel="stylesheet" href="/event-redesign.css?v=20260915-5">
+  <link rel="stylesheet" href="/event-management.css?v=20260915-5">
+  <link rel="stylesheet" href="/event-preferences.css?v=20260915-5">
+  <link rel="stylesheet" href="/afisha.css?v=20260915-5">
+  <link rel="stylesheet" href="/auth-easy.css?v=20260915-5">
+  <link rel="stylesheet" href="/avatar-profile.css?v=20260915-5">
+  <link rel="stylesheet" href="/home-tools.css?v=20260915-5">
 </head>
 <body>
 <div class="app">
   <section class="view active" data-view="home">
     <header class="top"><div><div class="ey">ВМЕСТЕ · АФИША</div><h1>Что происходит рядом</h1><p>Реальные события города — и возможность сразу собрать на них свою компанию.</p></div><div class="homeTopActions" id="home-top-actions"><button class="homeToolButton homeNotifications" type="button" aria-label="Оповещения" title="Оповещения"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path><path d="M10 21h4"></path></svg><span class="homeToolBadge" hidden></span></button><button class="homeToolButton homeLiked" type="button" aria-label="Понравилось" title="Понравилось"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1.1L12 21l7.8-7.5 1.1-1.1a5.5 5.5 0 0 0-.1-7.8z"></path></svg><span class="homeToolBadge" hidden></span></button><button class="homeToolButton homeCompare" type="button" aria-label="Сравнение" title="Сравнение"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 7h11"></path><path d="m16 4 3 3-3 3"></path><path d="M16 17H5"></path><path d="m8 14-3 3 3 3"></path></svg><span class="homeToolBadge" hidden></span></button><button class="avatar js-profile">В</button></div></header>
     <div class="afishaIntro"><div><span class="ey">ГОРОД</span><div class="afishaCity" id="afisha-city-label">Ростов-на-Дону</div></div><span class="ey">ИСТОЧНИКИ ПРОВЕРЕНЫ</span></div>
-    <div class="afishaFilters">
-      <button class="active" data-af-filter="for-me">Для меня</button>
-      <button data-af-filter="today">Сегодня</button>
-      <button data-af-filter="week">На неделе</button>
-      <button data-af-filter="free">Бесплатно</button>
-    </div>
+    <div class="afishaFilters"><button class="active" data-af-filter="for-me">Для меня</button><button data-af-filter="today">Сегодня</button><button data-af-filter="week">На неделе</button><button data-af-filter="free">Бесплатно</button></div>
     <div id="afisha-root"></div>
   </section>
 
@@ -74,47 +69,41 @@
   ];
   var current=seed.slice();
   function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
-  function cat(c){var x={music:'Музыка',theatre:'Театр',humor:'Юмор',exhibition:'Выставки',kids:'С детьми',walks:'Прогулки',food:'Еда',sport:'Спорт'};return x[c]||'Событие'}
-  function dt(v,o){try{return new Intl.DateTimeFormat('ru-RU',o).format(new Date(v))}catch(e){return ''}}
-  function dateKey(v){var p=new Intl.DateTimeFormat('en-CA',{year:'numeric',month:'2-digit',day:'2-digit',timeZone:'Europe/Moscow'}).formatToParts(new Date(v));var a={};for(var i=0;i<p.length;i++)a[p[i].type]=p[i].value;return a.year+'-'+a.month+'-'+a.day}
-  function render(items){
-    if(!root)return;
-    if(!items.length){root.innerHTML='<div class="afishaEmpty">По этому фильтру пока ничего нет.</div>';return}
-    var h='<div class="afishaFeed">';
-    for(var i=0;i<items.length;i++){var e=items[i];h+='<article class="afishaCard" data-afisha-id="'+esc(e.id)+'" data-free="'+(e.is_free?'1':'0')+'" data-start="'+esc(e.starts_at)+'"><div class="afishaVisual '+esc(e.category)+'"><span class="afishaCategory">'+esc(cat(e.category))+'</span><div class="afishaDateArt">'+dt(e.starts_at,{day:'2-digit',timeZone:'Europe/Moscow'})+'<span>'+dt(e.starts_at,{month:'short',timeZone:'Europe/Moscow'}).replace('.','').toUpperCase()+' · '+dt(e.starts_at,{hour:'2-digit',minute:'2-digit',timeZone:'Europe/Moscow'})+'</span></div></div><div class="afishaBody"><h2>'+esc(e.title)+'</h2>'+(e.description?'<p>'+esc(e.description)+'</p>':'')+'<div class="afishaFacts"><span>'+esc(e.venue||'Место уточняется')+'</span><span>'+esc(e.is_free?'Бесплатно':e.price_text||'Цена у организатора')+'</span></div><div class="afishaActions"><button class="af-like" data-id="'+esc(e.id)+'">♡ Нравится</button><button class="af-compare" data-id="'+esc(e.id)+'">⇄ Сравнить</button><button class="collectCompany" data-id="'+esc(e.id)+'">Собрать компанию</button></div><a class="afishaSource" href="'+esc(e.source_url)+'" target="_blank" rel="noopener">Источник: '+esc(e.source_name)+' ↗</a></div></article>'}
-    root.innerHTML=h+'</div>';
-  }
+  function cat(c){var m={music:'Музыка',theatre:'Театр',humor:'Юмор',exhibition:'Выставки',kids:'С детьми',walks:'Прогулки',food:'Еда',sport:'Спорт'};return m[c]||'Событие'}
+  function dt(v,opt){try{return new Intl.DateTimeFormat('ru-RU',opt).format(new Date(v))}catch(e){return ''}}
+  function dateKey(v){try{var p=new Intl.DateTimeFormat('en-CA',{year:'numeric',month:'2-digit',day:'2-digit',timeZone:'Europe/Moscow'}).formatToParts(new Date(v)),g=function(t){for(var i=0;i<p.length;i++)if(p[i].type===t)return p[i].value;return ''};return g('year')+'-'+g('month')+'-'+g('day')}catch(e){return ''}}
+  function render(items){if(!items.length){root.innerHTML='<div class="afishaEmpty">По этому фильтру пока ничего нет.</div>';return}var h='<div class="afishaFeed">';for(var i=0;i<items.length;i++){var e=items[i];h+='<article class="afishaCard" data-afisha-id="'+esc(e.id)+'" data-free="'+(e.is_free?'1':'0')+'" data-start="'+esc(e.starts_at)+'"><div class="afishaVisual '+esc(e.category)+'"><span class="afishaCategory">'+esc(cat(e.category))+'</span><div class="afishaDateArt">'+dt(e.starts_at,{day:'2-digit',timeZone:'Europe/Moscow'})+'<span>'+dt(e.starts_at,{month:'short',timeZone:'Europe/Moscow'}).replace('.','').toUpperCase()+' · '+dt(e.starts_at,{hour:'2-digit',minute:'2-digit',timeZone:'Europe/Moscow'})+'</span></div></div><div class="afishaBody"><h2>'+esc(e.title)+'</h2>'+(e.description?'<p>'+esc(e.description)+'</p>':'')+'<div class="afishaFacts"><span>'+esc(e.venue||'Место уточняется')+'</span><span>'+esc(e.is_free?'Бесплатно':e.price_text||'Цена у организатора')+'</span></div><div class="afishaActions"><button class="af-like" data-id="'+esc(e.id)+'">♡ Нравится</button><button class="af-compare" data-id="'+esc(e.id)+'">⇄ Сравнить</button><button class="collectCompany" data-id="'+esc(e.id)+'">Собрать компанию</button></div><a class="afishaSource" href="'+esc(e.source_url)+'" target="_blank" rel="noopener">Источник: '+esc(e.source_name)+' ↗</a></div></article>'}root.innerHTML=h+'</div>'}
   function fallbackView(name){var views=document.querySelectorAll('.view');for(var i=0;i<views.length;i++)views[i].classList.toggle('active',views[i].getAttribute('data-view')===name);var nav=document.querySelectorAll('.nav');for(var j=0;j<nav.length;j++)nav[j].classList.toggle('active',nav[j].getAttribute('data-go')===name);var bottom=document.getElementById('bottom-nav');if(bottom)bottom.style.display=(name==='profile'||name==='login')?'none':'grid';window.scrollTo(0,0)}
   function session(){try{return JSON.parse(localStorage.getItem('vmeste_session_v1')||'null')}catch(e){return null}}
   function sheet(title,body){var old=document.querySelector('.homeToolsOverlay');if(old)old.remove();var o=document.createElement('div');o.className='homeToolsOverlay';o.innerHTML='<div class="homeToolsSheet"><div class="homeToolsHead"><h2>'+esc(title)+'</h2><button class="homeToolsClose">×</button></div><div class="homeToolsBody">'+body+'</div></div>';document.body.appendChild(o);o.querySelector('.homeToolsClose').onclick=function(){o.remove()};o.onclick=function(e){if(e.target===o)o.remove()};return o}
-  function needLogin(){if(typeof window.openView==='function')window.openView('login');else fallbackView('login')}
+  function needLogin(){fallbackView('login')}
   function api(url,action,payload,token,done){var x=new XMLHttpRequest();x.open('POST',url,true);x.setRequestHeader('Content-Type','application/json');if(token)x.setRequestHeader('Authorization','Bearer '+token);x.timeout=6500;x.onreadystatechange=function(){if(x.readyState!==4)return;var d={};try{d=JSON.parse(x.responseText||'{}')}catch(e){}done(x.status>=200&&x.status<300,d)};x.onerror=function(){done(false,{})};x.ontimeout=function(){done(false,{})};var b={action:action};for(var k in payload)b[k]=payload[k];x.send(JSON.stringify(b))}
-  function topFallback(kind){var s=session();if(!s||!s.access_token){needLogin();return}if(kind==='notifications'){var o=sheet('Оповещения','<div class="homeToolsEmpty">Загружаю…</div>');api('https://nmeoakrpafxhpdrplsuo.supabase.co/functions/v1/vmeste-api','list_events',{},s.access_token,function(ok,d){var b=o.querySelector('.homeToolsBody');if(!ok){b.innerHTML='<div class="homeToolsEmpty">Не удалось загрузить оповещения.</div>';return}var a=(d.invited_events||[]).filter(function(e){return e.invitation_status==='pending'});b.innerHTML=a.length?a.map(function(e){return '<article class="homeNotification"><small>ПРИГЛАШЕНИЕ</small><h3>'+esc(e.title)+'</h3><p>'+esc(e.location_name||'')+'</p></article>'}).join(''):'<div class="homeToolsEmpty">Новых уведомлений пока нет.</div>'})}else if(kind==='liked'){var o2=sheet('Понравилось','<div class="homeToolsEmpty">Загружаю…</div>');api('https://nmeoakrpafxhpdrplsuo.supabase.co/functions/v1/vmeste-afisha-api','feed',{city:'Ростов-на-Дону'},s.access_token,function(ok,d){var b=o2.querySelector('.homeToolsBody');if(!ok){b.innerHTML='<div class="homeToolsEmpty">Не удалось загрузить понравившиеся.</div>';return}var ids=d.liked||[], a=(d.events||[]).filter(function(e){return ids.indexOf(e.id)>=0});b.innerHTML=a.length?a.map(function(e){return '<article class="homeLikedItem"><h3>'+esc(e.title)+'</h3><p>'+esc(e.venue||'')+'</p></article>'}).join(''):'<div class="homeToolsEmpty">Понравившихся мероприятий пока нет.</div>'})}else{var o3=sheet('Сравнение','<div class="homeToolsEmpty">Загружаю…</div>');api('https://nmeoakrpafxhpdrplsuo.supabase.co/functions/v1/vmeste-afisha-api','compare',{},s.access_token,function(ok,d){var b=o3.querySelector('.homeToolsBody');var a=d.events||[];b.innerHTML=ok&&a.length?a.map(function(e){return '<article class="homeLikedItem"><h3>'+esc(e.title)+'</h3><p>'+esc(e.venue||'')+'</p></article>'}).join(''):'<div class="homeToolsEmpty">Для сравнения пока ничего не выбрано.</div>'})}}
-  function applyFilter(f){var items=current.slice(), today=dateKey(new Date()), end=new Date();end.setDate(end.getDate()+7);if(f==='today')items=items.filter(function(e){return dateKey(e.starts_at)===today});if(f==='week')items=items.filter(function(e){return new Date(e.starts_at)<=end});if(f==='free')items=items.filter(function(e){return e.is_free});render(items)}
+  function topFallback(kind){var s=session();if(!s||!s.access_token){needLogin();return}if(kind==='notifications'){var o=sheet('Оповещения','<div class="homeToolsEmpty">Загружаю…</div>');api('https://nmeoakrpafxhpdrplsuo.supabase.co/functions/v1/vmeste-api','list_events',{},s.access_token,function(ok,d){var b=o.querySelector('.homeToolsBody');if(!ok){b.innerHTML='<div class="homeToolsEmpty">Не удалось загрузить оповещения.</div>';return}var a=(d.invited_events||[]).filter(function(e){return e.invitation_status==='pending'});b.innerHTML=a.length?a.map(function(e){return '<article class="homeNotification"><small>ПРИГЛАШЕНИЕ</small><h3>'+esc(e.title)+'</h3><p>'+esc(e.location_name||'')+'</p></article>'}).join(''):'<div class="homeToolsEmpty">Новых уведомлений пока нет.</div>'})}else if(kind==='liked'){var o2=sheet('Понравилось','<div class="homeToolsEmpty">Загружаю…</div>');api('https://nmeoakrpafxhpdrplsuo.supabase.co/functions/v1/vmeste-afisha-api','feed',{city:'Ростов-на-Дону'},s.access_token,function(ok,d){var b=o2.querySelector('.homeToolsBody');if(!ok){b.innerHTML='<div class="homeToolsEmpty">Не удалось загрузить понравившиеся.</div>';return}var ids=d.liked||[],a=(d.events||[]).filter(function(e){return ids.indexOf(e.id)>=0});b.innerHTML=a.length?a.map(function(e){return '<article class="homeLikedItem"><h3>'+esc(e.title)+'</h3><p>'+esc(e.venue||'')+'</p></article>'}).join(''):'<div class="homeToolsEmpty">Понравившихся мероприятий пока нет.</div>'})}else{var o3=sheet('Сравнение','<div class="homeToolsEmpty">Загружаю…</div>');api('https://nmeoakrpafxhpdrplsuo.supabase.co/functions/v1/vmeste-afisha-api','compare',{},s.access_token,function(ok,d){var b=o3.querySelector('.homeToolsBody'),a=d.events||[];b.innerHTML=ok&&a.length?a.map(function(e){return '<article class="homeLikedItem"><h3>'+esc(e.title)+'</h3><p>'+esc(e.venue||'')+'</p></article>'}).join(''):'<div class="homeToolsEmpty">Для сравнения пока ничего не выбрано.</div>'})}}
+  function applyFilter(f){var items=current.slice(),today=dateKey(new Date()),end=new Date();end.setDate(end.getDate()+7);if(f==='today')items=items.filter(function(e){return dateKey(e.starts_at)===today});if(f==='week')items=items.filter(function(e){return new Date(e.starts_at)<=end});if(f==='free')items=items.filter(function(e){return e.is_free});render(items)}
 
   render(seed);
   document.addEventListener('click',function(e){
-    var nav=e.target.closest&&e.target.closest('[data-go]');if(nav&&typeof window.openView!=='function'){e.preventDefault();fallbackView(nav.getAttribute('data-go'));return}
-    var prof=e.target.closest&&e.target.closest('.js-profile');if(prof&&typeof window.openView!=='function'){e.preventDefault();fallbackView('profile');return}
-    var home=e.target.closest&&e.target.closest('.js-home');if(home&&typeof window.openView!=='function'){e.preventDefault();fallbackView('home');return}
-    var filter=e.target.closest&&e.target.closest('[data-af-filter]');if(filter&&typeof window.loadAfisha!=='function'){var fs=document.querySelectorAll('[data-af-filter]');for(var i=0;i<fs.length;i++)fs[i].classList.toggle('active',fs[i]===filter);applyFilter(filter.getAttribute('data-af-filter'));return}
-    var top=e.target.closest&&e.target.closest('.homeToolButton');if(top){var wrap=document.getElementById('home-top-actions');if(!wrap||wrap.getAttribute('data-bound')!=='1'){e.preventDefault();topFallback(top.classList.contains('homeNotifications')?'notifications':top.classList.contains('homeLiked')?'liked':'compare');return}}
+    var nav=e.target.closest&&e.target.closest('[data-go]');if(nav){e.preventDefault();e.stopImmediatePropagation();fallbackView(nav.getAttribute('data-go'));return}
+    var prof=e.target.closest&&e.target.closest('.js-profile');if(prof){e.preventDefault();e.stopImmediatePropagation();fallbackView('profile');if(typeof window.renderProfile==='function')try{window.renderProfile()}catch(x){}return}
+    var home=e.target.closest&&e.target.closest('.js-home');if(home){e.preventDefault();e.stopImmediatePropagation();fallbackView('home');return}
+    var filter=e.target.closest&&e.target.closest('[data-af-filter]');if(filter){e.preventDefault();e.stopImmediatePropagation();var fs=document.querySelectorAll('[data-af-filter]');for(var i=0;i<fs.length;i++)fs[i].classList.toggle('active',fs[i]===filter);applyFilter(filter.getAttribute('data-af-filter'));return}
+    var top=e.target.closest&&e.target.closest('.homeToolButton');if(top){e.preventDefault();e.stopImmediatePropagation();topFallback(top.classList.contains('homeNotifications')?'notifications':top.classList.contains('homeLiked')?'liked':'compare');return}
   },true);
 
   try{var now=encodeURIComponent(new Date().toISOString()),city=encodeURIComponent('Ростов-на-Дону'),url='https://nmeoakrpafxhpdrplsuo.supabase.co/rest/v1/afisha_events?select=id,city,title,description,category,starts_at,ends_at,timezone,venue,source_name,source_url,cover_url,price_text,is_free&city=eq.'+city+'&published=eq.true&starts_at=gte.'+now+'&order=starts_at.asc&limit=60';var x=new XMLHttpRequest();x.open('GET',url,true);x.setRequestHeader('apikey','sb_publishable_44_6dVen8Hq25CDywZKLwA_8PWV4-24');x.timeout=6000;x.onreadystatechange=function(){if(x.readyState===4&&x.status>=200&&x.status<300){try{var d=JSON.parse(x.responseText);if(d&&d.length){current=d;render(d)}}catch(e){}}};x.send()}catch(e){}
 })();
 </script>
 
-<script defer src="/app.js?v=20260915-4"></script>
-<script defer src="/auth-easy.js?v=20260915-4"></script>
-<script defer src="/private-event-overrides.js?v=20260915-4"></script>
-<script defer src="/event-detail.js?v=20260915-4"></script>
-<script defer src="/rsvp-two-state.js?v=20260915-4"></script>
-<script defer src="/event-preferences.js?v=20260915-4"></script>
-<script defer src="/event-redesign.js?v=20260915-4"></script>
-<script defer src="/event-management.js?v=20260915-4"></script>
-<script defer src="/afisha.js?v=20260915-4"></script>
-<script defer src="/avatar-profile.js?v=20260915-4"></script>
-<script defer src="/home-tools.js?v=20260915-4"></script>
+<script defer src="/app.js?v=20260915-5"></script>
+<script defer src="/auth-easy.js?v=20260915-5"></script>
+<script defer src="/private-event-overrides.js?v=20260915-5"></script>
+<script defer src="/event-detail.js?v=20260915-5"></script>
+<script defer src="/rsvp-two-state.js?v=20260915-5"></script>
+<script defer src="/event-preferences.js?v=20260915-5"></script>
+<script defer src="/event-redesign.js?v=20260915-5"></script>
+<script defer src="/event-management.js?v=20260915-5"></script>
+<script defer src="/afisha.js?v=20260915-5"></script>
+<script defer src="/avatar-profile.js?v=20260915-5"></script>
+<script defer src="/home-tools.js?v=20260915-5"></script>
 </body>
 </html>
