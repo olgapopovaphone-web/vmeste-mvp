@@ -50,7 +50,7 @@ function updateCompareOpen(button,count){
   button.hidden=count<2;
   button.textContent=count>=2?`Сравнить выбранные · ${count}`:'';
 }
-function compareStatusLabel(s){return s==='creator'?'Организатор':s==='going'?'Пойду':s==='interested'?'Возможно':s==='declined'?'Не смогу':'—'}
+function compareStatusLabel(s){return s==='creator'?'Организатор':s==='going'?'Я иду':s==='declined'?'Не смогу':'—'}
 function compareWhen(v){return new Intl.DateTimeFormat('ru-RU',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit',timeZone:'Europe/Moscow'}).format(new Date(v))}
 
 async function openComparison(){
@@ -75,7 +75,6 @@ async function renderComparison(){
       <div class="compareLabel">Где</div>${events.map(e=>`<div>${eventEsc(e.location_name||'Не указано')}</div>`).join('')}
       <div class="compareLabel">Организатор</div>${events.map(e=>`<div>${eventEsc(e.creator_name)}</div>`).join('')}
       <div class="compareLabel">Пойдут</div>${events.map(e=>`<div>${e.participant_counts?.going||0}</div>`).join('')}
-      <div class="compareLabel">Возможно</div>${events.map(e=>`<div>${e.participant_counts?.interested||0}</div>`).join('')}
       <div class="compareLabel">Мой статус</div>${events.map(e=>`<div>${eventEsc(compareStatusLabel(e.my_status))}</div>`).join('')}
       <div class="compareLabel">Источник</div>${events.map(e=>`<div>${e.source_url?`<a href="${eventEsc(e.source_url)}" target="_blank" rel="noopener">Открыть ↗</a>`:'—'}</div>`).join('')}
     </div></div>`;
