@@ -17,6 +17,14 @@ function dayEventHtml(ev){
 
 const privateEventForm=document.querySelector('#event-form');
 if(privateEventForm){
+  const oldSourceInput=document.querySelector('#event-source');
+  if(oldSourceInput){
+    oldSourceInput.placeholder='https://yandex.ru/maps/...';
+    const label=oldSourceInput.closest('label');
+    if(label&&label.firstChild)label.firstChild.nodeValue='Ссылка на место';
+    const hint=label?.nextElementSibling;
+    if(hint?.classList.contains('muted'))hint.textContent='Добавьте ссылку на Яндекс Карты, Google Maps или сайт площадки.';
+  }
   privateEventForm.onsubmit=async e=>{
     e.preventDefault();
     if(!account){openView('login');return}
@@ -26,7 +34,7 @@ if(privateEventForm){
     const time=document.querySelector('#event-time').value;
     const starts=new Date(`${date}T${time}:00+03:00`);
     const ends=new Date(starts.getTime()+2*60*60*1000);
-    const sourceUrl=(document.querySelector('#event-source')?.value||'').trim();
+    const locationUrl=(document.querySelector('#event-source')?.value||'').trim();
     try{
       const data=await api('create_event',{
         title:document.querySelector('#event-title').value.trim(),
@@ -35,7 +43,7 @@ if(privateEventForm){
         location_name:document.querySelector('#event-place').value.trim()||null,
         price_minor:0
       });
-      if(sourceUrl)await eventRaw('set_source_url',{event_id:data.event.id,source_url:sourceUrl});
+      if(locationUrl)await eventRaw('set_location_url',{event_id:data.event.id,location_url:locationUrl});
       status.textContent='Событие сохранено';
       e.target.reset();
       selectedDateKey=dateKey(data.event.starts_at);
