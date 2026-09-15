@@ -1,0 +1,12 @@
+.avatar.avatarHasPhoto{background-size:cover;background-position:center;background-repeat:no-repeat;color:transparent;border:1px solid rgba(0,0,0,.08)}
+.profileAvatarWrap{display:flex;align-items:center;gap:14px;margin:6px 0 22px}
+.profileAvatarMain{position:relative;width:92px;height:92px;flex:0 0 92px}
+.profileAvatarLarge{width:92px;height:92px;border-radius:50%;border:0;background:#ddd5c8;display:grid;place-items:center;font:600 34px/1 serif;color:#25231f;overflow:hidden;background-size:cover;background-position:center;cursor:pointer;padding:0}
+.profileAvatarCamera{position:absolute;right:-2px;bottom:2px;width:30px;height:30px;border-radius:50%;border:2px solid #f4f0e8;background:#25231f;color:#fff;display:grid;place-items:center;font-size:14px;padding:0;cursor:pointer}
+.profileAvatarCopy{display:flex;flex-direction:column;align-items:flex-start;gap:6px}
+.profileAvatarCopy b{font-size:15px}
+.profileAvatarAction{border:0;background:transparent;padding:0;font:inherit;font-size:13px;text-decoration:underline;text-underline-offset:3px;cursor:pointer;color:#292722}
+.profileAvatarRemove{opacity:.58}
+.profileAvatarStatus{font-size:12px;line-height:1.35;color:#6d685f;min-height:16px}
+.profileAvatarStatus.error{color:#9b302d}
+@media(max-width:520px){.profileAvatarWrap{margin-top:2px}.profileAvatarLarge,.profileAvatarMain{width:82px;height:82px}.profileAvatarLarge{font-size:30px}}
