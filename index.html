@@ -7,6 +7,7 @@
   <title>Вместе — события и люди</title>
   <meta name="description" content="Вместе — здесь встречаются события и люди">
   <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/event-detail.css">
 </head>
 <body>
 <div class="app">
@@ -64,11 +65,17 @@
     <article class="history"><div><b>29</b><span>АВГ</span></div><div><h3>Кино на крыше</h3><p>12 человек · Закат</p><button class="repeat">↻ Повторить</button></div></article>
   </section>
 
+  <section class="view standalone eventView" data-view="event">
+    <button class="eventBack" id="event-back">← Календарь</button>
+    <div id="event-detail-root"><p class="muted">Загружаю событие…</p></div>
+  </section>
+
   <section class="view standalone" data-view="profile"><button class="back js-home">← Главная</button><div id="profile-root"></div></section>
   <section class="view standalone" data-view="login"><button class="back js-home">← Посмотреть приложение</button><div class="auth"><span class="ey">ВМЕСТЕ · ТЕСТ</span><h2>Вход в MVP</h2><div class="tabs"><button id="signup-tab" class="active">Регистрация</button><button id="login-tab">Вход</button></div><form id="auth-form"><label id="name-field">Имя<input id="auth-name" required></label><label>Email<input id="auth-email" type="email" required></label><label>Пароль<input id="auth-password" type="password" minlength="6" required></label><div id="auth-status" class="status" hidden></div><button id="auth-submit" class="primary">Создать аккаунт</button></form></div></section>
 
   <nav class="bottom" id="bottom-nav"><button class="nav active" data-go="home">⌂<span>Главная</span></button><button class="nav" data-go="calendar">▣<span>Календарь</span></button><button class="nav plus" data-go="create">＋<span>Создать</span></button><button class="nav" data-go="communities">○○<span>Сообщества</span></button><button class="nav" data-go="chronicle">◷<span>Хроника</span></button></nav>
 </div>
 <script src="/app.js"></script>
+<script src="/event-detail.js"></script>
 </body>
 </html>
