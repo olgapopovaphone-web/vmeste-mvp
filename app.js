@@ -192,6 +192,53 @@ function formatEventDate(value){
   return new Intl.DateTimeFormat('ru-RU',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit',timeZone:'Europe/Moscow'}).format(new Date(value));
 }
 
+function eventPrice(ev){
+  return ev.price_minor?Math.round(ev.price_minor/100)+' ₽':'Бесплатно';
+}
+
+function creatorEventHtml(ev){
+  return `<div class="eventRow" style="display:block"><div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start"><div><h3>${escapeHtml(ev.title)}</h3><p class="muted">${formatEventDate(ev.starts_at)}${ev.location_name?' · '+escapeHtml(ev.location_name):''} · ${eventPrice(ev)}</p></div><span class="tag">${ev.status==='draft'?'Черновик':'Опубликовано'}</span></div><div style="margin-top:10px"><button class="repeat invite-button" data-event-id="${escapeHtml(ev.id)}" data-event-title="${escapeHtml(ev.title)}">Пригласить</button></div><div class="invite-area" id="invite-${escapeHtml(ev.id)}"></div></div>`;
+}
+
+function invitedEventHtml(ev){
+  const pending=ev.invitation_status==='pending';
+  return `<div class="eventRow" style="display:block"><div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start"><div><h3>${escapeHtml(ev.title)}</h3><p class="muted">${formatEventDate(ev.starts_at)}${ev.location_name?' · '+escapeHtml(ev.location_name):''} · ${eventPrice(ev)}</p></div><span class="tag">${pending?'Приглашение':'Иду'}</span></div>${pending?`<div style="display:flex;gap:8px;margin-top:10px"><button class="primary invite-response" data-invitation-id="${escapeHtml(ev.invitation_id)}" data-response="accepted" style="width:auto;padding:10px 14px">Принять</button><button class="repeat invite-response" data-invitation-id="${escapeHtml(ev.invitation_id)}" data-response="declined">Отклонить</button></div>`:''}</div>`;
+}
+
+function bindCalendarActions(){
+  $$('.invite-button').forEach(button=>button.onclick=()=>showInviteForm(button.dataset.eventId,button.dataset.eventTitle));
+  $$('.invite-response').forEach(button=>button.onclick=()=>respondInvitation(button.dataset.invitationId,button.dataset.response));
+}
+
+function showInviteForm(eventId,eventTitle){
+  const area=document.getElementById('invite-'+eventId);
+  if(!area)return;
+  area.innerHTML=`<div class="panel" style="margin-top:12px;padding:14px"><p class="muted" style="margin-bottom:10px">Пригласить на «${escapeHtml(eventTitle)}»</p><label>Email<input type="email" class="invite-email" placeholder="name@example.com" required></label><div class="status invite-status" hidden></div><button class="primary send-invite" style="margin-top:10px">Отправить приглашение</button></div>`;
+  const input=area.querySelector('.invite-email');
+  const status=area.querySelector('.invite-status');
+  const send=area.querySelector('.send-invite');
+  input.focus();
+  send.onclick=async()=>{
+    const email=input.value.trim();
+    if(!email){status.hidden=false;status.className='status error';status.textContent='Введите email';return}
+    status.hidden=false;status.className='status';status.textContent='Отправляю…';
+    send.disabled=true;
+    try{
+      await api('invite_by_email',{event_id:eventId,email});
+      status.textContent='Приглашение отправлено. Событие опубликовано для приглашённых.';
+      input.value='';
+      await loadEvents();
+    }catch(err){status.className='status error';status.textContent=err.message;send.disabled=false}
+  };
+}
+
+async function respondInvitation(invitationId,response){
+  try{
+    await api('respond_invitation',{invitation_id:invitationId,response});
+    await loadEvents();
+  }catch(err){alert(err.message)}
+}
+
 async function loadEvents(){
   const root=$('#my-events');
   if(!root)return;
@@ -200,7 +247,12 @@ async function loadEvents(){
   try{
     const data=await api('list_events');
     const events=data.events||[];
-    root.innerHTML=events.length?events.map(ev=>`<div class="eventRow"><div><h3>${escapeHtml(ev.title)}</h3><p class="muted">${formatEventDate(ev.starts_at)}${ev.location_name?' · '+escapeHtml(ev.location_name):''} · ${ev.price_minor?Math.round(ev.price_minor/100)+' ₽':'Бесплатно'}</p></div><span class="tag">${ev.status==='draft'?'Черновик':escapeHtml(ev.status)}</span></div>`).join(''):'<p class="muted">Пока пусто. Создайте первое событие.</p>';
+    const invited=data.invited_events||[];
+    let html='';
+    if(invited.length){html+=`<div style="margin-bottom:24px"><span class="ey">МЕНЯ ПРИГЛАСИЛИ</span>${invited.map(invitedEventHtml).join('')}</div>`}
+    html+=events.length?events.map(creatorEventHtml).join(''):'<p class="muted">Пока пусто. Создайте первое событие.</p>';
+    root.innerHTML=html;
+    bindCalendarActions();
   }catch(err){root.innerHTML=`<p class="muted">${escapeHtml(err.message)}</p>`}
 }
 
