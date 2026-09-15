@@ -1,15 +1,18 @@
 function eventPrice(){return ''}
 
 function allEventsFromResponse(data){
-  const created=(data.events||[]).filter(ev=>!['finished','cancelled'].includes(ev.status)).map(ev=>({...ev,calendar_kind:'created'}));
-  const invited=(data.invited_events||[]).filter(ev=>!['finished','cancelled'].includes(ev.status)).map(ev=>({...ev,calendar_kind:'invited'}));
+  const created=(data.events||[])
+    .filter(ev=>!['finished','cancelled'].includes(ev.status))
+    .map(ev=>({...ev,calendar_kind:'created'}));
+  const invited=(data.invited_events||[])
+    .filter(ev=>!['finished','cancelled'].includes(ev.status)&&ev.invitation_status==='accepted')
+    .map(ev=>({...ev,calendar_kind:'invited'}));
   return [...created,...invited].sort((a,b)=>new Date(a.starts_at)-new Date(b.starts_at));
 }
 
 function dayEventHtml(ev){
   const own=ev.calendar_kind==='created';
-  const pending=ev.calendar_kind==='invited'&&ev.invitation_status==='pending';
-  return `<article class="calendarEvent"><div class="eventKind">${own?'МОЁ СОБЫТИЕ':pending?'МЕНЯ ПРИГЛАСИЛИ':'Я УЧАСТВУЮ'}</div><div class="calendarEventTop"><div><h3>${escapeHtml(ev.title)}</h3><p class="muted">${eventTime(ev.starts_at)}${ev.location_name?' · '+escapeHtml(ev.location_name):''}</p></div><span class="tag">${eventBadge(ev)}</span></div><div class="calendarEventActions">${own?`<button class="repeat invite-link-button" data-event-id="${escapeHtml(ev.id)}" data-event-title="${escapeHtml(ev.title)}">Ссылка-приглашение</button>`:''}${pending?`<button class="smallPrimary invite-response" data-invitation-id="${escapeHtml(ev.invitation_id)}" data-response="accepted">Принять</button><button class="repeat invite-response" data-invitation-id="${escapeHtml(ev.invitation_id)}" data-response="declined">Отклонить</button>`:''}</div><div class="invite-area" id="invite-${escapeHtml(ev.id)}"></div></article>`;
+  return `<article class="calendarEvent"><div class="eventKind">${own?'МОЁ СОБЫТИЕ':'Я УЧАСТВУЮ'}</div><div class="calendarEventTop"><div><h3>${escapeHtml(ev.title)}</h3><p class="muted">${eventTime(ev.starts_at)}${ev.location_name?' · '+escapeHtml(ev.location_name):''}</p></div><span class="tag">${eventBadge(ev)}</span></div><div class="calendarEventActions">${own?`<button class="repeat invite-link-button" data-event-id="${escapeHtml(ev.id)}" data-event-title="${escapeHtml(ev.title)}">Ссылка-приглашение</button>`:''}</div><div class="invite-area" id="invite-${escapeHtml(ev.id)}"></div></article>`;
 }
 
 const privateEventForm=document.querySelector('#event-form');
