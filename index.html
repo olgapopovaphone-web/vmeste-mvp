@@ -9,20 +9,20 @@
   <link rel="stylesheet" href="/styles.css">
   <link rel="stylesheet" href="/event-detail.css">
   <link rel="stylesheet" href="/event-preferences.css">
+  <link rel="stylesheet" href="/afisha.css">
 </head>
 <body>
 <div class="app">
   <section class="view active" data-view="home">
-    <header class="top"><div><div class="ey">ВМЕСТЕ</div><h1>Что происходит рядом</h1><p>События, куда хочется прийти — и люди, с которыми хочется остаться.</p></div><button class="avatar js-profile">В</button></header>
-    <div class="filters"><button class="active">Для меня</button><button>Сегодня</button><button>На неделе</button><button>Бесплатно</button></div>
-    <article class="hero"><div class="date">СЕГОДНЯ · 20:00</div><div class="num">15</div><h2>Кино во дворе</h2><p>Небольшой показ под открытым небом. 16 мест.</p><div class="heroFoot"><span>Набережная</span><b>500 ₽</b></div></article>
-    <div class="sectionHead"><div><span class="ey">ПОДБОРКА</span><h2>В ближайшие дни</h2></div></div>
-    <div class="cards">
-      <article class="card"><div class="art clay"><span>ОТКРЫТОЕ</span><b>01</b></div><div class="copy"><small>СБ · 18:00</small><h3>Вечер на крыше</h3><p>Сообщество «Город рядом»</p><div><span>Центр</span><strong>1 200 ₽</strong></div></div></article>
-      <article class="card"><div class="art sage"><span>ПУБЛИЧНОЕ</span><b>02</b></div><div class="copy"><small>ВС · 11:00</small><h3>Архитектурная прогулка</h3><p>Бюро «Контур»</p><div><span>Старый город</span><strong>Бесплатно</strong></div></div></article>
-      <article class="card"><div class="art dark"><span>ПО ПРИГЛАШЕНИЮ</span><b>03</b></div><div class="copy"><small>СР · 19:30</small><h3>Ужин для своих</h3><p>Анна и друзья</p><div><span>Личная встреча</span><strong>По приглашению</strong></div></div></article>
+    <header class="top"><div><div class="ey">ВМЕСТЕ · АФИША</div><h1>Что происходит рядом</h1><p>Реальные события города — и возможность сразу собрать на них свою компанию.</p></div><button class="avatar js-profile">В</button></header>
+    <div class="afishaIntro"><div><span class="ey">ГОРОД</span><div class="afishaCity" id="afisha-city-label">Ростов-на-Дону</div></div><span class="ey">ИСТОЧНИКИ ПРОВЕРЕНЫ</span></div>
+    <div class="afishaFilters">
+      <button class="active" data-af-filter="for-me">Для меня</button>
+      <button data-af-filter="today">Сегодня</button>
+      <button data-af-filter="week">На неделе</button>
+      <button data-af-filter="free">Бесплатно</button>
     </div>
-    <div class="callout"><span class="ey">СООБЩЕСТВА</span><h2>Не только куда.<br>Но и с кем.</h2><p>Находите людей по интересам и открытые события внутри сообществ.</p></div>
+    <div id="afisha-root"><div class="afishaLoading">Загружаю настоящую афишу…</div></div>
   </section>
 
   <section class="view" data-view="calendar">
@@ -54,10 +54,8 @@
   </section>
 
   <section class="view" data-view="communities">
-    <header class="top"><div><div class="ey">СООБЩЕСТВА</div><h1>Люди вокруг интереса</h1><p>Пространства людей и событий — без чата в нижнем меню.</p></div><button class="avatar js-profile">В</button></header>
-    <article class="community"><b>01</b><div><h3>Город рядом</h3><p>Прогулки, музыка, маленькие городские события.</p><small>1 248 участников</small></div></article>
-    <article class="community"><b>02</b><div><h3>Кино не дома</h3><p>Показы, обсуждения и необычные площадки.</p><small>684 участника</small></div></article>
-    <article class="community"><b>03</b><div><h3>Архитектура</h3><p>Город глазами тех, кому важны детали.</p><small>937 участников</small></div></article>
+    <header class="top"><div><div class="ey">СООБЩЕСТВА</div><h1>Люди вокруг интереса</h1><p>Здесь появятся реальные сообщества и их открытые события.</p></div><button class="avatar js-profile">В</button></header>
+    <div class="callout"><span class="ey">ПОКА ТИХО</span><h2>Не будем придумывать людей.</h2><p>В тестовой версии сообщества подключим после проверки главного сценария: найти событие → собрать компанию → встретиться.</p></div>
   </section>
 
   <section class="view" data-view="chronicle">
@@ -73,11 +71,15 @@
   <section class="view standalone" data-view="profile"><button class="back js-home">← Главная</button><div id="profile-root"></div></section>
   <section class="view standalone" data-view="login"><button class="back js-home">← Посмотреть приложение</button><div class="auth"><span class="ey">ВМЕСТЕ · ТЕСТ</span><h2>Вход в MVP</h2><div class="tabs"><button id="signup-tab" class="active">Регистрация</button><button id="login-tab">Вход</button></div><form id="auth-form"><label id="name-field">Имя<input id="auth-name" required></label><label>Email<input id="auth-email" type="email" required></label><label>Пароль<input id="auth-password" type="password" minlength="6" required></label><div id="auth-status" class="status" hidden></div><button id="auth-submit" class="primary">Создать аккаунт</button></form></div></section>
 
+  <div class="afishaCompareBar" id="afisha-compare-bar" hidden></div>
+  <div class="afishaModal" id="afisha-compare-modal" hidden><div class="afishaSheet"><div class="afishaSheetHead"><h2>Сравнение</h2><button id="close-afisha-compare">×</button></div><div id="afisha-compare-body"></div></div></div>
+
   <nav class="bottom" id="bottom-nav"><button class="nav active" data-go="home">⌂<span>Главная</span></button><button class="nav" data-go="calendar">▣<span>Календарь</span></button><button class="nav plus" data-go="create">＋<span>Создать</span></button><button class="nav" data-go="communities">○○<span>Сообщества</span></button><button class="nav" data-go="chronicle">◷<span>Хроника</span></button></nav>
 </div>
 <script src="/app.js"></script>
 <script src="/private-event-overrides.js"></script>
 <script src="/event-detail.js"></script>
 <script src="/event-preferences.js"></script>
+<script src="/afisha.js"></script>
 </body>
 </html>
