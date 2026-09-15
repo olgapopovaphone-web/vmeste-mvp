@@ -8,17 +8,26 @@
   function formatDate(v){try{return new Intl.DateTimeFormat('ru-RU',{day:'numeric',month:'long',hour:'2-digit',minute:'2-digit',timeZone:'Europe/Moscow'}).format(new Date(v))}catch{return ''}}
   function toolButton(cls,label,svg){return `<button class="homeToolButton ${cls}" type="button" aria-label="${label}" title="${label}">${svg}<span class="homeToolBadge" hidden></span></button>`}
 
+  function bindHomeActions(wrap){
+    if(!wrap||wrap.dataset.bound==='1')return;
+    const n=wrap.querySelector('.homeNotifications');if(n)n.onclick=openNotifications;
+    const l=wrap.querySelector('.homeLiked');if(l)l.onclick=openLiked;
+    const c=wrap.querySelector('.homeCompare');if(c)c.onclick=openCompare;
+    wrap.dataset.bound='1';
+  }
+
   function mountHomeTools(){
     const home=document.querySelector('[data-view="home"]');
     const top=home?.querySelector('.top');
     const avatar=top?.querySelector('.avatar.js-profile');
-    if(!top||!avatar||top.querySelector('.homeTopActions'))return;
-    const wrap=document.createElement('div');wrap.className='homeTopActions';
-    wrap.innerHTML=toolButton('homeNotifications','Оповещения',bellSvg)+toolButton('homeLiked','Понравилось',heartSvg)+toolButton('homeCompare','Сравнение',compareSvg);
-    avatar.before(wrap);wrap.appendChild(avatar);
-    wrap.querySelector('.homeNotifications').onclick=openNotifications;
-    wrap.querySelector('.homeLiked').onclick=openLiked;
-    wrap.querySelector('.homeCompare').onclick=openCompare;
+    if(!top||!avatar)return;
+    let wrap=top.querySelector('.homeTopActions');
+    if(!wrap){
+      wrap=document.createElement('div');wrap.className='homeTopActions';
+      wrap.innerHTML=toolButton('homeNotifications','Оповещения',bellSvg)+toolButton('homeLiked','Понравилось',heartSvg)+toolButton('homeCompare','Сравнение',compareSvg);
+      avatar.before(wrap);wrap.appendChild(avatar);
+    }
+    bindHomeActions(wrap);
     refreshBadges();
   }
 
