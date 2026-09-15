@@ -38,16 +38,16 @@
   </section>
 
   <section class="view" data-view="create">
-    <header class="top"><div><div class="ey">СОЗДАТЬ</div><h1>Какое это событие?</h1><p>Тип события определяет, кто сможет его увидеть.</p></div><button class="avatar js-profile">В</button></header>
+    <header class="top"><div><div class="ey">СОЗДАТЬ</div><h1>Какое это событие?</h1><p>В тестовой версии начинаем с личных событий по приглашению.</p></div><button class="avatar js-profile">В</button></header>
     <button class="choice" id="private-choice"><b>01</b><span><h3>По приглашению</h3><p>Личное событие. Его видят только приглашённые.</p></span></button>
-    <button class="choice disabled"><b>02</b><span><h3>Открытое</h3><p>Создаётся внутри сообщества.</p></span></button>
-    <button class="choice disabled"><b>03</b><span><h3>Публичное</h3><p>Только для подтверждённых бизнес-аккаунтов.</p></span></button>
+    <button class="choice disabled"><b>02</b><span><h3>Открытое</h3><p>Позже подключим события внутри сообществ.</p></span></button>
     <form class="panel" id="event-form" hidden>
       <span class="ey">НОВОЕ ЛИЧНОЕ СОБЫТИЕ</span><h3>Черновик</h3>
-      <label>Название<input id="event-title" required placeholder="Например, ужин для своих"></label>
+      <label>Название<input id="event-title" required placeholder="Например, спа-девичник"></label>
       <div class="two"><label>Дата<input id="event-date" type="date" required></label><label>Время<input id="event-time" type="time" required></label></div>
       <label>Место<input id="event-place" placeholder="Где встречаемся"></label>
-      <label>Цена, ₽<input id="event-price" type="number" min="0" value="0"></label>
+      <label>Ссылка на реальное мероприятие<input id="event-source" type="url" placeholder="https://..."></label>
+      <p class="muted" style="margin:-4px 0 12px">Если встреча связана с афишей, сайтом или бронированием — ссылка будет доступна участникам в карточке события.</p>
       <div id="event-status" class="status" hidden></div><button class="primary">Сохранить черновик</button>
     </form>
   </section>
@@ -60,13 +60,12 @@
   </section>
 
   <section class="view" data-view="chronicle">
-    <header class="top"><div><div class="ey">ХРОНИКА</div><h1>То, что уже было</h1><p>Хорошее событие можно повторить.</p></div><button class="avatar js-profile">В</button></header>
-    <article class="history"><div><b>05</b><span>СЕН</span></div><div><h3>Завтрак на рынке</h3><p>6 человек · Центр</p><button class="repeat">↻ Повторить</button></div></article>
-    <article class="history"><div><b>29</b><span>АВГ</span></div><div><h3>Кино на крыше</h3><p>12 человек · Закат</p><button class="repeat">↻ Повторить</button></div></article>
+    <header class="top"><div><div class="ey">ХРОНИКА</div><h1>То, что уже было</h1><p>Завершённые события остаются здесь и их можно повторить позже.</p></div><button class="avatar js-profile">В</button></header>
+    <div id="chronicle-list"><p class="muted">Загружаю хронику…</p></div>
   </section>
 
   <section class="view standalone eventView" data-view="event">
-    <button class="eventBack" id="event-back">← Календарь</button>
+    <button class="eventBack" id="event-back">← Назад</button>
     <div id="event-detail-root"><p class="muted">Загружаю событие…</p></div>
   </section>
 
@@ -76,6 +75,7 @@
   <nav class="bottom" id="bottom-nav"><button class="nav active" data-go="home">⌂<span>Главная</span></button><button class="nav" data-go="calendar">▣<span>Календарь</span></button><button class="nav plus" data-go="create">＋<span>Создать</span></button><button class="nav" data-go="communities">○○<span>Сообщества</span></button><button class="nav" data-go="chronicle">◷<span>Хроника</span></button></nav>
 </div>
 <script src="/app.js"></script>
+<script src="/private-event-overrides.js"></script>
 <script src="/event-detail.js"></script>
 </body>
 </html>
