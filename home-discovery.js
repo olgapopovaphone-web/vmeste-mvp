@@ -1,0 +1,3 @@
+(function(){
+  window.vmesteDiscoveryReady=true;
+})();
