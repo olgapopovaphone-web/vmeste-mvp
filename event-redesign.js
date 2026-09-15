@@ -37,16 +37,18 @@
 
   function detailsPanel(data){
     const ev=data.event;
-    const source=data.is_creator&&!['finished','cancelled'].includes(ev.status)
-      ? `<div class="eventDetailBlock"><span class="eventInfoLabel">ССЫЛКА НА МЕРОПРИЯТИЕ</span><div class="eventSourceEdit"><input id="event-source-edit" type="url" value="${eventEsc(ev.source_url||'')}" placeholder="https://..."><button id="event-source-save">Сохранить</button></div><div id="event-source-status" class="status" hidden></div>${ev.source_url?`<a class="eventDetailExternal" href="${eventEsc(ev.source_url)}" target="_blank" rel="noopener">Открыть источник ↗</a>`:''}</div>`
-      : ev.source_url?`<div class="eventDetailBlock"><span class="eventInfoLabel">ССЫЛКА НА МЕРОПРИЯТИЕ</span><a class="eventDetailExternal" href="${eventEsc(ev.source_url)}" target="_blank" rel="noopener">Открыть источник ↗</a></div>`:'';
+    const active=!['finished','cancelled'].includes(ev.status);
+    const locationBlock=data.is_creator&&active
+      ? `<div class="eventDetailBlock"><span class="eventInfoLabel">ССЫЛКА НА МЕСТО</span><div class="eventSourceEdit"><input id="event-location-edit" type="url" value="${eventEsc(ev.location_url||'')}" placeholder="https://yandex.ru/maps/..."><button id="event-location-save">Сохранить</button></div><div id="event-location-status" class="status" hidden></div>${ev.location_url?`<a class="eventDetailExternal" href="${eventEsc(ev.location_url)}" target="_blank" rel="noopener">Открыть место ↗</a>`:''}</div>`
+      : ev.location_url?`<div class="eventDetailBlock"><span class="eventInfoLabel">МЕСТО</span><a class="eventDetailExternal" href="${eventEsc(ev.location_url)}" target="_blank" rel="noopener">Открыть на карте ↗</a></div>`:'';
+    const sourceBlock=ev.source_url?`<div class="eventDetailBlock"><span class="eventInfoLabel">ИСТОЧНИК</span><a class="eventDetailExternal" href="${eventEsc(ev.source_url)}" target="_blank" rel="noopener">Источник мероприятия ↗</a></div>`:'';
     return `<div class="eventAccordionPanel" data-event-panel="details" hidden>
       ${ev.description?`<div class="eventDetailBlock"><span class="eventInfoLabel">О СОБЫТИИ</span><p>${eventEsc(ev.description)}</p></div>`:''}
       <div class="eventDetailGrid">
         <div><span class="eventInfoLabel">ОРГАНИЗАТОР</span><strong>${eventEsc(data.creator?.display_name||'Организатор')}</strong></div>
         <div><span class="eventInfoLabel">ДАТА И ВРЕМЯ</span><strong>${eventEsc(eventDateTime(ev.starts_at))}</strong></div>
         <div><span class="eventInfoLabel">МЕСТО</span><strong>${eventEsc(ev.location_name||'Не указано')}</strong></div>
-      </div>${source}
+      </div>${locationBlock}${sourceBlock}
     </div>`;
   }
 
@@ -121,6 +123,12 @@
       if(management&&panel){document.querySelectorAll('.eventAccordionPanel').forEach(p=>p.hidden=true);panel.hidden=false;management.classList.add('open');}
       const invite=document.querySelector('#event-invite-link');if(invite)invite.click();
     });
+    const locationSave=document.querySelector('#event-location-save');
+    if(locationSave)locationSave.onclick=async()=>{
+      const input=document.querySelector('#event-location-edit');const status=document.querySelector('#event-location-status');
+      status.hidden=false;status.className='status';status.textContent='Сохраняю…';
+      try{await eventRaw('set_location_url',{event_id:data.event.id,location_url:input.value.trim()});status.textContent='Ссылка на место сохранена';await loadEventDetail(data.event.id)}catch(err){status.className='status error';status.textContent=err.message}
+    };
     bindTopPreferences(data.event.id);
   }
 
