@@ -33,7 +33,11 @@
 
   function setBadge(selector,value){
     const badge=document.querySelector(selector+' .homeToolBadge');if(!badge)return;
-    const n=Number(value)||0;badge.hidden=n<=0;badge.textContent=n>99?'99+':String(n);
+    const n=Number(value)||0;
+    const hidden=n<=0;
+    const text=n>99?'99+':String(n);
+    if(badge.hidden!==hidden)badge.hidden=hidden;
+    if(badge.textContent!==text)badge.textContent=text;
   }
   function refreshBadges(){
     setBadge('.homeNotifications',notificationCount);
@@ -82,8 +86,6 @@
     if(typeof openAfishaComparison==='function')openAfishaComparison();
   }
 
-  const observer=new MutationObserver(()=>{mountHomeTools();refreshBadges()});
-  observer.observe(document.body,{childList:true,subtree:true});
   mountHomeTools();
   setTimeout(async()=>{mountHomeTools();await fetchNotifications();refreshBadges()},600);
   setInterval(()=>{if(account)fetchNotifications();else{notificationCount=0;refreshBadges()}},30000);
