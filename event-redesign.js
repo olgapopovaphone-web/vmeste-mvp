@@ -25,7 +25,7 @@
         ${preview.map(compactAvatar).join('')}
         ${extra?`<button class="eventMorePeople" id="event-more-people">+${extra}</button>`:''}
       </div>
-      <button class="eventGoingCount" id="event-going-count"><span class="eventPeopleIcon">●●</span><b>${people.length}</b> ${people.length===1?'идёт':'идут'}</button>
+      <button class="eventGoingCount" id="event-going-count"><b>${people.length}</b> ${people.length===1?'идёт':'идут'}</button>
     </div>`;
   }
 
@@ -131,7 +131,7 @@
     const cover=ev.cover_url?`<img src="${eventEsc(ev.cover_url)}" alt="Обложка события">`:`<div class="eventHeroPlaceholder"><span>${eventEsc(ev.title||'Вместе')}</span></div>`;
     const upload=data.is_creator&&!finished?`<input type="file" id="event-cover-input" accept="image/jpeg,image/png,image/webp" hidden><button class="eventCoverChange" id="event-cover-button" aria-label="Сменить обложку">＋ фото</button><div class="coverUploadStatus" id="cover-upload-status" hidden></div>`:'';
     const rsvp=!data.is_creator&&!finished?`<div class="eventDecision"><button data-rsvp="going" class="eventYes ${data.my_status==='going'?'active':''}"><span>✓</span>Я иду</button><button data-rsvp="declined" class="eventNo ${data.my_status==='declined'?'active':''}"><span>×</span>Не смогу</button></div>`:'';
-    const organizerState=data.is_creator&&!finished?`<div class="eventOrganizerState"><span>Вы организатор</span><button id="event-organizer-invite">Пригласить</button></div>`:'';
+    const organizerState=data.is_creator&&!finished?`<div class="eventOrganizerState"><span>Вы организатор</span></div>`:'';
     root.innerHTML=`
       <div class="eventHero">
         ${cover}
@@ -151,6 +151,5 @@
     `;
     bindEventDetail(data);
     bindRedesignedEvent(data);
-    const organizerInvite=document.querySelector('#event-organizer-invite');if(organizerInvite)organizerInvite.onclick=()=>document.querySelector('#event-invite-plus')?.click();
   };
 })();
