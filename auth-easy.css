@@ -1,0 +1,11 @@
+.quickAuth{margin:22px 0 18px;padding:18px;border:1px solid rgba(40,44,66,.12);border-radius:18px;background:rgba(255,255,255,.38)}
+.quickAuth h3{margin:4px 0 6px;font-size:24px}
+.quickAuth p{margin:0 0 14px}
+.quickAuth label{display:grid;gap:7px;font-size:13px;letter-spacing:.02em}
+.quickAuth input{width:100%;box-sizing:border-box;margin-top:2px}
+.quickAuthActions{display:grid;gap:10px;margin-top:12px}
+.authAlternativeToggle{width:100%;margin:10px 0 0;background:transparent;border:0;text-decoration:underline;text-underline-offset:3px;cursor:pointer;color:inherit}
+#legacy-auth-wrap[hidden]{display:none!important}
+#legacy-auth-wrap{margin-top:18px;padding-top:18px;border-top:1px solid rgba(40,44,66,.12)}
+.quickAuthNote{font-size:12px;line-height:1.45;opacity:.7;margin-top:10px}
+.quickAuthSuccess{padding:12px 14px;border-radius:14px;background:rgba(77,110,82,.09);margin-top:12px}
