@@ -2,7 +2,7 @@
   var API='https://nmeoakrpafxhpdrplsuo.supabase.co/functions/v1/vmeste-invite-api';
   var createSelected=new Map();
 
-  function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]})}
+  function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
   function session(){try{return JSON.parse(localStorage.getItem('vmeste_session_v1')||'null')}catch(e){return null}}
   function token(){var s=session();return s&&s.access_token||''}
   async function raw(action,payload){var t=token();if(!t)throw new Error('LOGIN');var r=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+t},body:JSON.stringify(Object.assign({action:action},payload||{}))});var d={};try{d=await r.json()}catch(e){d={error:'Некорректный ответ сервера'}}if(!r.ok)throw new Error(d.error||'Ошибка запроса');return d}
@@ -23,7 +23,7 @@
   function mountDetail(data){if(!data||!data.event||!data.can_invite||['finished','cancelled'].includes(data.event.status))return;var id=data.event.id;var plus=document.getElementById('event-invite-plus');if(plus){var clean=plus.cloneNode(true);plus.replaceWith(clean);clean.onclick=function(){openPicker({mode:'event',eventId:id})}}
     if(data.is_creator){var panel=document.querySelector('[data-event-panel="management"]');if(panel&&!panel.querySelector('[data-event-circle-manage]')){var block=document.createElement('div');block.className='eventManageBlock eventCircleManage';block.dataset.eventCircleManage='1';block.innerHTML='<span class="eventInfoLabel">ИЗ ВАШЕГО КРУГА</span><button type="button" class="eventManagePrimary" data-open-event-circle>Выбрать людей</button><small>Приглашение появится у них в разделе «События».</small>';panel.insertBefore(block,panel.firstChild);block.querySelector('[data-open-event-circle]').onclick=function(){openPicker({mode:'event',eventId:id})};var linkBlock=panel.querySelector('.eventManageBlock:not([data-event-circle-manage])');if(linkBlock){var label=linkBlock.querySelector('.eventInfoLabel');if(label&&label.textContent.trim()==='ПРИГЛАШЕНИЕ')label.textContent='ПО ССЫЛКЕ';var linkBtn=linkBlock.querySelector('#event-invite-link');if(linkBtn)linkBtn.textContent='Создать ссылку-приглашение'}}}}
 
-  var base=window.renderEventDetail;if(typeof base==='function'){window.renderEventDetail=function(data){base(data);mountDetail(data)}}
+  var base=window.renderEventDetail;if(typeof base==='function'){window.renderEventDetail=function(data){base(data);var duplicate=document.querySelector('.eventHeroPlaceholder span');if(duplicate)duplicate.remove();mountDetail(data)}}
   window.getPendingEventCircleInviteIds=function(){return Array.from(createSelected.keys())};
   window.clearPendingEventCircleInviteIds=function(){createSelected.clear();renderCreateSelected()};
   window.inviteCircleToEvent=inviteSelectedToEvent;
