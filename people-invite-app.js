@@ -20,11 +20,11 @@
     if(!list||list.querySelector('.peopleV2Card')||list.querySelector('[data-people-invite-app]'))return;
     var empty=list.querySelector('.peopleV2Empty');
     if(!empty)return;
-    empty.innerHTML='<strong>Не нашли человека?</strong><span>Возможно, его ещё нет во «Вместе».</span><button type="button" data-people-invite-app>Пригласить в Вместе</button><small data-people-invite-status hidden></small>';
+    empty.innerHTML='<strong>Не нашли человека?</strong><span>Возможно, его ещё нет в «ЛЯ».</span><button type="button" data-people-invite-app>Пригласить в ЛЯ</button><small data-people-invite-status hidden></small>';
     var button=empty.querySelector('[data-people-invite-app]');
     var status=empty.querySelector('[data-people-invite-status]');
     button.onclick=async function(){
-      var shareData={title:'Вместе',text:'Присоединяйся ко мне во «Вместе» — здесь встречаются события и люди.',url:APP_URL};
+      var shareData={title:'ЛЯ',text:'Присоединяйся ко мне в «ЛЯ» — здесь встречаются события и люди.',url:APP_URL};
       if(navigator.share){
         try{await navigator.share(shareData);return}catch(e){if(e&&e.name==='AbortError')return}
       }
