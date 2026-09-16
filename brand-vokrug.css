@@ -1,0 +1,2 @@
+/* Rename the main discovery destination without touching its mechanics. */
+[data-view="home"]>.top .ey:after{content:'ВОКРУГ'!important}
