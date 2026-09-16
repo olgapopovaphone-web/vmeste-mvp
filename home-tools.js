@@ -1,5 +1,5 @@
 (function(){
-  ['/home-discovery.css?v=20260915-2','/place-detail.css?v=20260915-2','/my-events.css?v=20260915-2','/social-hub.css?v=20260916-3','/event-group-prototype.css?v=20260916-1','/event-edit.css?v=20260916-1','/brand-lya.css?v=20260916-1'].forEach(function(href){var l=document.createElement('link');l.rel='stylesheet';l.href=href;document.head.appendChild(l)});
+  ['/home-discovery.css?v=20260915-2','/place-detail.css?v=20260915-2','/my-events.css?v=20260915-2','/social-hub.css?v=20260916-3','/event-group-prototype.css?v=20260916-1','/event-edit.css?v=20260916-1','/brand-lya.css?v=20260916-2'].forEach(function(href){var l=document.createElement('link');l.rel='stylesheet';l.href=href;document.head.appendChild(l)});
 
   function simplifyTabHeaders(){
     var createTop=document.querySelector('[data-view="create"] .top');
@@ -7,7 +7,7 @@
       var createEy=createTop.querySelector('.ey'),createTitle=createTop.querySelector('h1'),createText=createTop.querySelector('p');
       if(createEy)createEy.hidden=true;
       if(createText)createText.hidden=true;
-      if(createTitle)createTitle.textContent='Создать';
+      if(createTitle)createTitle.innerHTML='Создавай моменты,<br>которые <em>сближают</em>';
     }
     var eventsSection=document.querySelector('[data-view="calendar"]'),eventsTop=eventsSection&&eventsSection.querySelector('.top');
     if(eventsTop){
@@ -29,4 +29,5 @@
   import('/social-hub.js?v=20260916-2');
   import('/event-group-prototype.js?v=20260916-1').then(function(){return import('/event-edit.js?v=20260916-1')});
   import('/place-detail.js?v=20260915-2').then(function(){return import('/home-discovery.js?v=20260915-2')});
+  import('/brand-lya.js?v=20260916-1');
 })();
