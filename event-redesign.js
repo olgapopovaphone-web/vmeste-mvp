@@ -100,14 +100,41 @@
     like.onclick=async()=>{like.disabled=true;try{const r=await prefRaw('toggle_like',{event_id:eventId});like.classList.toggle('active',r.liked)}catch(err){alert(err.message)}finally{like.disabled=false}};
     compare.onclick=async()=>{compare.disabled=true;try{const r=await prefRaw('toggle_compare',{event_id:eventId});compare.classList.toggle('active',r.compared);if(r.compare_count>=2&&typeof openComparison==='function')openComparison()}catch(err){alert(err.message)}finally{compare.disabled=false}};
   }
+  function openEventDateInCalendar(data){
+    const key=dateKey(data.event.starts_at);
+    selectedDateKey=key;
+    const parts=key.split('-').map(Number);
+    calendarYear=parts[0];calendarMonth=parts[1]-1;calendarMode='day';
+    activeEventId=null;
+    if(typeof stopChatPolling==='function')stopChatPolling();
+    openView('calendar');
+    if(window.openMyEvents)window.openMyEvents('calendar');
+    else{try{renderCalendar()}catch{}}
+  }
+  function bindFactAction(el,handler){
+    if(!el)return;
+    el.classList.add('eventFactAction');el.setAttribute('role','button');el.tabIndex=0;
+    el.onclick=handler;
+    el.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();handler(e)}};
+  }
   function bindRedesignedEvent(data){
     document.querySelector('.eventHeroBack')?.addEventListener('click',closeEventView);
     document.querySelectorAll('[data-event-toggle]').forEach(btn=>btn.onclick=()=>{const name=btn.dataset.eventToggle;const panel=document.querySelector(`[data-event-panel="${name}"]`);if(!panel)return;const willOpen=panel.hidden;document.querySelectorAll('.eventAccordionPanel').forEach(p=>p.hidden=true);document.querySelectorAll('.eventAccordionRow').forEach(r=>r.classList.remove('open'));if(willOpen){panel.hidden=false;btn.classList.add('open');setTimeout(()=>panel.scrollIntoView({behavior:'smooth',block:'nearest'}),20)}});
+    const facts=[...document.querySelectorAll('.eventFacts>.eventFact')];
+    bindFactAction(facts[0],()=>openEventDateInCalendar(data));
+    bindFactAction(facts[1],e=>{
+      if(e?.target?.closest?.('[data-event-place]'))return;
+      const ev=data.event;
+      if(ev.place_id&&window.openPlaceView){window.openPlaceView(ev.place_id,{returnToEvent:ev.id});return}
+      const fallback=ev.location_url||ev.source_url;
+      if(fallback){window.open(fallback,'_blank','noopener');return}
+      const details=document.querySelector('[data-event-toggle="details"]');if(details)details.click();
+    });
     const openPeople=()=>{document.querySelector('#event-people-overlay')?.remove();document.body.insertAdjacentHTML('beforeend',participantSheetHtml(data));const overlay=document.querySelector('#event-people-overlay');overlay.querySelector('#event-people-close').onclick=()=>overlay.remove();overlay.onclick=e=>{if(e.target===overlay)overlay.remove()}};
     document.querySelector('#event-going-count')?.addEventListener('click',openPeople);
     document.querySelector('#event-more-people')?.addEventListener('click',openPeople);
     document.querySelector('#event-invite-plus')?.addEventListener('click',()=>{const management=document.querySelector('[data-event-toggle="management"]');const panel=document.querySelector('[data-event-panel="management"]');if(management&&panel){document.querySelectorAll('.eventAccordionPanel').forEach(p=>p.hidden=true);document.querySelectorAll('.eventAccordionRow').forEach(r=>r.classList.remove('open'));panel.hidden=false;management.classList.add('open')}const invite=document.querySelector('#event-invite-link');if(invite)invite.click()});
-    document.querySelectorAll('[data-event-place]').forEach(btn=>btn.onclick=()=>{if(window.openPlaceView)window.openPlaceView(btn.dataset.eventPlace,{returnToEvent:data.event.id})});
+    document.querySelectorAll('[data-event-place]').forEach(btn=>btn.onclick=e=>{e.stopPropagation();if(window.openPlaceView)window.openPlaceView(btn.dataset.eventPlace,{returnToEvent:data.event.id})});
     const more=document.querySelector('#event-description-more');if(more)more.onclick=()=>{const p=document.querySelector('.eventDescriptionText');const expanded=p.classList.toggle('expanded');more.innerHTML=expanded?'Свернуть <span>⌃</span>':'Ещё <span>⌄</span>'};
     const locationSave=document.querySelector('#event-location-save');if(locationSave)locationSave.onclick=async()=>{const input=document.querySelector('#event-location-edit');const status=document.querySelector('#event-location-status');status.hidden=false;status.className='status';status.textContent='Сохраняю…';try{await eventRaw('set_location_url',{event_id:data.event.id,location_url:input.value.trim()});status.textContent='Ссылка на место сохранена';await loadEventDetail(data.event.id)}catch(err){status.className='status error';status.textContent=err.message}};
     bindTopPreferences(data.event.id);
