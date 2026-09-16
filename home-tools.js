@@ -27,7 +27,7 @@
   import('/home-core.js?v=20260915-2');
   import('/calendar-reminders.js?v=20260915-2');
   import('/my-events.js?v=20260915-1').then(function(){simplifyTabHeaders()});
-  import('/social-hub.js?v=20260916-6').then(function(){return import('/circle-labels.js?v=20260916-1')});
+  import('/social-hub.js?v=20260916-6').then(function(){return import('/circle-labels.js?v=20260916-2')});
   import('/community-detail.js?v=20260916-2');
   import('/community-detail-link.js?v=20260916-2');
   import('/event-group-prototype.js?v=20260916-1').then(function(){return import('/event-edit.js?v=20260916-1')});
