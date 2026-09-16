@@ -1,0 +1,5 @@
+.socialHubView .socialCommunityBar{display:none!important}
+.socialHubView .socialCircleAcceptedSection .socialHubSectionHead{display:none!important}
+.socialHubView .socialCircleAcceptedSection .socialPersonCard{grid-template-columns:46px minmax(0,1fr)!important}
+.socialHubView .socialCircleAcceptedSection .socialPersonAction.is-state{display:none!important}
+.socialHubView .socialHubTop .avatar{background-size:cover;background-position:center;background-repeat:no-repeat}
