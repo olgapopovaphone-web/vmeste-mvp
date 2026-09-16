@@ -1,0 +1,3 @@
+/* Calendar has one view only: month. The day is selected directly in the month grid. */
+.myEventsCalendarPane #calendar-modes,
+.myEventsCalendarPane .calendarModes{display:none!important}
