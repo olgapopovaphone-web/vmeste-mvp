@@ -19,6 +19,7 @@
   }
 
   var homeNav=document.querySelector('.nav[data-go="home"]');if(homeNav){var homeLabel=homeNav.querySelector('span');if(homeLabel)homeLabel.textContent='Вокруг'}
+  var circleNav=document.querySelector('.nav[data-go="communities"]');if(circleNav){var circleLabel=circleNav.querySelector('span');if(circleLabel)circleLabel.textContent='В кругу'}
   var eventsNav=document.querySelector('.nav[data-go="calendar"]');if(eventsNav){var label=eventsNav.querySelector('span');if(label)label.textContent='События';eventsNav.childNodes.forEach(function(n){if(n.nodeType===3&&n.textContent.trim())n.textContent='▤'})}
   simplifyTabHeaders();
   document.addEventListener('click',function(e){var mode=e.target.closest&&e.target.closest('[data-my-events-mode]');if(mode)setTimeout(simplifyTabHeaders,0)},true);
