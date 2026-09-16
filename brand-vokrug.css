@@ -1,40 +1,35 @@
-/* Exact brand assets extracted from the supplied PDF. No CSS-drawn logo. */
+/* Exact brand mark from the supplied PDF. The logo is an actual <img>, not CSS-drawn. */
 [data-view="home"]>.top>div:first-child:before,
 [data-view="calendar"]>.top>div:first-child:before,
 [data-view="create"]>.top>div:first-child:before,
 [data-view="communities"]>.top>div:first-child:before,
-[data-view="chronicle"]>.top>div:first-child:before{
-  content:''!important;
-  display:block!important;
-  position:absolute!important;
-  left:-4px!important;
-  top:-5px!important;
-  width:72px!important;
-  height:48px!important;
-  background:url('/brand-lya-mark.svg') no-repeat left top/contain!important;
-  border:0!important;
-  border-radius:0!important;
-  font-size:0!important;
-  letter-spacing:0!important;
-  pointer-events:none!important;
-}
+[data-view="chronicle"]>.top>div:first-child:before,
 [data-view="home"]>.top>div:first-child:after,
 [data-view="calendar"]>.top>div:first-child:after,
 [data-view="create"]>.top>div:first-child:after,
 [data-view="communities"]>.top>div:first-child:after,
-[data-view="chronicle"]>.top>div:first-child:after{display:none!important}
+[data-view="chronicle"]>.top>div:first-child:after{display:none!important;content:none!important}
 
-/* Main destination uses the exact master logo: LYA + "люди и события". */
-[data-view="home"]>.top>div:first-child{padding-top:70px!important;min-height:70px!important}
-[data-view="home"]>.top>div:first-child:before{
-  left:-8px!important;
-  top:-14px!important;
-  width:92px!important;
-  height:92px!important;
-  background-image:url('/brand-lya-logo.svg')!important;
+[data-view="home"]>.top>div:first-child,
+[data-view="calendar"]>.top>div:first-child,
+[data-view="create"]>.top>div:first-child,
+[data-view="communities"]>.top>div:first-child,
+[data-view="chronicle"]>.top>div:first-child{position:relative!important;padding-top:52px!important;min-height:52px!important}
+
+.lyaHeaderLogo{
+  position:absolute;
+  left:-4px;
+  top:-4px;
+  display:block;
+  width:72px;
+  height:auto;
+  max-width:none;
+  object-fit:contain;
+  object-position:left top;
+  pointer-events:none;
 }
 
-/* Section names are already clear from bottom navigation: no header subline anywhere. */
+/* Section names are already clear from bottom navigation: no header subline. */
 [data-view="home"]>.top .ey,
 [data-view="calendar"]>.top .ey,
 [data-view="create"]>.top .ey,
@@ -47,11 +42,5 @@
 [data-view="calendar"].mode-list>.top .ey:after,
 [data-view="calendar"].mode-calendar>.top .ey:after{content:none!important;display:none!important}
 
-/* Other sections use only the exact master mark, without a section-name subline. */
-[data-view="calendar"]>.top>div:first-child,
-[data-view="create"]>.top>div:first-child,
-[data-view="communities"]>.top>div:first-child,
-[data-view="chronicle"]>.top>div:first-child{padding-top:50px!important}
-
-/* Around: city name stands alone, without the redundant "ГОРОД" label. */
+/* Around: city name stands alone, without the redundant label. */
 [data-view="home"] .afishaIntro>div>.ey{display:none!important}
