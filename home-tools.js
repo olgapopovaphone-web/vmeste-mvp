@@ -1,5 +1,5 @@
 (function(){
-  ['/home-discovery.css?v=20260915-2','/place-detail.css?v=20260915-2','/my-events.css?v=20260915-2','/social-hub.css?v=20260916-3','/event-group-prototype.css?v=20260916-1','/event-edit.css?v=20260916-1','/community-detail.css?v=20260916-1','/brand-lya.css?v=20260916-2','/brand-color-balance.css?v=20260916-2','/brand-vokrug.css?v=20260916-3','/image-cropper.css?v=20260916-2'].forEach(function(href){var l=document.createElement('link');l.rel='stylesheet';l.href=href;document.head.appendChild(l)});
+  ['/home-discovery.css?v=20260915-2','/place-detail.css?v=20260915-2','/my-events.css?v=20260915-2','/social-hub.css?v=20260916-3','/event-group-prototype.css?v=20260916-1','/event-edit.css?v=20260916-1','/community-detail.css?v=20260916-1','/brand-lya.css?v=20260916-2','/brand-color-balance.css?v=20260916-2','/brand-vokrug.css?v=20260916-4','/image-cropper.css?v=20260916-2'].forEach(function(href){var l=document.createElement('link');l.rel='stylesheet';l.href=href;document.head.appendChild(l)});
 
   function simplifyTabHeaders(){
     var createTop=document.querySelector('[data-view="create"] .top');
