@@ -35,6 +35,7 @@ if(privateEventForm){
     const starts=new Date(`${date}T${time}:00+03:00`);
     const ends=new Date(starts.getTime()+2*60*60*1000);
     const locationUrl=(document.querySelector('#event-source')?.value||'').trim();
+    const inviteIds=typeof window.getPendingEventCircleInviteIds==='function'?window.getPendingEventCircleInviteIds():[];
     try{
       const data=await api('create_event',{
         title:document.querySelector('#event-title').value.trim(),
@@ -44,7 +45,22 @@ if(privateEventForm){
         price_minor:0
       });
       if(locationUrl)await eventRaw('set_location_url',{event_id:data.event.id,location_url:locationUrl});
-      status.textContent='Событие сохранено';
+      let inviteNote='';
+      if(inviteIds.length&&typeof window.inviteCircleToEvent==='function'){
+        status.textContent='Событие сохранено. Отправляю приглашения…';
+        try{
+          const result=await window.inviteCircleToEvent(data.event.id,inviteIds);
+          const sent=(result.invited_ids||[]).length;
+          const blocked=(result.blocked_ids||[]).length;
+          inviteNote=sent?` · приглашений отправлено: ${sent}`:'';
+          if(blocked)inviteNote+=` · не отправлено: ${blocked}`;
+        }catch(invErr){
+          status.className='status error';
+          inviteNote=' · приглашения не отправлены: '+invErr.message;
+        }
+      }
+      status.textContent='Событие сохранено'+inviteNote;
+      if(typeof window.clearPendingEventCircleInviteIds==='function')window.clearPendingEventCircleInviteIds();
       e.target.reset();
       selectedDateKey=dateKey(data.event.starts_at);
       calendarYear=Number(selectedDateKey.slice(0,4));
