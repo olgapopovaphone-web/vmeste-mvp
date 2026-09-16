@@ -1,9 +1,10 @@
 (function(){
+  function setText(node,value){
+    if(node&&node.textContent!==value)node.textContent=value;
+  }
   function applyCircleLabels(){
-    var nav=document.querySelector('.nav[data-go="communities"] span');
-    if(nav)nav.textContent='В кругу';
-    var header=document.querySelector('[data-view="communities"] .socialHubTop .ey');
-    if(header)header.textContent='В КРУГУ';
+    setText(document.querySelector('.nav[data-go="communities"] span'),'В кругу');
+    setText(document.querySelector('[data-view="communities"] .socialHubTop .ey'),'В КРУГУ');
     document.querySelectorAll('[data-view="communities"] .socialPersonAction.is-state').forEach(function(button){
       if(button.textContent.trim()==='В круге')button.textContent='В кругу';
     });
