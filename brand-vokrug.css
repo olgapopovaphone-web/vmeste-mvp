@@ -24,18 +24,24 @@
 [data-view="communities"]>.top>div:first-child:after,
 [data-view="chronicle"]>.top>div:first-child:after{display:none!important}
 
-/* Vokrug has its own approved topper from page 2 of the supplied PDF. */
+/* Main destination uses the exact master logo: LYA + "люди и события". */
 [data-view="home"]>.top>div:first-child{padding-top:70px!important;min-height:70px!important}
 [data-view="home"]>.top>div:first-child:before{
   left:-8px!important;
   top:-14px!important;
   width:92px!important;
   height:92px!important;
-  background-image:url('/brand-lya-vokrug.svg')!important;
+  background-image:url('/brand-lya-logo.svg')!important;
 }
-[data-view="home"]>.top .ey{display:none!important}
 
-/* Other sections use the exact master mark + a separate functional section label. */
+/* Section names are already clear from bottom navigation: no header subline anywhere. */
+[data-view="home"]>.top .ey,
+[data-view="calendar"]>.top .ey,
+[data-view="create"]>.top .ey,
+[data-view="communities"]>.top .ey,
+[data-view="chronicle"]>.top .ey{display:none!important}
+
+/* Other sections use only the exact master mark, without a section-name subline. */
 [data-view="calendar"]>.top>div:first-child,
 [data-view="create"]>.top>div:first-child,
 [data-view="communities"]>.top>div:first-child,
