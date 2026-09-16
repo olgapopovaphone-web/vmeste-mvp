@@ -3,7 +3,6 @@
 
   function config(input){
     if(input.matches('#profile-avatar-input'))return{aspect:1,outputWidth:960,outputHeight:960,circle:true,title:'Фото профиля',quality:.9};
-    if(input.matches('.socialCreateCoverInput'))return{aspect:3,outputWidth:1200,outputHeight:400,title:'Обложка группы',quality:.86};
     if(input.matches('#event-cover-input,#event-edit-cover-input'))return{aspect:16/9,outputWidth:1600,outputHeight:900,title:'Обложка события',quality:.88};
     if(input.dataset.imageRole==='avatar')return{aspect:1,outputWidth:960,outputHeight:960,circle:true,title:'Фото профиля',quality:.9};
     if(input.dataset.imageRole==='cover')return{aspect:Number(input.dataset.imageAspect)||16/9,outputWidth:1600,outputHeight:900,title:'Настроить обложку',quality:.88};
