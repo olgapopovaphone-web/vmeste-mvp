@@ -26,7 +26,15 @@
   function communityCards(items){return '<div class="socialCommunityList">'+items.map(function(g){var count=Number(g.member_count||1),visual=g.cover_url?'<div class="socialCommunityMark socialCommunityPhoto" style="background-image:url(\''+esc(g.cover_url)+'\')"></div>':'<div class="socialCommunityMark">'+esc((g.name||'?').trim().slice(0,1).toUpperCase())+'</div>';return '<article class="socialCommunityCard">'+visual+'<div class="socialCommunityCopy"><h3>'+esc(g.name)+'</h3><p>'+esc(g.description||'Локальная группа')+'</p><small>'+count+' '+(count===1?'участник':'участников')+' · '+(g.access==='closed'?'закрытая':'открытая')+'</small></div></article>'}).join('')+'</div>'}
   function renderCommunities(){communitiesMine=readGroups();var items=filtered(communityMode==='mine'?communitiesMine:communitiesDiscover);var modes='<div class="socialCommunityBar"><div class="socialCommunityModes"><button type="button" data-community-mode="mine" class="'+(communityMode==='mine'?'active':'')+'">Мои</button><button type="button" data-community-mode="discover" class="'+(communityMode==='discover'?'active':'')+'">Найти</button></div>'+createButton()+'</div>';var body;if(items.length){body=communityCards(items);}else if(query){body=empty(communityIcon(),'Ничего не нашли','Попробуйте изменить запрос.');}else if(communityMode==='mine'){body=empty(communityIcon(),'У вас пока нет сообществ','Создайте постоянную локальную группу: компанию друзей, класс, школу или коллектив.','create','Создать группу');}else{body=empty(communityIcon(),'Сообщества появятся здесь','Позже здесь можно будет находить открытые локальные группы.');}root.innerHTML=modes+body;}
   function render(){section.querySelectorAll('[data-social-tab]').forEach(function(b){b.classList.toggle('active',b.dataset.socialTab===activeTab)});search.placeholder=activeTab==='people'?'Найти человека':activeTab==='friends'?'Найти среди друзей':'Найти сообщество';if(activeTab==='people')renderPeople();else if(activeTab==='friends')renderFriends();else renderCommunities()}
-  function resizeCover(file,done){
+  async function resizeCover(file,done){
+    try{
+      if(!window.openImageCropper){try{await import('/image-cropper.js?v=20260916-2')}catch(e){}}
+      if(window.openImageCropper){
+        var blob=await window.openImageCropper(file,{aspect:3,outputWidth:1200,outputHeight:400,title:'Обложка группы',quality:.86});
+        if(!blob){done(null);return}
+        var reader=new FileReader();reader.onload=function(){done(reader.result)};reader.onerror=function(){done(null)};reader.readAsDataURL(blob);return;
+      }
+    }catch(e){done(null);return}
     var reader=new FileReader();
     reader.onload=function(){var img=new Image();img.onload=function(){try{var canvas=document.createElement('canvas'),w=1200,h=400;canvas.width=w;canvas.height=h;var scale=Math.max(w/img.width,h/img.height),sw=w/scale,sh=h/scale,sx=(img.width-sw)/2,sy=(img.height-sh)/2;canvas.getContext('2d').drawImage(img,sx,sy,sw,sh,0,0,w,h);done(canvas.toDataURL('image/jpeg',.78))}catch(e){done(reader.result)}};img.onerror=function(){done(reader.result)};img.src=reader.result};reader.readAsDataURL(file);
   }
@@ -40,7 +48,7 @@
     function clearCover(){coverData='';cover.classList.remove('has-cover');cover.style.backgroundImage='';actions.hidden=true;pick.hidden=false;fileInput.value=''}
     function chooseCover(){fileInput.click()}
     pick.onclick=chooseCover;o.querySelector('.socialCreateCoverChange').onclick=chooseCover;o.querySelector('.socialCreateCoverRemove').onclick=clearCover;
-    fileInput.onchange=function(){var file=fileInput.files&&fileInput.files[0];if(!file)return;resizeCover(file,function(data){coverData=data;cover.style.backgroundImage='url("'+data+'")';cover.classList.add('has-cover');pick.hidden=true;actions.hidden=false})};
+    fileInput.onchange=function(){var file=fileInput.files&&fileInput.files[0];if(!file)return;resizeCover(file,function(data){if(!data){fileInput.value='';return}coverData=data;cover.style.backgroundImage='url("'+data+'")';cover.classList.add('has-cover');pick.hidden=true;actions.hidden=false})};
     nameInput.addEventListener('input',syncSubmit);syncSubmit();
     o.querySelector('.socialCreateClose').onclick=function(){o.remove()};o.onclick=function(e){if(e.target===o)o.remove()};
     form.onsubmit=function(e){e.preventDefault();var n=nameInput.value.trim();if(!n)return;var desc=(form.querySelector('textarea')&&form.querySelector('textarea').value||'').trim(),access=(form.querySelector('input[name="community-access"]:checked')||{}).value||'closed';var a=readGroups();a.unshift({id:'proto-'+Date.now(),name:n,description:desc,access:access,cover_url:coverData,member_count:1,created_at:new Date().toISOString()});saveGroups(a);communitiesMine=a;activeTab='communities';communityMode='mine';query='';search.value='';o.remove();render()};
