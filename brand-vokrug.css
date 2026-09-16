@@ -41,8 +41,17 @@
 [data-view="communities"]>.top .ey,
 [data-view="chronicle"]>.top .ey{display:none!important}
 
+/* Override legacy compact-header rules that explicitly re-show hidden eyebrow labels. */
+[data-view="calendar"]>.top .ey[hidden],
+[data-view="create"]>.top .ey[hidden]{display:none!important}
+[data-view="calendar"].mode-list>.top .ey:after,
+[data-view="calendar"].mode-calendar>.top .ey:after{content:none!important;display:none!important}
+
 /* Other sections use only the exact master mark, without a section-name subline. */
 [data-view="calendar"]>.top>div:first-child,
 [data-view="create"]>.top>div:first-child,
 [data-view="communities"]>.top>div:first-child,
 [data-view="chronicle"]>.top>div:first-child{padding-top:50px!important}
+
+/* Around: city name stands alone, without the redundant "ГОРОД" label. */
+[data-view="home"] .afishaIntro>div>.ey{display:none!important}
