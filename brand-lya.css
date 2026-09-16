@@ -24,8 +24,9 @@ body{background:#DED9D1;color:var(--lya-ink);font-family:Inter,Arial,sans-serif}
 /* Bottom navigation */
 .bottom{height:74px!important;background:rgba(255,253,249,.97)!important;border-top:1px solid var(--lya-line)!important;box-shadow:0 -8px 24px rgba(35,31,25,.035)}
 .nav{color:#76756F!important;font:600 9px/1 Inter,Arial,sans-serif!important;gap:5px!important;position:relative}
+.nav>svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .nav.active{color:var(--lya-coral)!important;font-weight:700!important}
-.nav:not(.plus){font-size:17px!important}.nav:not(.plus) span{font-size:9px!important}
+.nav:not(.plus) span{font-size:9px!important}
 .nav.plus{color:var(--lya-ink)!important;font-size:0!important;gap:4px!important}.nav.plus:before{content:'+';width:37px;height:37px;border-radius:50%;display:grid;place-items:center;background:var(--lya-ink);color:#fff;font:300 27px/1 Inter,Arial,sans-serif}.nav.plus span{font-size:9px!important;color:#76756F}.nav.plus.active:before{background:var(--lya-coral)}.nav.plus.active span{color:var(--lya-coral)}
 
 /* Afisha */
@@ -39,7 +40,8 @@ body{background:#DED9D1;color:var(--lya-ink);font-family:Inter,Arial,sans-serif}
 .myEventsSectionHead h2{font:700 17px/1.1 Inter,Arial,sans-serif!important}.myEventCard{border-radius:16px!important;box-shadow:none!important;padding:9px!important}.myEventDate{border-radius:12px!important;background:var(--lya-coral-soft)!important;color:var(--lya-coral)!important}.myEventBody h3{color:var(--lya-ink)!important}.myEventStatus.organizing{background:var(--lya-coral-soft)!important;color:#B73B2B!important}.myEventStatus.going{background:var(--lya-green-soft)!important;color:var(--lya-green)!important}.myEventsFilters button.active{background:var(--lya-coral)!important;border-color:var(--lya-coral)!important}.myEventsAccept{background:var(--lya-coral)!important}.myEventsCalendarPane .calendarModes button.active{background:var(--lya-coral)!important;color:#fff!important;box-shadow:none!important}.myEventsCalendarPane .monthDay.selected{background:var(--lya-coral)!important}.myEventsCalendarPane .monthDay.today:not(.selected){box-shadow:inset 0 0 0 1px var(--lya-coral)!important}.myEventsCalendarPane .monthDayDots i{background:var(--lya-coral)!important}
 
 /* Create */
-[data-view="create"]>.top{margin-bottom:16px!important}[data-view="create"]>.top .ey{color:var(--lya-coral)!important}
+[data-view="create"]>.top{margin-bottom:16px!important;min-height:150px!important}[data-view="create"]>.top .ey{color:var(--lya-coral)!important}
+[data-view="create"]>.top h1{display:block!important;margin:10px 0 0!important;max-width:330px;font:400 30px/1.03 Prata,Georgia,serif!important;letter-spacing:-.7px!important}[data-view="create"]>.top h1 em{font-style:normal;color:var(--lya-coral)}[data-view="create"]>.top>div:first-child>p{display:none!important}
 [data-view="create"] .choice{grid-template-columns:46px 1fr auto!important;border:1px solid var(--lya-line)!important;background:var(--lya-surface)!important;border-radius:16px!important;padding:14px!important;position:relative}
 [data-view="create"] .choice>b{width:40px;height:40px;border-radius:11px;display:grid;place-items:center;background:var(--lya-coral);color:#fff;font:700 12px Inter,Arial,sans-serif!important}
 [data-view="create"] .choice:nth-of-type(2)>b{background:var(--lya-green)}
@@ -56,4 +58,4 @@ body{background:#DED9D1;color:var(--lya-ink);font-family:Inter,Arial,sans-serif}
 /* Shared controls */
 .repeat{border-color:var(--lya-line);color:var(--lya-ink);background:var(--lya-surface)}input,textarea{accent-color:var(--lya-coral)}
 
-@media(max-width:380px){[data-view="home"]>.top>div:first-child:before,[data-view="calendar"]>.top>div:first-child:before,[data-view="create"]>.top>div:first-child:before,[data-view="communities"]>.top>div:first-child:before,[data-view="chronicle"]>.top>div:first-child:before{font-size:27px}.bottom{height:70px!important}.afishaVisual{height:155px!important}}
+@media(max-width:380px){[data-view="home"]>.top>div:first-child:before,[data-view="calendar"]>.top>div:first-child:before,[data-view="create"]>.top>div:first-child:before,[data-view="communities"]>.top>div:first-child:before,[data-view="chronicle"]>.top>div:first-child:before{font-size:27px}.bottom{height:70px!important}.afishaVisual{height:155px!important}[data-view="create"]>.top h1{font-size:27px!important}}
