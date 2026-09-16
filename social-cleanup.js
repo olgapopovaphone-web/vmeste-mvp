@@ -23,7 +23,13 @@
       }
     });
   }
-  function clean(){cleanPeople();cleanAvatar()}
+  function normalizeCommunities(){
+    var communitiesTab=section.querySelector('[data-social-tab="communities"].active');
+    if(!communitiesTab)return;
+    var mine=section.querySelector('[data-community-mode="mine"]');
+    if(mine&&!mine.classList.contains('active'))mine.click();
+  }
+  function clean(){cleanPeople();cleanAvatar();normalizeCommunities()}
 
   document.addEventListener('click',function(e){
     var create=e.target.closest&&e.target.closest('.nav[data-go="create"]');
