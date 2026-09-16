@@ -11,8 +11,9 @@
   function mountHeaderLogos(){
     ['home','calendar','create','communities','chronicle'].forEach(function(view){
       var header=document.querySelector('[data-view="'+view+'"]>.top');if(!header)return;
-      var logo=header.querySelector(':scope > .lyaHeaderLogo');
-      if(!logo){logo=document.createElement('img');logo.className='lyaHeaderLogo';logo.src='/brand-lya-mark.svg';logo.alt='ЛЯ';header.insertBefore(logo,header.firstChild)}
+      var copy=header.querySelector(':scope > div:first-child');if(!copy)return;
+      var logo=copy.querySelector(':scope > .lyaHeaderLogo');
+      if(!logo){logo=document.createElement('img');logo.className='lyaHeaderLogo';logo.src='/brand-lya-mark.svg';logo.alt='ЛЯ';copy.insertBefore(logo,copy.firstChild)}
     });
   }
   function apply(){
