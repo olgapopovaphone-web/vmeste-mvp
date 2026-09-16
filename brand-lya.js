@@ -11,10 +11,10 @@
   function apply(){
     document.title='ЛЯ — люди и события';
     var meta=document.querySelector('meta[name="description"]');if(meta)meta.content='ЛЯ — люди и события вокруг тебя';
-    nav('home','Афиша','home');nav('calendar','События','calendar');nav('create','Создать');nav('communities','Люди','people');nav('chronicle','Хроника','chronicle');
+    nav('home','Вокруг','home');nav('calendar','События','calendar');nav('create','Создать');nav('communities','Люди','people');nav('chronicle','Хроника','chronicle');
     var loginEy=document.querySelector('[data-view="login"] .ey');if(loginEy)loginEy.textContent='ЛЯ · ЛЮДИ И СОБЫТИЯ';
     var loginTitle=document.querySelector('[data-view="login"] .auth h2');if(loginTitle&&/MVP/i.test(loginTitle.textContent))loginTitle.textContent='Вход';
-    var profileBack=document.querySelector('[data-view="profile"] .js-home');if(profileBack)profileBack.textContent='← Афиша';
+    var profileBack=document.querySelector('[data-view="profile"] .js-home');if(profileBack)profileBack.textContent='← Вокруг';
     var createTitle=document.querySelector('[data-view="create"]>.top h1');if(createTitle)createTitle.innerHTML='Создавай моменты,<br>которые <em>сближают</em>';
   }
   apply();
