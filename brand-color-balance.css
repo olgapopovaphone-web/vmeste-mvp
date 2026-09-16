@@ -1,0 +1,61 @@
+:root{--lya-green:#0D4B38;--lya-green-soft:#EAF1ED;--lya-coral:#FF4B36;--lya-coral-soft:#FFF0EC}
+
+/* Brand rule: tomato = one primary CTA / meaningful accent. Bottle green = states, navigation, filters, secondary actions. */
+.nav.active{color:var(--lya-green)!important}.nav.plus.active:before{background:var(--lya-green)!important}.nav.plus.active span{color:var(--lya-green)!important}
+
+/* Shared primary controls default to bottle green. Screen-specific hero CTAs opt back into tomato below. */
+.primary{background:var(--lya-green)!important;color:#fff!important}
+.repeat{border-color:#CFCAC1!important;color:var(--lya-green)!important;background:var(--lya-surface)!important}
+input,textarea{accent-color:var(--lya-green)!important}
+
+/* Afisha: filters/states are green, collect-company remains the single tomato CTA. */
+.afishaFilters button.active{background:var(--lya-green)!important;color:#fff!important}
+.afishaActions button.active{background:var(--lya-green-soft)!important;border-color:#B9CBBF!important;color:var(--lya-green)!important}
+.afishaActions .collectCompany{background:var(--lya-coral)!important;border-color:var(--lya-coral)!important;color:#fff!important}
+.afishaCompareBar{background:var(--lya-green)!important}.afishaToast{background:var(--lya-green)!important}
+
+/* Events: all selection, status and calendar states are bottle green. */
+.myEventsView{--me-primary:var(--lya-green)!important;--me-soft:var(--lya-green-soft)!important}
+.myEventsSwitch button.active,.myEventsView.mode-list .myEventsSwitch button[data-my-events-mode="list"],.myEventsView.mode-calendar .myEventsSwitch button[data-my-events-mode="calendar"]{background:var(--lya-green)!important;color:#fff!important;box-shadow:none!important}
+.myEventDate{background:var(--lya-green-soft)!important;color:var(--lya-green)!important}
+.myEventStatus.organizing,.myEventStatus.going{background:var(--lya-green-soft)!important;color:var(--lya-green)!important}
+.myEventsFilters button.active{background:var(--lya-green)!important;border-color:var(--lya-green)!important;color:#fff!important}
+.myEventsAccept{background:var(--lya-green)!important;color:#fff!important}
+.myEventsCalendarPane .calendarModes button.active{background:var(--lya-green)!important;color:#fff!important;box-shadow:none!important}
+.myEventsCalendarPane .monthDay.selected{background:var(--lya-green)!important;color:#fff!important}
+.myEventsCalendarPane .monthDay.today:not(.selected){box-shadow:inset 0 0 0 1px var(--lya-green)!important}
+/* Tiny event dots may stay tomato: they are information, not controls. */
+.myEventsCalendarPane .monthDayDots i{background:var(--lya-coral)!important}.myEventsCalendarPane .monthDay.selected .monthDayDots i{background:#fff!important}
+
+/* Create: tomato is reserved for the key message and submit CTA; options are green. */
+[data-view="create"] .choice>b,[data-view="create"] .choice:nth-of-type(2)>b{background:var(--lya-green)!important}
+[data-view="create"] .panel .primary{background:var(--lya-coral)!important;color:#fff!important}
+
+/* People: navigation and selection green; Create is the principal tomato action. */
+.socialHubView{--sh-primary:var(--lya-green)!important;--sh-soft:var(--lya-green-soft)!important}
+.socialHubTabs button.active{background:var(--lya-green)!important;color:#fff!important;box-shadow:none!important}
+.socialEmptyIcon{background:var(--lya-green-soft)!important;color:var(--lya-green)!important}
+.socialEmptyAction{background:var(--lya-green)!important;color:#fff!important}
+.socialCommunityModes button.active{background:var(--lya-green)!important;border-color:var(--lya-green)!important;color:#fff!important}
+.socialCreateCommunity{background:var(--lya-coral)!important;color:#fff!important}
+.socialCommunityMark{background:var(--lya-green-soft)!important;color:var(--lya-green)!important}
+.socialCreateSubmit{background:var(--lya-coral)!important;border-color:var(--lya-coral)!important;box-shadow:0 6px 16px rgba(255,75,54,.14)!important}
+.socialCreateSubmit:disabled{background:#E2E3DC!important;border-color:#D3D5CC!important;color:#50564F!important;box-shadow:none!important}
+
+/* Chronicle: no tomato CTA here, so the whole functional layer stays green. */
+[data-view="chronicle"] .history>div:first-child{background:var(--lya-green-soft)!important;color:var(--lya-green)!important}
+[data-view="chronicle"] .repeat{border-color:#B8C8BE!important;color:var(--lya-green)!important;background:#fff!important}
+
+/* Community detail: Create event is the one tomato CTA; everything else is green/neutral. */
+.communityDetailTabs button.active{background:var(--lya-green)!important;color:#fff!important;box-shadow:none!important}
+.communityEventDate{background:var(--lya-green-soft)!important;color:var(--lya-green)!important}
+.communityCreateEvent{background:var(--lya-coral)!important;color:#fff!important;box-shadow:0 6px 16px rgba(255,75,54,.14)!important}
+.communityInviteMembers{background:var(--lya-green)!important;color:#fff!important}
+.communityMemberAvatar{background:var(--lya-green-soft)!important;color:var(--lya-green)!important}
+.communityActionPrimary{background:var(--lya-green)!important;color:#fff!important}
+.communityManageSetting select{accent-color:var(--lya-green)!important}
+/* Group-create context is informational, so a soft tomato tint is intentional. */
+.communityCreateContext{background:var(--lya-coral-soft)!important;border-color:#FFD1C9!important}
+
+/* Event detail already uses bottle green as its functional primary; keep generic primary controls green there. */
+.eventView .primary,.eventView .eventManagePrimary,.eventView .eventYes{background:var(--lya-green)!important;color:#fff!important}
