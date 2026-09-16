@@ -23,7 +23,7 @@
   simplifyTabHeaders();
   document.addEventListener('click',function(e){var mode=e.target.closest&&e.target.closest('[data-my-events-mode]');if(mode)setTimeout(simplifyTabHeaders,0)},true);
 
-  import('/image-cropper.js?v=20260916-2').then(function(){return import('/image-upload-bridge.js?v=20260916-1')});
+  import('/image-cropper.js?v=20260916-2').then(function(){return import('/image-upload-bridge.js?v=20260916-2')});
   import('/home-core.js?v=20260915-2');
   import('/calendar-reminders.js?v=20260915-2');
   import('/my-events.js?v=20260915-1').then(function(){simplifyTabHeaders()});
