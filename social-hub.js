@@ -2,61 +2,121 @@
   var section=document.querySelector('[data-view="communities"]');
   if(!section||section.dataset.socialHubMounted==='1')return;
   section.dataset.socialHubMounted='1';section.classList.add('socialHubView');
+
   var GROUPS_KEY='vmeste_groups_proto_v1';
+  var CIRCLE_API='https://nmeoakrpafxhpdrplsuo.supabase.co/functions/v1/vmeste-circle-api';
   var activeTab='people',communityMode='mine',query='';
-  var people=[],friends=[],friendRequests=[],communitiesDiscover=[];
+  var people=[],circle=[],incoming=[],outgoing=[],communitiesDiscover=[];
+  var loadingPeople=false,loadingCircle=false,searchTimer=null,lastSearch='';
+
   function readGroups(){try{var a=JSON.parse(localStorage.getItem(GROUPS_KEY)||'[]');return Array.isArray(a)?a:[]}catch(e){return[]}}
   function saveGroups(a){try{localStorage.setItem(GROUPS_KEY,JSON.stringify(a))}catch(e){}}
   var communitiesMine=readGroups();
   function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+  function session(){try{return JSON.parse(localStorage.getItem('vmeste_session_v1')||'null')}catch(e){return null}}
+  function token(){return session()&&session().access_token||''}
+  function loggedIn(){return !!token()}
+  function api(action,payload){
+    var t=token();if(!t)return Promise.reject(new Error('LOGIN'));
+    var body=Object.assign({action:action},payload||{});
+    return fetch(CIRCLE_API,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+t},body:JSON.stringify(body)}).then(function(r){return r.json().catch(function(){return{error:'Некорректный ответ сервера'}}).then(function(d){if(!r.ok)throw new Error(d.error||'Ошибка запроса');return d})});
+  }
   function peopleIcon(){return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>'}
   function communityIcon(){return '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3"></circle><path d="M5 19a7 7 0 0 1 14 0"></path><path d="M4.5 10.5A3 3 0 0 0 2 13.5"></path><path d="M19.5 10.5a3 3 0 0 1 2.5 3"></path></svg>'}
   function searchIcon(){return '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg>'}
   function coverIcon(){return '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"></rect><circle cx="9" cy="10" r="2"></circle><path d="m21 15-5-5L5 19"></path></svg>'}
   function setNav(){var nav=document.querySelector('.nav[data-go="communities"]');if(!nav)return;nav.innerHTML='<svg class="socialNavIcon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"></circle><path d="M3.5 19a5.5 5.5 0 0 1 11 0"></path><circle cx="17" cy="9" r="2.3"></circle><path d="M15.5 14.6a4.4 4.4 0 0 1 5 4.4"></path></svg><span>Люди</span>'}
-  function topAvatar(){var name=(window.account&&window.account.profile&&window.account.profile.display_name)||(window.account&&window.account.user&&window.account.user.email)||'В';return esc(String(name).trim().slice(0,1).toUpperCase()||'В')}
-  section.innerHTML='<header class="top socialHubTop"><div><div class="ey">ЛЮДИ</div></div><button class="avatar js-profile" type="button">'+topAvatar()+'</button></header><div class="socialHubTabs"><button type="button" class="active" data-social-tab="people">Люди</button><button type="button" data-social-tab="friends">Друзья</button><button type="button" data-social-tab="communities">Сообщества</button></div><label class="socialHubSearch">'+searchIcon()+'<input id="social-hub-search" type="search" autocomplete="off" placeholder="Найти человека"></label><div class="socialHubRoot" id="social-hub-root"></div>';
+  function topAvatar(){return 'В'}
+
+  section.innerHTML='<header class="top socialHubTop"><div><div class="ey">ЛЮДИ</div></div><button class="avatar js-profile" type="button">'+topAvatar()+'</button></header><div class="socialHubTabs"><button type="button" class="active" data-social-tab="people">Люди</button><button type="button" data-social-tab="circle">Круг</button><button type="button" data-social-tab="communities">Сообщества</button></div><label class="socialHubSearch">'+searchIcon()+'<input id="social-hub-search" type="search" autocomplete="off" placeholder="Найти человека"></label><div class="socialHubRoot" id="social-hub-root"></div>';
   setNav();
+
   var root=document.getElementById('social-hub-root'),search=document.getElementById('social-hub-search');
   function empty(icon,title,text,action,label){return '<div class="socialEmpty"><div class="socialEmptyIcon">'+icon+'</div><h3>'+esc(title)+'</h3><p>'+esc(text)+'</p>'+(action?'<button type="button" class="socialEmptyAction" data-social-action="'+esc(action)+'">'+esc(label)+'</button>':'')+'</div>'}
-  function filtered(items){if(!query)return items;var q=query.toLowerCase();return items.filter(function(x){return String(x.display_name||x.name||x.title||'').toLowerCase().includes(q)})}
-  function renderPeople(){var items=filtered(people);if(items.length){root.innerHTML='';return}root.innerHTML=empty(peopleIcon(),query?'Никого не нашли':'Здесь появятся люди',query?'Попробуйте другой запрос.':'Покажем людей, с которыми есть реальный общий контекст: события, места, общие друзья или сообщества.');}
-  function renderFriends(){var items=filtered(friends),requests=friendRequests;if(items.length||requests.length){var h='';if(requests.length)h+='<section class="socialHubSection"><div class="socialHubSectionHead"><h2>Запросы</h2><small>'+requests.length+'</small></div><div class="socialHubRequests"></div></section>';if(items.length)h+='<section class="socialHubSection"><div class="socialHubSectionHead"><h2>Друзья</h2><small>'+items.length+'</small></div></section>';root.innerHTML=h;return}root.innerHTML=empty(peopleIcon(),query?'Никого не нашли':'Друзей пока нет',query?'Попробуйте другой запрос.':'Когда вы добавите людей в друзья, они появятся здесь. Отсюда можно будет быстро приглашать их на события.','people','Найти людей');}
+  function filtered(items){if(!query)return items;var q=query.toLowerCase();return items.filter(function(x){var u=x.user||x;return String(u.display_name||u.name||u.title||'').toLowerCase().includes(q)})}
+  function avatar(user){var name=(user&&user.display_name)||'У';if(user&&user.avatar_url)return '<span class="socialPersonAvatar socialPersonAvatarPhoto" style="background-image:url(\''+esc(user.avatar_url)+'\')"></span>';return '<span class="socialPersonAvatar">'+esc(name.trim().slice(0,1).toUpperCase()||'У')+'</span>'}
+  function personMeta(user){return user&&user.city?esc(user.city):'Участник Вместе'}
+  function relationButton(person){var r=person.relation;if(!r)return '<button type="button" class="socialPersonAction" data-circle-add="'+esc(person.id)+'">Добавить в круг</button>';if(r.status==='accepted')return '<button type="button" class="socialPersonAction is-state" disabled>В круге</button>';if(r.status==='pending'&&r.direction==='outgoing')return '<button type="button" class="socialPersonAction is-state" disabled>Запрос отправлен</button>';if(r.status==='pending'&&r.direction==='incoming')return '<button type="button" class="socialPersonAction" data-circle-respond="'+esc(r.connection_id)+'" data-response="accepted">Принять</button>';return '<button type="button" class="socialPersonAction" data-circle-add="'+esc(person.id)+'">Добавить в круг</button>'}
+  function personCard(person){return '<article class="socialPersonCard">'+avatar(person)+'<div class="socialPersonCopy"><h3>'+esc(person.display_name||'Участник')+'</h3><p>'+personMeta(person)+'</p></div>'+relationButton(person)+'</article>'}
+
+  function renderPeople(){
+    if(!loggedIn()){root.innerHTML=empty(peopleIcon(),'Войдите, чтобы находить людей','После входа можно искать знакомых и добавлять их в свой круг.','login','Войти');return}
+    if(query.length<2){root.innerHTML=empty(peopleIcon(),'Найдите человека','Введите хотя бы две буквы имени. Здесь не будет случайной ленты незнакомцев — только поиск по вашему запросу.');return}
+    if(loadingPeople){root.innerHTML='<div class="socialLoading">Ищу…</div>';return}
+    var items=people;if(items.length){root.innerHTML='<div class="socialPeopleList">'+items.map(personCard).join('')+'</div>';return}
+    root.innerHTML=empty(peopleIcon(),'Никого не нашли','Попробуйте другой запрос.');
+  }
+
+  function requestCard(item,incomingRequest){var u=item.user||{};return '<article class="socialHubRequest">'+avatar(u)+'<div><h3>'+esc(u.display_name||'Участник')+'</h3><p>'+(incomingRequest?'Хочет добавить вас в круг':'Запрос отправлен')+'</p></div>'+(incomingRequest?'<div class="socialHubRequestActions"><button class="socialHubAccept" type="button" data-circle-respond="'+esc(item.connection_id)+'" data-response="accepted" aria-label="Принять">✓</button><button class="socialHubDecline" type="button" data-circle-respond="'+esc(item.connection_id)+'" data-response="declined" aria-label="Отклонить">×</button></div>':'<button class="socialCircleCancel" type="button" data-circle-remove="'+esc(item.connection_id)+'">Отменить</button>')+'</article>'}
+  function circleCard(item){var u=item.user||{};return '<article class="socialPersonCard">'+avatar(u)+'<div class="socialPersonCopy"><h3>'+esc(u.display_name||'Участник')+'</h3><p>'+personMeta(u)+'</p></div><button type="button" class="socialPersonAction is-state" disabled>В круге</button></article>'}
+  function renderCircle(){
+    if(!loggedIn()){root.innerHTML=empty(peopleIcon(),'Ваш круг появится после входа','Здесь будут люди, которых вы добавили и которые добавили вас.','login','Войти');return}
+    if(loadingCircle){root.innerHTML='<div class="socialLoading">Загружаю круг…</div>';return}
+    var members=filtered(circle),requests=filtered(incoming),sent=filtered(outgoing),h='';
+    if(requests.length)h+='<section class="socialHubSection"><div class="socialHubSectionHead"><h2>Запросы</h2><small>'+requests.length+'</small></div><div class="socialHubRequests">'+requests.map(function(x){return requestCard(x,true)}).join('')+'</div></section>';
+    if(members.length)h+='<section class="socialHubSection"><div class="socialHubSectionHead"><h2>Мой круг</h2><small>'+members.length+'</small></div><div class="socialPeopleList">'+members.map(circleCard).join('')+'</div></section>';
+    if(sent.length)h+='<section class="socialHubSection"><div class="socialHubSectionHead"><h2>Ждём ответа</h2><small>'+sent.length+'</small></div><div class="socialHubRequests">'+sent.map(function(x){return requestCard(x,false)}).join('')+'</div></section>';
+    if(h){root.innerHTML=h;return}
+    root.innerHTML=empty(peopleIcon(),query?'Никого не нашли':'Ваш круг пока пуст',query?'Попробуйте другой запрос.':'Найдите знакомого во вкладке «Люди» и нажмите «Добавить в круг».','people','Найти людей');
+  }
+
   function createButton(){return '<button type="button" class="socialCreateCommunity" data-social-create><span>＋</span>Создать</button>'}
   function communityCards(items){return '<div class="socialCommunityList">'+items.map(function(g){var count=Number(g.member_count||1),visual=g.cover_url?'<div class="socialCommunityMark socialCommunityPhoto" style="background-image:url(\''+esc(g.cover_url)+'\')"></div>':'<div class="socialCommunityMark">'+esc((g.name||'?').trim().slice(0,1).toUpperCase())+'</div>';return '<article class="socialCommunityCard">'+visual+'<div class="socialCommunityCopy"><h3>'+esc(g.name)+'</h3><p>'+esc(g.description||'Локальная группа')+'</p><small>'+count+' '+(count===1?'участник':'участников')+' · '+(g.access==='closed'?'закрытая':'открытая')+'</small></div></article>'}).join('')+'</div>'}
-  function renderCommunities(){communitiesMine=readGroups();var items=filtered(communityMode==='mine'?communitiesMine:communitiesDiscover);var modes='<div class="socialCommunityBar"><div class="socialCommunityModes"><button type="button" data-community-mode="mine" class="'+(communityMode==='mine'?'active':'')+'">Мои</button><button type="button" data-community-mode="discover" class="'+(communityMode==='discover'?'active':'')+'">Найти</button></div>'+createButton()+'</div>';var body;if(items.length){body=communityCards(items);}else if(query){body=empty(communityIcon(),'Ничего не нашли','Попробуйте изменить запрос.');}else if(communityMode==='mine'){body=empty(communityIcon(),'У вас пока нет сообществ','Создайте постоянную локальную группу: компанию друзей, класс, школу или коллектив.','create','Создать группу');}else{body=empty(communityIcon(),'Сообщества появятся здесь','Позже здесь можно будет находить открытые локальные группы.');}root.innerHTML=modes+body;}
-  function render(){section.querySelectorAll('[data-social-tab]').forEach(function(b){b.classList.toggle('active',b.dataset.socialTab===activeTab)});search.placeholder=activeTab==='people'?'Найти человека':activeTab==='friends'?'Найти среди друзей':'Найти сообщество';if(activeTab==='people')renderPeople();else if(activeTab==='friends')renderFriends();else renderCommunities()}
+  function renderCommunities(){communitiesMine=readGroups();var items=filtered(communityMode==='mine'?communitiesMine:communitiesDiscover);var modes='<div class="socialCommunityBar"><div class="socialCommunityModes"><button type="button" data-community-mode="mine" class="'+(communityMode==='mine'?'active':'')+'">Мои</button><button type="button" data-community-mode="discover" class="'+(communityMode==='discover'?'active':'')+'">Найти</button></div>'+createButton()+'</div>';var body;if(items.length){body=communityCards(items)}else if(query){body=empty(communityIcon(),'Ничего не нашли','Попробуйте изменить запрос.')}else if(communityMode==='mine'){body=empty(communityIcon(),'У вас пока нет сообществ','Создайте постоянную локальную группу: компанию друзей, класс, школу или коллектив.','create','Создать группу')}else{body=empty(communityIcon(),'Сообщества появятся здесь','Позже здесь можно будет находить открытые локальные группы.')}root.innerHTML=modes+body}
+
+  function render(){
+    section.querySelectorAll('[data-social-tab]').forEach(function(b){b.classList.toggle('active',b.dataset.socialTab===activeTab)});
+    search.placeholder=activeTab==='people'?'Найти человека':activeTab==='circle'?'Найти в круге':'Найти сообщество';
+    if(activeTab==='people')renderPeople();else if(activeTab==='circle')renderCircle();else renderCommunities();
+  }
+
+  function loadCircle(){
+    if(!loggedIn()){circle=[];incoming=[];outgoing=[];loadingCircle=false;render();return Promise.resolve()}
+    loadingCircle=true;render();
+    return api('list_circle').then(function(d){circle=d.accepted||[];incoming=d.incoming||[];outgoing=d.outgoing||[]}).catch(function(){circle=[];incoming=[];outgoing=[]}).finally(function(){loadingCircle=false;render()})
+  }
+  function searchPeople(){
+    if(!loggedIn()||query.length<2){people=[];loadingPeople=false;lastSearch='';render();return}
+    var q=query;lastSearch=q;loadingPeople=true;render();
+    api('search_people',{query:q}).then(function(d){if(lastSearch===q)people=d.people||[]}).catch(function(){if(lastSearch===q)people=[]}).finally(function(){if(lastSearch===q){loadingPeople=false;render()}})
+  }
+  function schedulePeopleSearch(){clearTimeout(searchTimer);searchTimer=setTimeout(searchPeople,260)}
+  function refreshSocial(){return loadCircle().then(function(){if(activeTab==='people'&&query.length>=2)searchPeople()})}
+
   async function resizeCover(file,done){
-    try{
-      if(!window.openImageCropper){try{await import('/image-cropper.js?v=20260916-2')}catch(e){}}
-      if(window.openImageCropper){
-        var blob=await window.openImageCropper(file,{aspect:3,outputWidth:1200,outputHeight:400,title:'Обложка группы',quality:.86});
-        if(!blob){done(null);return}
-        var reader=new FileReader();reader.onload=function(){done(reader.result)};reader.onerror=function(){done(null)};reader.readAsDataURL(blob);return;
-      }
-    }catch(e){done(null);return}
-    var reader=new FileReader();
-    reader.onload=function(){var img=new Image();img.onload=function(){try{var canvas=document.createElement('canvas'),w=1200,h=400;canvas.width=w;canvas.height=h;var scale=Math.max(w/img.width,h/img.height),sw=w/scale,sh=h/scale,sx=(img.width-sw)/2,sy=(img.height-sh)/2;canvas.getContext('2d').drawImage(img,sx,sy,sw,sh,0,0,w,h);done(canvas.toDataURL('image/jpeg',.78))}catch(e){done(reader.result)}};img.onerror=function(){done(reader.result)};img.src=reader.result};reader.readAsDataURL(file);
+    try{if(!window.openImageCropper){try{await import('/image-cropper.js?v=20260916-2')}catch(e){}}if(window.openImageCropper){var blob=await window.openImageCropper(file,{aspect:3,outputWidth:1200,outputHeight:400,title:'Обложка группы',quality:.86});if(!blob){done(null);return}var reader=new FileReader();reader.onload=function(){done(reader.result)};reader.onerror=function(){done(null)};reader.readAsDataURL(blob);return}}catch(e){done(null);return}
+    var reader=new FileReader();reader.onload=function(){var img=new Image();img.onload=function(){try{var canvas=document.createElement('canvas'),w=1200,h=400;canvas.width=w;canvas.height=h;var scale=Math.max(w/img.width,h/img.height),sw=w/scale,sh=h/scale,sx=(img.width-sw)/2,sy=(img.height-sh)/2;canvas.getContext('2d').drawImage(img,sx,sy,sw,sh,0,0,w,h);done(canvas.toDataURL('image/jpeg',.78))}catch(e){done(reader.result)}};img.onerror=function(){done(reader.result)};img.src=reader.result};reader.readAsDataURL(file)
   }
   function openCreateCommunity(){
-    document.querySelector('.socialCreateOverlay')?.remove();
-    var coverData='';
+    document.querySelector('.socialCreateOverlay')?.remove();var coverData='';
     var o=document.createElement('div');o.className='socialCreateOverlay';o.innerHTML='<div class="socialCreateSheet"><div class="socialCreateHead"><div><span class="ey">НОВАЯ ГРУППА</span><h2>Создать группу</h2></div><button type="button" class="socialCreateClose" aria-label="Закрыть">×</button></div><form class="socialCreateForm"><div class="socialCreateCover"><input class="socialCreateCoverInput" type="file" accept="image/*" hidden><button type="button" class="socialCreateCoverPick">'+coverIcon()+'<span>Добавить обложку</span></button><div class="socialCreateCoverActions" hidden><button type="button" class="socialCreateCoverChange">Изменить</button><button type="button" class="socialCreateCoverRemove">Удалить</button></div></div><label>Название<input class="socialCreateName" required maxlength="80" placeholder="Например, Наши девочки"></label><label>Описание<textarea rows="2" maxlength="240" placeholder="Кто мы и для чего собираемся"></textarea></label><fieldset><legend>Доступ</legend><label class="socialCreateChoice"><input type="radio" name="community-access" value="closed" checked><span><b>Закрытая</b><small>Только по приглашению</small></span></label><label class="socialCreateChoice"><input type="radio" name="community-access" value="open"><span><b>Открытая</b><small>Группу можно найти и вступить</small></span></label></fieldset><button class="socialCreateSubmit" type="submit" disabled>Создать группу</button></form></div>';
     document.body.appendChild(o);
     var form=o.querySelector('form'),nameInput=o.querySelector('.socialCreateName'),submit=o.querySelector('.socialCreateSubmit'),cover=o.querySelector('.socialCreateCover'),fileInput=o.querySelector('.socialCreateCoverInput'),pick=o.querySelector('.socialCreateCoverPick'),actions=o.querySelector('.socialCreateCoverActions');
-    function syncSubmit(){submit.disabled=!nameInput.value.trim()}
-    function clearCover(){coverData='';cover.classList.remove('has-cover');cover.style.backgroundImage='';actions.hidden=true;pick.hidden=false;fileInput.value=''}
-    function chooseCover(){fileInput.click()}
+    function syncSubmit(){submit.disabled=!nameInput.value.trim()}function clearCover(){coverData='';cover.classList.remove('has-cover');cover.style.backgroundImage='';actions.hidden=true;pick.hidden=false;fileInput.value=''}function chooseCover(){fileInput.click()}
     pick.onclick=chooseCover;o.querySelector('.socialCreateCoverChange').onclick=chooseCover;o.querySelector('.socialCreateCoverRemove').onclick=clearCover;
     fileInput.onchange=function(){var file=fileInput.files&&fileInput.files[0];if(!file)return;resizeCover(file,function(data){if(!data){fileInput.value='';return}coverData=data;cover.style.backgroundImage='url("'+data+'")';cover.classList.add('has-cover');pick.hidden=true;actions.hidden=false})};
-    nameInput.addEventListener('input',syncSubmit);syncSubmit();
-    o.querySelector('.socialCreateClose').onclick=function(){o.remove()};o.onclick=function(e){if(e.target===o)o.remove()};
-    form.onsubmit=function(e){e.preventDefault();var n=nameInput.value.trim();if(!n)return;var desc=(form.querySelector('textarea')&&form.querySelector('textarea').value||'').trim(),access=(form.querySelector('input[name="community-access"]:checked')||{}).value||'closed';var a=readGroups();a.unshift({id:'proto-'+Date.now(),name:n,description:desc,access:access,cover_url:coverData,member_count:1,created_at:new Date().toISOString()});saveGroups(a);communitiesMine=a;activeTab='communities';communityMode='mine';query='';search.value='';o.remove();render()};
+    nameInput.addEventListener('input',syncSubmit);syncSubmit();o.querySelector('.socialCreateClose').onclick=function(){o.remove()};o.onclick=function(e){if(e.target===o)o.remove()};
+    form.onsubmit=function(e){e.preventDefault();var n=nameInput.value.trim();if(!n)return;var desc=(form.querySelector('textarea')&&form.querySelector('textarea').value||'').trim(),access=(form.querySelector('input[name="community-access"]:checked')||{}).value||'closed';var a=readGroups();a.unshift({id:'proto-'+Date.now(),name:n,description:desc,access:access,cover_url:coverData,member_count:1,created_at:new Date().toISOString()});saveGroups(a);communitiesMine=a;activeTab='communities';communityMode='mine';query='';search.value='';o.remove();render()}
   }
+
+  function openLogin(){if(typeof openView==='function'){openView('login');return}document.querySelectorAll('.view').forEach(function(v){v.classList.toggle('active',v.dataset.view==='login')});var b=document.getElementById('bottom-nav');if(b)b.style.display='none'}
   window.openSocialCommunities=function(){activeTab='communities';communityMode='mine';query='';search.value='';render();if(typeof openView==='function')openView('communities');else{var nav=document.querySelector('.nav[data-go="communities"]');if(nav)nav.click()}};
   section.querySelector('.js-profile').onclick=function(){if(typeof openView==='function')openView('profile')};
-  section.querySelectorAll('[data-social-tab]').forEach(function(b){b.onclick=function(){activeTab=b.dataset.socialTab;query='';search.value='';render()}});
-  search.addEventListener('input',function(){query=search.value.trim();render()});
-  root.addEventListener('click',function(e){var create=e.target.closest('[data-social-create]');if(create){openCreateCommunity();return}var cm=e.target.closest('[data-community-mode]');if(cm){communityMode=cm.dataset.communityMode;query='';search.value='';render();return}var a=e.target.closest('[data-social-action]');if(!a)return;if(a.dataset.socialAction==='people'){activeTab='people';query='';search.value='';render()}if(a.dataset.socialAction==='discover'){activeTab='communities';communityMode='discover';query='';search.value='';render()}if(a.dataset.socialAction==='create'){openCreateCommunity()}});
+  section.querySelectorAll('[data-social-tab]').forEach(function(b){b.onclick=function(){activeTab=b.dataset.socialTab;query='';search.value='';people=[];render();if(activeTab==='circle')loadCircle()}});
+  search.addEventListener('input',function(){query=search.value.trim();if(activeTab==='people')schedulePeopleSearch();else render()});
+  root.addEventListener('click',function(e){
+    var add=e.target.closest('[data-circle-add]');if(add){add.disabled=true;add.textContent='Отправляю…';api('send_request',{target_user_id:add.dataset.circleAdd}).then(refreshSocial).catch(function(err){add.disabled=false;add.textContent=err.message==='LOGIN'?'Войти':'Повторить'});return}
+    var respond=e.target.closest('[data-circle-respond]');if(respond){respond.disabled=true;api('respond_request',{connection_id:respond.dataset.circleRespond,response:respond.dataset.response}).then(refreshSocial).catch(function(){respond.disabled=false});return}
+    var remove=e.target.closest('[data-circle-remove]');if(remove){remove.disabled=true;api('remove_connection',{connection_id:remove.dataset.circleRemove}).then(refreshSocial).catch(function(){remove.disabled=false});return}
+    var create=e.target.closest('[data-social-create]');if(create){openCreateCommunity();return}
+    var cm=e.target.closest('[data-community-mode]');if(cm){communityMode=cm.dataset.communityMode;query='';search.value='';render();return}
+    var a=e.target.closest('[data-social-action]');if(!a)return;
+    if(a.dataset.socialAction==='people'){activeTab='people';query='';search.value='';people=[];render()}
+    if(a.dataset.socialAction==='login'){openLogin()}
+    if(a.dataset.socialAction==='discover'){activeTab='communities';communityMode='discover';query='';search.value='';render()}
+    if(a.dataset.socialAction==='create'){openCreateCommunity()}
+  });
+
   render();
+  if(loggedIn())loadCircle();
 })();
