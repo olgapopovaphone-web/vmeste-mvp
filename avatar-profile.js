@@ -41,6 +41,12 @@
     return await new Promise((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('Не удалось подготовить фото')),'image/jpeg',0.88));
   }
 
+  async function cropAvatar(file){
+    if(!window.openImageCropper){try{await import('/image-cropper.js?v=20260916-2')}catch{}}
+    if(window.openImageCropper)return window.openImageCropper(file,{aspect:1,outputWidth:960,outputHeight:960,circle:true,title:'Фото профиля',quality:.9});
+    return prepareAvatar(file);
+  }
+
   function paintTopAvatars(){
     const url=(typeof account!=='undefined'&&account)?currentAvatar():null;const letter=currentLetter();
     document.querySelectorAll('.avatar').forEach(el=>{
@@ -63,9 +69,10 @@
     const choose=()=>input.click();
     wrap.querySelector('#profile-avatar-button').onclick=choose;wrap.querySelector('#profile-avatar-camera').onclick=choose;wrap.querySelector('#profile-avatar-change').onclick=choose;
     input.onchange=async()=>{
-      const file=input.files?.[0];if(!file)return;setStatus('Подготавливаю фото…');
+      const file=input.files?.[0];if(!file)return;setStatus('Настройте кадр…');
       try{
-        const blob=await prepareAvatar(file);setStatus('Загружаю…');const data=await uploadBlob(blob);avatarCache=data.avatar_url||null;
+        const blob=await cropAvatar(file);if(!blob){setStatus('');return}
+        setStatus('Загружаю…');const data=await uploadBlob(blob);avatarCache=data.avatar_url||null;
         if(account?.profile)account.profile.avatar_url=avatarCache;paintTopAvatars();paintProfileAvatar();setStatus('Готово');
       }catch(err){setStatus(err.message||'Не удалось загрузить фото',true)}finally{input.value=''}
     };
