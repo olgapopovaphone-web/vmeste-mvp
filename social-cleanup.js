@@ -31,16 +31,6 @@
   }
   function clean(){cleanPeople();cleanAvatar();normalizeCommunities()}
 
-  document.addEventListener('click',function(e){
-    var create=e.target.closest&&e.target.closest('.nav[data-go="create"]');
-    if(!create||!section.classList.contains('active'))return;
-    var communitiesTab=section.querySelector('[data-social-tab="communities"].active');
-    if(!communitiesTab)return;
-    var communityCreate=section.querySelector('[data-social-create]');
-    if(!communityCreate)return;
-    e.preventDefault();e.stopImmediatePropagation();communityCreate.click();
-  },true);
-
   var root=section.querySelector('#social-hub-root');
   if(root)new MutationObserver(function(){clean()}).observe(root,{childList:true,subtree:true});
   document.addEventListener('vmeste-circle-changed',function(){setTimeout(clean,0)});
