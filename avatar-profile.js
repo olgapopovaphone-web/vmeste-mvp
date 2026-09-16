@@ -42,6 +42,7 @@
   }
 
   async function cropAvatar(file){
+    if(/-crop\.jpg$/i.test(file?.name||''))return file;
     if(!window.openImageCropper){try{await import('/image-cropper.js?v=20260916-2')}catch{}}
     if(window.openImageCropper)return window.openImageCropper(file,{aspect:1,outputWidth:960,outputHeight:960,circle:true,title:'Фото профиля',quality:.9});
     return prepareAvatar(file);
