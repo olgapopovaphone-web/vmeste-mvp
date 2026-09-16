@@ -5,7 +5,7 @@
     return new Promise(function(resolve,reject){
       if(!file||!file.type||!file.type.startsWith('image/')){reject(new Error('Выберите изображение'));return}
       var url=URL.createObjectURL(file),img=new Image();
-      img.onload=function(){URL.revokeObjectURL(url);resolve(img)};
+      img.onload=function(){img._cropObjectUrl=url;resolve(img)};
       img.onerror=function(){URL.revokeObjectURL(url);reject(new Error('Не удалось прочитать изображение'))};
       img.src=url;
     });
@@ -28,10 +28,11 @@
       overlay.innerHTML='<div class="imageCropSheet"><div class="imageCropHead"><div><span class="ey">ИЗОБРАЖЕНИЕ</span><h2>'+title+'</h2></div><button type="button" class="imageCropClose" aria-label="Закрыть">×</button></div><div class="imageCropStage'+(circle?' is-circle':'')+'"><img alt=""></div><p class="imageCropHint">Перетащите изображение, чтобы выбрать кадр</p><div class="imageCropZoom"><button type="button" data-crop-minus aria-label="Уменьшить">−</button><input type="range" min="1" max="3" step="0.01" value="1" aria-label="Масштаб"><button type="button" data-crop-plus aria-label="Увеличить">＋</button></div><div class="imageCropActions"><button type="button" class="imageCropCancel">Отмена</button><button type="button" class="imageCropApply">Готово</button></div></div>';
       document.body.appendChild(overlay);
       var stage=overlay.querySelector('.imageCropStage'),pic=stage.querySelector('img'),range=overlay.querySelector('input[type="range"]');
-      pic.src=img.src;
+      pic.src=img._cropObjectUrl;
       stage.style.aspectRatio=String(aspect);
       var zoom=1,offsetX=0,offsetY=0,baseScale=1,drag=false,lastX=0,lastY=0,finished=false;
 
+      function cleanup(){if(img._cropObjectUrl){URL.revokeObjectURL(img._cropObjectUrl);img._cropObjectUrl=''}}
       function metrics(){
         var w=stage.clientWidth,h=stage.clientHeight;
         baseScale=Math.max(w/img.naturalWidth,h/img.naturalHeight);
@@ -41,13 +42,14 @@
         return{w:w,h:h,scale:scale,dw:dw,dh:dh,maxX:maxX,maxY:maxY};
       }
       function paint(){
+        if(!stage.isConnected)return;
         var m=metrics();
         pic.style.width=m.dw+'px';pic.style.height=m.dh+'px';
         pic.style.transform='translate(calc(-50% + '+offsetX+'px), calc(-50% + '+offsetY+'px))';
       }
       function setZoom(v){zoom=clamp(Number(v)||1,1,3);range.value=String(zoom);paint()}
-      function close(cancelled){
-        if(finished)return;finished=true;overlay.remove();if(cancelled)reject(new Error('IMAGE_CROP_CANCELLED'));
+      function close(){
+        if(finished)return;finished=true;cleanup();overlay.remove();resolve(null);
       }
 
       pic.addEventListener('load',paint,{once:true});
@@ -62,9 +64,9 @@
       stage.addEventListener('pointerup',endDrag);stage.addEventListener('pointercancel',endDrag);
       stage.addEventListener('wheel',function(e){e.preventDefault();setZoom(zoom+(e.deltaY<0?.08:-.08))},{passive:false});
 
-      overlay.querySelector('.imageCropClose').onclick=function(){close(true)};
-      overlay.querySelector('.imageCropCancel').onclick=function(){close(true)};
-      overlay.onclick=function(e){if(e.target===overlay)close(true)};
+      overlay.querySelector('.imageCropClose').onclick=close;
+      overlay.querySelector('.imageCropCancel').onclick=close;
+      overlay.onclick=function(e){if(e.target===overlay)close()};
       overlay.querySelector('.imageCropApply').onclick=function(){
         try{
           var m=metrics();
@@ -72,9 +74,12 @@
           var sx=clamp(-left/m.scale,0,img.naturalWidth),sy=clamp(-top/m.scale,0,img.naturalHeight);
           var sw=Math.min(m.w/m.scale,img.naturalWidth-sx),sh=Math.min(m.h/m.scale,img.naturalHeight-sy);
           var canvas=document.createElement('canvas');canvas.width=outputWidth;canvas.height=outputHeight;
-          var ctx=canvas.getContext('2d');ctx.imageSmoothingQuality='high';ctx.drawImage(img,sx,sy,sw,sh,0,0,outputWidth,outputHeight);
-          canvas.toBlob(function(blob){if(!blob){return reject(new Error('Не удалось подготовить изображение'))}finished=true;overlay.remove();resolve(blob)},'image/jpeg',options.quality||.88);
-        }catch(err){reject(err)}
+          var ctx=canvas.getContext('2d');ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';ctx.drawImage(img,sx,sy,sw,sh,0,0,outputWidth,outputHeight);
+          canvas.toBlob(function(blob){
+            if(!blob){cleanup();return reject(new Error('Не удалось подготовить изображение'))}
+            finished=true;cleanup();overlay.remove();resolve(blob)
+          },'image/jpeg',options.quality||.88);
+        }catch(err){cleanup();reject(err)}
       };
       window.addEventListener('resize',paint,{once:true});
     });
