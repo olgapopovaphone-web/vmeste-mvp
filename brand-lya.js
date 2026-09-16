@@ -8,10 +8,18 @@
     };return '<svg viewBox="0 0 24 24" aria-hidden="true">'+p[name]+'</svg>';
   }
   function nav(go,label,name){var b=document.querySelector('.nav[data-go="'+go+'"]');if(!b)return;if(go==='create'){b.innerHTML='<span>'+label+'</span>';return}b.innerHTML=icon(name)+'<span>'+label+'</span>'}
+  function mountHeaderLogos(){
+    ['home','calendar','create','communities','chronicle'].forEach(function(view){
+      var header=document.querySelector('[data-view="'+view+'"]>.top');if(!header)return;
+      var logo=header.querySelector(':scope > .lyaHeaderLogo');
+      if(!logo){logo=document.createElement('img');logo.className='lyaHeaderLogo';logo.src='/brand-lya-mark.svg';logo.alt='ЛЯ';header.insertBefore(logo,header.firstChild)}
+    });
+  }
   function apply(){
     document.title='ЛЯ — люди и события';
     var meta=document.querySelector('meta[name="description"]');if(meta)meta.content='ЛЯ — люди и события вокруг тебя';
     nav('home','Вокруг','home');nav('calendar','События','calendar');nav('create','Создать');nav('communities','Люди','people');nav('chronicle','Хроника','chronicle');
+    mountHeaderLogos();
     var loginEy=document.querySelector('[data-view="login"] .ey');if(loginEy)loginEy.textContent='ЛЯ · ЛЮДИ И СОБЫТИЯ';
     var loginTitle=document.querySelector('[data-view="login"] .auth h2');if(loginTitle&&/MVP/i.test(loginTitle.textContent))loginTitle.textContent='Вход';
     var profileBack=document.querySelector('[data-view="profile"] .js-home');if(profileBack)profileBack.textContent='← Вокруг';
@@ -20,4 +28,5 @@
   apply();
   setTimeout(apply,120);
   setTimeout(apply,700);
+  document.addEventListener('click',function(e){if(e.target.closest&&e.target.closest('.nav'))setTimeout(apply,0)},true);
 })();
