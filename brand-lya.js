@@ -19,7 +19,7 @@
   function apply(){
     document.title='ЛЯ — люди и события';
     var meta=document.querySelector('meta[name="description"]');if(meta)meta.content='ЛЯ — люди и события вокруг тебя';
-    nav('home','Вокруг','home');nav('calendar','События','calendar');nav('create','Создать');nav('communities','Люди','people');nav('chronicle','Хроника','chronicle');
+    nav('home','Вокруг','home');nav('calendar','События','calendar');nav('create','Создать');nav('communities','В кругу','people');nav('chronicle','Хроника','chronicle');
     mountHeaderLogos();
     var loginEy=document.querySelector('[data-view="login"] .ey');if(loginEy)loginEy.textContent='ЛЯ · ЛЮДИ И СОБЫТИЯ';
     var loginTitle=document.querySelector('[data-view="login"] .auth h2');if(loginTitle&&/MVP/i.test(loginTitle.textContent))loginTitle.textContent='Вход';
