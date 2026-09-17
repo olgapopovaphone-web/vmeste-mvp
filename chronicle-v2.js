@@ -9,7 +9,7 @@
   var LINKS_KEY='vmeste_event_group_proto_v1';
   var events=[],activeFilter='all',query='',loading=false,loaded=false,wasActive=false;
 
-  function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+  function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]})}
   function read(key,fallback){try{var v=JSON.parse(localStorage.getItem(key)||'');return v||fallback}catch(e){return fallback}}
   function token(){try{var s=JSON.parse(localStorage.getItem('vmeste_session_v1')||'null');return s&&s.access_token||''}catch(e){return''}}
   async function call(action,payload,retry){var t=token();if(!t)throw new Error('LOGIN');var r=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+t},body:JSON.stringify(Object.assign({action:action},payload||{}))});var d={};try{d=await r.json()}catch(e){d={error:'Некорректный ответ сервера'}}if(r.status===401&&retry!==false&&typeof refreshSession==='function'&&await refreshSession())return call(action,payload,false);if(!r.ok)throw new Error(d.error||'Ошибка запроса');return d}
@@ -42,12 +42,14 @@
   }
 
   function card(ev){
-    var g=groupFor(ev),count=Number(ev.participant_count||1),kind=typeOf(ev),meta=[];
+    var g=groupFor(ev),count=Number(ev.participant_count||1),kind=typeOf(ev),meta=[],media=[];
     if(ev.location_name)meta.push('⌖ '+ev.location_name);
     if(count)meta.push(count+' '+memberWord(count));
     if(g)meta.push(g.name);
+    if(Number(ev.photo_count||0))media.push(Number(ev.photo_count)+' фото');
+    if(Number(ev.video_count||0))media.push(Number(ev.video_count)+' видео');
     var bg=ev.cover_url?' style="background-image:url(\''+esc(String(ev.cover_url).replace(/'/g,'%27'))+'\')"':'';
-    return '<article class="chronicleV2Card '+(ev.cover_url?'has-cover':'no-cover')+'" data-chronicle-id="'+esc(ev.id)+'" data-kind="'+kind+'"'+bg+'><div class="chronicleV2Shade"></div><div class="chronicleV2CardBody"><time>'+esc(dateLabel(ev.starts_at))+'</time><h2>'+esc(ev.title||'Событие')+'</h2><p>'+meta.map(esc).join(' · ')+'</p><div class="chronicleV2Actions"><button type="button" class="chronicleV2Repeat" data-chronicle-repeat="'+esc(ev.id)+'">Повторить</button><button type="button" class="chronicleV2More" data-chronicle-menu="'+esc(ev.id)+'" aria-label="Ещё">•••</button></div></div></article>'
+    return '<article class="chronicleV2Card '+(ev.cover_url?'has-cover':'no-cover')+'" data-chronicle-id="'+esc(ev.id)+'" data-kind="'+kind+'"'+bg+'><div class="chronicleV2Shade"></div><div class="chronicleV2CardBody"><time>'+esc(dateLabel(ev.starts_at))+'</time><h2>'+esc(ev.title||'Событие')+'</h2><p>'+meta.map(esc).join(' · ')+'</p>'+(media.length?'<p class="chronicleV2MediaCount">'+media.map(esc).join(' · ')+'</p>':'')+'<div class="chronicleV2Actions"><button type="button" class="chronicleV2Repeat" data-chronicle-repeat="'+esc(ev.id)+'">Повторить</button><button type="button" class="chronicleV2More" data-chronicle-menu="'+esc(ev.id)+'" aria-label="Ещё">•••</button></div></div></article>'
   }
 
   function visibleEvents(){return events.filter(function(ev){if(activeFilter!=='all'&&typeOf(ev)!==activeFilter)return false;if(query&&!searchable(ev).includes(query))return false;return true})}
