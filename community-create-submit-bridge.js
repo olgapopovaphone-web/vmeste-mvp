@@ -17,7 +17,7 @@
         var src=reader.result,img=new Image();
         img.onload=function(){
           try{
-            var w=1200,h=960,canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;
+            var w=1200,h=900,canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;
             canvas.getContext('2d').drawImage(img,0,0,w,h);resolve(canvas.toDataURL('image/jpeg',.82))
           }catch(e){resolve(src)}
         };
