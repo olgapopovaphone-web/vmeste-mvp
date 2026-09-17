@@ -1,5 +1,5 @@
 (function(){
-  ['/home-discovery.css?v=20260915-2','/around-people.css?v=20260916-1','/place-detail.css?v=20260915-2','/my-events.css?v=20260915-2','/calendar-month-only.css?v=20260916-1','/calendar-day-v2.css?v=20260916-1','/social-hub.css?v=20260916-3','/social-circle.css?v=20260916-2','/social-cleanup.css?v=20260916-2','/people-tab-v2.css?v=20260916-1','/people-invite-app.css?v=20260916-1','/communities-tab-v2.css?v=20260916-1','/chronicle-v2.css?v=20260916-1','/event-media.css?v=20260917-2','/navigation-order-v2.css?v=20260916-1','/event-group-prototype.css?v=20260916-1','/event-edit.css?v=20260916-1','/event-circle-invite.css?v=20260916-1','/community-detail.css?v=20260916-1','/brand-lya.css?v=20260916-2','/brand-color-balance.css?v=20260916-2','/brand-vokrug.css?v=20260916-5','/image-cropper.css?v=20260916-2','/header-kit-v1.css?v=20260917-1'].forEach(function(href){var l=document.createElement('link');l.rel='stylesheet';l.href=href;document.head.appendChild(l)});
+  ['/home-discovery.css?v=20260915-2','/around-people.css?v=20260916-1','/place-detail.css?v=20260915-2','/my-events.css?v=20260915-2','/calendar-month-only.css?v=20260916-1','/calendar-day-v2.css?v=20260916-1','/social-hub.css?v=20260916-3','/social-circle.css?v=20260916-2','/social-cleanup.css?v=20260916-2','/people-tab-v2.css?v=20260916-1','/people-invite-app.css?v=20260916-1','/communities-tab-v2.css?v=20260916-1','/chronicle-v2.css?v=20260916-1','/event-media.css?v=20260917-2','/navigation-order-v2.css?v=20260916-1','/event-group-prototype.css?v=20260916-1','/event-edit.css?v=20260916-1','/event-circle-invite.css?v=20260916-1','/community-detail.css?v=20260916-1','/brand-lya.css?v=20260916-2','/brand-color-balance.css?v=20260916-2','/brand-vokrug.css?v=20260916-5','/image-cropper.css?v=20260916-2','/header-kit-v1.css?v=20260917-1','/create-landing-v2.css?v=20260917-1'].forEach(function(href){var l=document.createElement('link');l.rel='stylesheet';l.href=href;document.head.appendChild(l)});
 
   function simplifyTabHeaders(){
     var createTop=document.querySelector('[data-view="create"] .top');
@@ -35,5 +35,5 @@
   import('/place-detail.js?v=20260915-2').then(function(){return import('/home-discovery.js?v=20260916-3')}).then(function(){return import('/around-people.js?v=20260916-1')});
   import('/chronicle-v2.js?v=20260916-1');
   import('/event-media.js?v=20260917-2').then(function(){return import('/event-media-upload-fix.js?v=20260917-1')});
-  import('/brand-lya.js?v=20260917-1').then(function(){return import('/header-kit-v1.js?v=20260917-1')});
+  import('/brand-lya.js?v=20260917-1').then(function(){return import('/header-kit-v1.js?v=20260917-1')}).then(function(){return import('/create-landing-v2.js?v=20260917-1')});
 })();
