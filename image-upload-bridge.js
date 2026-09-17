@@ -4,7 +4,7 @@
   function config(input){
     if(input.matches('#profile-avatar-input')||input.dataset.imageRole==='avatar')return{aspect:1,outputWidth:960,outputHeight:960,circle:true,title:'Фото профиля',quality:.9,maxZoom:5};
     if(input.matches('#event-cover-input,#event-edit-cover-input,#event-create-cover-input')||input.dataset.imageRole==='event-cover')return{aspect:4/3,outputWidth:1600,outputHeight:1200,title:'Обложка события',quality:.9,maxZoom:5};
-    if(input.matches('#community-cover,.communityCreateCoverInput,[data-community-cover-input]')||input.dataset.imageRole==='community-cover')return{aspect:5/4,outputWidth:1500,outputHeight:1200,title:'Обложка сообщества',quality:.9,maxZoom:5};
+    if(input.matches('#community-cover,.communityCreateCoverInput,[data-community-cover-input]')||input.dataset.imageRole==='community-cover')return{aspect:4/3,outputWidth:1600,outputHeight:1200,title:'Обложка сообщества',quality:.9,maxZoom:5};
     if(input.dataset.imageRole==='cover'){
       var aspect=Number(input.dataset.imageAspect)||4/3;
       var outW=Number(input.dataset.imageWidth)||1600,outH=Number(input.dataset.imageHeight)||Math.round(outW/aspect);
