@@ -9,7 +9,7 @@
   var LINKS_KEY='vmeste_event_group_proto_v1';
   var events=[],activeFilter='all',query='',loading=false,loaded=false,wasActive=false;
 
-  function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]})}
+  function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
   function read(key,fallback){try{var v=JSON.parse(localStorage.getItem(key)||'');return v||fallback}catch(e){return fallback}}
   function token(){try{var s=JSON.parse(localStorage.getItem('vmeste_session_v1')||'null');return s&&s.access_token||''}catch(e){return''}}
   async function call(action,payload,retry){var t=token();if(!t)throw new Error('LOGIN');var r=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+t},body:JSON.stringify(Object.assign({action:action},payload||{}))});var d={};try{d=await r.json()}catch(e){d={error:'Некорректный ответ сервера'}}if(r.status===401&&retry!==false&&typeof refreshSession==='function'&&await refreshSession())return call(action,payload,false);if(!r.ok)throw new Error(d.error||'Ошибка запроса');return d}
