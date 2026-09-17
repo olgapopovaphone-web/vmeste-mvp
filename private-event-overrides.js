@@ -29,7 +29,7 @@ if(privateEventForm){
     e.preventDefault();
     if(!account){openView('login');return}
     const status=document.querySelector('#event-status');
-    status.hidden=false;status.className='status';status.textContent='Сохраняю в базе…';
+    status.hidden=false;status.className='status';status.textContent='Создаю событие…';
     const date=document.querySelector('#event-date').value;
     const time=document.querySelector('#event-time').value;
     const starts=new Date(`${date}T${time}:00+03:00`);
@@ -47,7 +47,7 @@ if(privateEventForm){
       if(locationUrl)await eventRaw('set_location_url',{event_id:data.event.id,location_url:locationUrl});
       let inviteNote='';
       if(inviteIds.length&&typeof window.inviteCircleToEvent==='function'){
-        status.textContent='Событие сохранено. Отправляю приглашения…';
+        status.textContent='Событие создано. Отправляю приглашения…';
         try{
           const result=await window.inviteCircleToEvent(data.event.id,inviteIds);
           const sent=(result.invited_ids||[]).length;
@@ -59,13 +59,14 @@ if(privateEventForm){
           inviteNote=' · приглашения не отправлены: '+invErr.message;
         }
       }
-      status.textContent='Событие сохранено'+inviteNote;
+      status.textContent='Событие создано'+inviteNote;
       if(typeof window.clearPendingEventCircleInviteIds==='function')window.clearPendingEventCircleInviteIds();
       e.target.reset();
       selectedDateKey=dateKey(data.event.starts_at);
       calendarYear=Number(selectedDateKey.slice(0,4));
       calendarMonth=Number(selectedDateKey.slice(5,7))-1;
       await loadEvents();
+      window.dispatchEvent(new CustomEvent('lya:event-created',{detail:{event:data.event}}));
     }catch(err){status.className='status error';status.textContent=err.message}
   };
 }
