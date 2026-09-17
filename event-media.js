@@ -54,11 +54,24 @@
   function cleanupRows(rows){rows.forEach(function(r){if(r._previewUrl){URL.revokeObjectURL(r._previewUrl);r._previewUrl=''}})}
   function rowStatus(row,text,pct,state){var small=row.querySelector('small'),bar=row.querySelector('i');if(small)small.textContent=text;if(bar&&pct!=null)bar.style.width=Math.max(0,Math.min(100,pct))+'%';row.classList.toggle('error',state==='error');row.classList.toggle('done',state==='done')}
 
-  async function uploadTus(file,spec,row){
-    var lib=await tus();
-    return new Promise(async function(resolve,reject){
-      var upload=new lib.Upload(file,{endpoint:'https://'+PROJECT+'.storage.supabase.co/storage/v1/upload/resumable',retryDelays:[0,3000,5000,10000,20000],headers:{'x-signature':spec.token},uploadDataDuringCreation:true,removeFingerprintOnSuccess:true,chunkSize:6*1024*1024,metadata:{bucketName:BUCKET,objectName:spec.path,contentType:file.type,cacheControl:'3600'},onError:function(err){reject(new Error(err&&err.message?'Не удалось загрузить файл: '+err.message:'Не удалось загрузить файл'))},onProgress:function(done,total){var p=total?done/total*100:0;rowStatus(row,'Загрузка · '+Math.round(p)+'%',p)},onSuccess:function(){rowStatus(row,'Сохраняю…',100);resolve()}});
-      try{var prev=await upload.findPreviousUploads();if(prev&&prev.length)upload.resumeFromPreviousUpload(prev[0]);upload.start()}catch(e){reject(e)}
+  function uploadSigned(file,spec,row){
+    return new Promise(function(resolve,reject){
+      if(!spec||!spec.signed_url){reject(new Error('Не удалось подготовить загрузку'));return}
+      var xhr=new XMLHttpRequest(),form=new FormData();
+      form.append('cacheControl','3600');
+      form.append('',file,file.name||'file');
+      xhr.open('PUT',spec.signed_url,true);
+      xhr.setRequestHeader('x-upsert','false');
+      xhr.upload.onprogress=function(e){if(e.lengthComputable){var p=e.total?e.loaded/e.total*100:0;rowStatus(row,'Загрузка · '+Math.round(p)+'%',p)}};
+      xhr.onerror=function(){reject(new Error('Не удалось загрузить файл. Проверьте соединение.'))};
+      xhr.onabort=function(){reject(new Error('Загрузка отменена'))};
+      xhr.onload=function(){
+        if(xhr.status>=200&&xhr.status<300){rowStatus(row,'Сохраняю…',100);resolve();return}
+        var msg='Ошибка загрузки';
+        try{var d=JSON.parse(xhr.responseText||'{}');msg=d.message||d.error||msg}catch(e){if(xhr.responseText)msg=xhr.responseText.slice(0,180)}
+        reject(new Error(msg))
+      };
+      xhr.send(form)
     })
   }
 
@@ -70,7 +83,7 @@
     var queue=section.querySelector('.eventMediaUploadQueue');queue.hidden=false;queue.innerHTML='';var rows=files.map(function(file,i){return queueRow(queue,i,file)}),prepared;
     try{prepared=await call('prepare_upload',{event_id:eventId,files:files.map(function(f){return{name:f.name,type:f.type,size:f.size}})})}catch(e){cleanupRows(rows);queue.innerHTML='<div class="eventMediaUploadError">'+esc(e.message)+'</div>';return}
     var next=0,failed=0;
-    async function worker(){while(next<files.length){var i=next++,file=files[i],spec=prepared.uploads[i],row=rows[i];try{var m=await meta(file);await uploadTus(file,spec,row);await call('complete_upload',{event_id:eventId,storage_path:spec.path,mime_type:file.type,file_size:file.size,width:m.width,height:m.height,duration_seconds:m.duration_seconds,captured_at:m.captured_at});rowStatus(row,'Готово',100,'done')}catch(e){failed++;rowStatus(row,e&&e.message?e.message:'Не удалось загрузить файл. Проверьте соединение.',null,'error')}}}
+    async function worker(){while(next<files.length){var i=next++,file=files[i],spec=prepared.uploads[i],row=rows[i];try{var m=await meta(file);await uploadSigned(file,spec,row);await call('complete_upload',{event_id:eventId,storage_path:spec.path,mime_type:file.type,file_size:file.size,width:m.width,height:m.height,duration_seconds:m.duration_seconds,captured_at:m.captured_at});rowStatus(row,'Готово',100,'done')}catch(e){failed++;rowStatus(row,e&&e.message?e.message:'Не удалось загрузить файл. Проверьте соединение.',null,'error')}}}
     await Promise.all([worker(),worker()]);await load(eventId,section);
     if(!hadRealCover&&!current.items.some(function(x){return x.is_cover})){var first=current.items.find(function(x){return x.media_type==='image'&&x.can_cover});if(first){try{await call('set_cover',{media_id:first.id});await load(eventId,section);if(typeof window.loadEventDetail==='function')setTimeout(function(){window.loadEventDetail(eventId)},0)}catch(e){}}}
     if(typeof window.loadChronicleV2==='function')window.loadChronicleV2();if(!failed)setTimeout(function(){cleanupRows(rows);if(queue)queue.hidden=true},1000)
