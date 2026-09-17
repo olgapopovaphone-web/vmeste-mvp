@@ -9,7 +9,7 @@
     var g=groupFromCard(card);if(!g)return;
     if(e){e.preventDefault();e.stopPropagation()}
     try{
-      if(typeof window.openCommunityDetail!=='function')await import('/community-detail.js?v=20260916-2');
+      if(typeof window.openCommunityDetail!=='function')await import('/community-media-bridge.js?v=20260917-1').then(function(){return import('/community-detail-v3.js?v=20260917-3')});
       if(typeof window.openCommunityDetail==='function')window.openCommunityDetail(g.id);
     }catch(err){console.error('Community detail load failed',err)}
   }
