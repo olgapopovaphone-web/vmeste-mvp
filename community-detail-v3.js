@@ -131,7 +131,7 @@
   }
 
   function saveMemberGroup(g,extra){var mine=groups(),i=mine.findIndex(function(x){return x.id===g.id}),copy=Object.assign({},g,extra||{});if(i>=0)mine[i]=Object.assign({},mine[i],copy);else mine.unshift(copy);write(GROUPS_KEY,mine);activeSnapshot=Object.assign({},copy)}
-  function joinGroup(g){var base=Object.assign({},g,{member_count:Number(g.member_count||0)+1,role:'member',joined_via_invite:true});saveMemberGroup(base);if(isInvited())write(INVITES_KEY,invites().filter(function(x){return x.id!==g.id}));activeSnapshot=base;render();loadEvents()}
+  function joinGroup(g){var invitedBefore=isInvited(),base=Object.assign({},g,{member_count:Number(g.member_count||0)+1,role:'member',joined_via_invite:true});saveMemberGroup(base);if(invitedBefore)write(INVITES_KEY,invites().filter(function(x){return x.id!==g.id}));activeSnapshot=base;render();loadEvents()}
   function declineInvite(g){write(INVITES_KEY,invites().filter(function(x){return x.id!==g.id}));close()}
   function leaveGroup(g){if(!confirm('Покинуть сообщество «'+g.name+'»?'))return;write(GROUPS_KEY,groups().filter(function(x){return x.id!==g.id}));activeSnapshot=Object.assign({},g,{member_count:Math.max(0,Number(g.member_count||1)-1),role:null,joined_via_invite:false});render()}
 
