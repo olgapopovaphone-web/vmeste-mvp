@@ -1,18 +1,22 @@
 (function(){
-  if(window.__vmesteImageUploadBridge)return;window.__vmesteImageUploadBridge=true;
+  if(window.__vmesteImageUploadBridgeV2)return;window.__vmesteImageUploadBridgeV2=true;
 
   function config(input){
-    if(input.matches('#profile-avatar-input'))return{aspect:1,outputWidth:960,outputHeight:960,circle:true,title:'Фото профиля',quality:.9};
-    if(input.matches('#event-cover-input,#event-edit-cover-input'))return{aspect:16/9,outputWidth:1600,outputHeight:900,title:'Обложка события',quality:.88};
-    if(input.dataset.imageRole==='avatar')return{aspect:1,outputWidth:960,outputHeight:960,circle:true,title:'Фото профиля',quality:.9};
-    if(input.dataset.imageRole==='cover')return{aspect:Number(input.dataset.imageAspect)||16/9,outputWidth:1600,outputHeight:900,title:'Настроить обложку',quality:.88};
-    return null;
+    if(input.matches('#profile-avatar-input')||input.dataset.imageRole==='avatar')return{aspect:1,outputWidth:960,outputHeight:960,circle:true,title:'Фото профиля',quality:.9,maxZoom:5};
+    if(input.matches('#event-cover-input,#event-edit-cover-input,#event-create-cover-input')||input.dataset.imageRole==='event-cover')return{aspect:4/3,outputWidth:1600,outputHeight:1200,title:'Обложка события',quality:.9,maxZoom:5};
+    if(input.matches('#community-cover,.communityCreateCoverInput,[data-community-cover-input]')||input.dataset.imageRole==='community-cover')return{aspect:5/4,outputWidth:1500,outputHeight:1200,title:'Обложка сообщества',quality:.9,maxZoom:5};
+    if(input.dataset.imageRole==='cover'){
+      var aspect=Number(input.dataset.imageAspect)||4/3;
+      var outW=Number(input.dataset.imageWidth)||1600,outH=Number(input.dataset.imageHeight)||Math.round(outW/aspect);
+      return{aspect:aspect,outputWidth:outW,outputHeight:outH,title:input.dataset.imageTitle||'Настроить обложку',quality:.9,maxZoom:5}
+    }
+    return null
   }
 
   async function ensureCropper(){
     if(window.openImageCropper)return true;
-    try{await import('/image-cropper.js?v=20260916-2')}catch(e){}
-    return !!window.openImageCropper;
+    try{await import('/image-cropper.js?v=20260918-2')}catch(e){}
+    return !!window.openImageCropper
   }
 
   document.addEventListener('change',async function(e){
@@ -26,9 +30,7 @@
       if(!blob){input.value='';return}
       var cropped=new File([blob],file.name.replace(/\.[^.]+$/, '')+'-crop.jpg',{type:'image/jpeg',lastModified:Date.now()});
       var dt=new DataTransfer();dt.items.add(cropped);input.files=dt.files;
-      input.dataset.imageCropReady='1';input.dispatchEvent(new Event('change',{bubbles:true}));setTimeout(function(){delete input.dataset.imageCropReady},0);
-    }catch(err){
-      console.error('Image crop failed',err);input.value='';
-    }
+      input.dataset.imageCropReady='1';input.dispatchEvent(new Event('change',{bubbles:true}));setTimeout(function(){delete input.dataset.imageCropReady},0)
+    }catch(err){console.error('Image crop failed',err);input.value=''}
   },true);
 })();
