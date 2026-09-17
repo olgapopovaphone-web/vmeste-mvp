@@ -4,19 +4,33 @@
   section.dataset.createLandingV2='1';
   section.classList.add('createLandingV2');
 
+  var API='https://nmeoakrpafxhpdrplsuo.supabase.co/functions/v1/vmeste-api';
+  var SESSION_KEY='vmeste_session_v1';
   var oldChoice=section.querySelector('#private-choice');
   var eventForm=section.querySelector('#event-form');
   if(!oldChoice||!eventForm)return;
 
   function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
-  function hasSession(){try{return !!(JSON.parse(localStorage.getItem('vmeste_session_v1')||'null')||{}).access_token}catch(e){return false}}
+  function getSession(){try{return JSON.parse(localStorage.getItem(SESSION_KEY)||'null')}catch(e){return null}}
+  function hasSession(){var s=getSession();return !!(s&&s.access_token)}
+  async function api(action,payload,retry){
+    var s=getSession();
+    if(!s||!s.access_token)throw new Error('Требуется вход в аккаунт');
+    var r=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+s.access_token},body:JSON.stringify(Object.assign({action:action},payload||{}))});
+    var d={};try{d=await r.json()}catch(e){d={error:'Некорректный ответ сервера'}}
+    if(r.status===401&&retry!==false&&s.refresh_token){
+      var rr=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'refresh',refresh_token:s.refresh_token})});
+      var rd={};try{rd=await rr.json()}catch(e){}
+      if(rr.ok&&rd.session){localStorage.setItem(SESSION_KEY,JSON.stringify(rd.session));return api(action,payload,false)}
+    }
+    if(!r.ok)throw new Error(d.error||'Ошибка запроса');
+    return d
+  }
 
   var shell=document.createElement('div');
   shell.className='createLandingShell';
   shell.innerHTML='\
-    <div class="createBannerSlot" data-create-banner-slot aria-label="Место для эмоционального баннера">\
-      <span class="createBannerSlotLabel">место под эмоциональный баннер</span>\
-    </div>\
+    <div class="createBannerSlot" data-create-banner-slot aria-label="Место для эмоционального баннера"></div>\
     <div class="createActionGrid">\
       <button type="button" class="createActionCard" data-create-action="event">\
         <span class="createActionIcon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5.5" width="17" height="15" rx="3"></rect><path d="M7.5 3.5v4M16.5 3.5v4M3.5 10h17"></path></svg></span>\
@@ -46,7 +60,6 @@
   var communityForm=document.createElement('form');
   communityForm.className='createFormCard createCommunityForm';
   communityForm.hidden=true;
-  communityForm.noValidate=false;
   communityForm.innerHTML='\
     <div class="createFormHead">\
       <div><span class="createFormEy">НОВОЕ СООБЩЕСТВО</span><h2>Создать сообщество</h2></div>\
@@ -96,16 +109,16 @@
     eventForm.hidden=true;communityForm.hidden=true;shell.hidden=false;
     window.scrollTo(0,0);return true
   }
+  function requireLogin(){if(typeof window.openView==='function')window.openView('login');else document.querySelector('[data-view="login"]')?.classList.add('active')}
   function showEvent(){
-    oldChoice.click();
-    if(eventForm.hidden)return;
+    if(!hasSession()){requireLogin();return}
     currentFlow='event';shell.hidden=true;communityForm.hidden=true;eventForm.hidden=false;
     section.classList.add('createFlowEvent');section.classList.remove('createFlowCommunity');
     eventForm.dataset.createDirty='';
     setTimeout(function(){eventForm.scrollIntoView({behavior:'smooth',block:'start'})},20)
   }
   function showCommunity(){
-    if(!hasSession()){if(typeof openView==='function')openView('login');return}
+    if(!hasSession()){requireLogin();return}
     currentFlow='community';shell.hidden=true;eventForm.hidden=true;communityForm.hidden=false;
     section.classList.add('createFlowCommunity');section.classList.remove('createFlowEvent');
     communityForm.dataset.createDirty='';
@@ -124,12 +137,43 @@
     p.classList.add('hasPhoto');p.style.backgroundImage='url("'+coverUrl.replace(/"/g,'%22')+'")';p.innerHTML='<span class="createCoverChange">Изменить обложку</span>'
   };
 
+  eventForm.onsubmit=async function(e){
+    e.preventDefault();
+    if(!hasSession()){requireLogin();return}
+    if(!eventForm.reportValidity())return;
+    var status=eventForm.querySelector('#event-status');
+    var submit=eventForm.querySelector('button.primary');
+    var date=(eventForm.querySelector('#event-date')||{}).value||'';
+    var time=(eventForm.querySelector('#event-time')||{}).value||'';
+    var title=((eventForm.querySelector('#event-title')||{}).value||'').trim();
+    var place=((eventForm.querySelector('#event-place')||{}).value||'').trim();
+    var priceInput=eventForm.querySelector('#event-price');
+    var price=priceInput?Number(priceInput.value||0):0;
+    if(!date||!time||!title)return;
+    if(status){status.hidden=false;status.className='status';status.textContent='Создаю событие…'}
+    if(submit)submit.disabled=true;
+    try{
+      var starts=new Date(date+'T'+time+':00+03:00');
+      var ends=new Date(starts.getTime()+2*60*60*1000);
+      var d=await api('create_event',{title:title,starts_at:starts.toISOString(),ends_at:ends.toISOString(),location_name:place||null,price_minor:Math.round((Number.isFinite(price)?price:0)*100)});
+      var ev=d&&d.event;
+      eventForm.dataset.createDirty='';
+      if(status)status.textContent='Событие создано';
+      currentFlow=null;section.classList.remove('createFlowEvent');eventForm.hidden=true;shell.hidden=false;
+      if(typeof window.loadEvents==='function'){try{await window.loadEvents()}catch(ignore){}}
+      if(ev&&ev.id&&typeof window.openEventView==='function')window.openEventView(ev.id,'create');
+      else if(typeof window.openView==='function')window.openView('calendar');
+      resetEvent();
+    }catch(err){if(status){status.hidden=false;status.className='status error';status.textContent=err&&err.message?err.message:'Не удалось создать событие'}}
+    finally{if(submit)submit.disabled=false}
+  };
+
   communityForm.onsubmit=function(e){
     e.preventDefault();
     if(!communityForm.reportValidity())return;
     var status=communityForm.querySelector('.createCommunityStatus');
     status.hidden=false;status.className='status createCommunityStatus';
-    status.textContent='Форма готова. Сохранение подключим вместе с backend сообществ.';
+    status.textContent='Форма готова. Реальное создание подключим вместе с backend сообществ.';
     section.dispatchEvent(new CustomEvent('lya:create-community-submit',{bubbles:true,detail:{
       name:(communityForm.querySelector('#community-name').value||'').trim(),
       description:(communityForm.querySelector('#community-description').value||'').trim(),
@@ -138,12 +182,6 @@
       cover_file:coverInput&&coverInput.files?coverInput.files[0]||null:null
     }}))
   };
-
-  window.addEventListener('lya:event-created',function(e){
-    var event=e.detail&&e.detail.event;if(!event||!event.id)return;
-    eventForm.dataset.createDirty='';currentFlow=null;section.classList.remove('createFlowEvent');shell.hidden=false;eventForm.hidden=true;
-    if(typeof openEventView==='function')openEventView(event.id,'create')
-  });
 
   document.querySelector('.nav[data-go="create"]')?.addEventListener('click',function(){setTimeout(function(){showLanding(true)},0)},true);
   showLanding(true);
