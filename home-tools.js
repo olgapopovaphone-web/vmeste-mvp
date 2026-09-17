@@ -35,5 +35,5 @@
   import('/place-detail.js?v=20260915-2').then(function(){return import('/home-discovery.js?v=20260916-3')}).then(function(){return import('/around-people.js?v=20260916-1')});
   import('/chronicle-v2.js?v=20260916-1');
   import('/event-media.js?v=20260918-2');
-  import('/brand-lya.js?v=20260917-1').then(function(){return import('/header-kit-v1.js?v=20260918-1')}).then(function(){return import('/create-landing-v2.js?v=20260917-3')}).then(function(){return import('/community-create-submit-bridge.js?v=20260918-2')}).then(function(){return import('/community-create-link-bridge.js?v=20260917-1')}).then(function(){return import('/image-system-v2.js?v=20260918-2')});
+  import('/brand-lya.js?v=20260917-1').then(function(){return import('/header-kit-v1.js?v=20260918-1')}).then(function(){return import('/create-landing-v2.js?v=20260917-3')}).then(function(){return import('/community-create-submit-bridge.js?v=20260918-2')}).then(function(){return import('/community-create-link-bridge.js?v=20260917-1')}).then(function(){return import('/image-system-v2.js?v=20260918-2')}).then(function(){return import('/image-system-reset-fix.js?v=20260918-1')});
 })();
