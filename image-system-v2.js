@@ -1,18 +1,28 @@
 (function(){
   if(window.__lyaImageSystemV2)return;window.__lyaImageSystemV2=true;
   var GROUPS_KEY='vmeste_groups_proto_v1';
+  var EVENT_COVER_API='https://nmeoakrpafxhpdrplsuo.supabase.co/functions/v1/vmeste-event-cover-api';
   var pendingEventCover=null,pendingEventPreview='',activeCommunityId=null,openEventPatched=false,openCommunityPatched=false;
 
   function readGroups(){try{var a=JSON.parse(localStorage.getItem(GROUPS_KEY)||'[]');return Array.isArray(a)?a:[]}catch(e){return[]}}
   function writeGroups(a){try{localStorage.setItem(GROUPS_KEY,JSON.stringify(a));return true}catch(e){alert('Не удалось сохранить изображение. Попробуйте выбрать другое фото.');return false}}
+  function session(){try{return JSON.parse(localStorage.getItem('vmeste_session_v1')||'null')}catch(e){return null}}
   function activeGroup(){var a=readGroups();if(activeCommunityId){var g=a.find(function(x){return String(x.id)===String(activeCommunityId)});if(g)return g}var title=document.querySelector('[data-view="community-detail"].active .communityDetailHeroCopy h1');if(title){var name=title.textContent.trim();return a.find(function(x){return String(x.name||'').trim()===name})||null}return null}
   function patchGroup(id,patch){var a=readGroups(),g=a.find(function(x){return String(x.id)===String(id)});if(!g)return null;Object.assign(g,patch);if(!writeGroups(a))return null;document.dispatchEvent(new CustomEvent('vmeste-community-changed',{detail:{community:g}}));return g}
   function cleanObjectUrl(){if(pendingEventPreview){URL.revokeObjectURL(pendingEventPreview);pendingEventPreview=''}}
   function styleDefault(el,kind,key,text){if(!el||!window.LyaDefaultCovers||!window.LyaDefaultCovers.ready())return false;var s=kind==='community'?window.LyaDefaultCovers.community(key,text):window.LyaDefaultCovers.event(key,text);return window.LyaDefaultCovers.apply(el,s)}
 
+  async function removeEventCover(eventId,retry){
+    var s=session();if(!s||!s.access_token)throw new Error('Требуется вход в аккаунт');
+    var r=await fetch(EVENT_COVER_API,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+s.access_token},body:JSON.stringify({action:'remove_cover',event_id:eventId})});
+    var d={};try{d=await r.json()}catch(e){d={error:'Некорректный ответ сервера'}}
+    if(r.status===401&&retry!==false&&typeof window.refreshSession==='function'&&await window.refreshSession())return removeEventCover(eventId,false);
+    if(!r.ok)throw new Error(d.error||'Не удалось удалить обложку');return d
+  }
+
   function decorateDefaults(root){
     root=root||document;
-    root.querySelectorAll('.eventHeroPlaceholder:not([data-default-cover])').forEach(function(el){var hero=el.closest('.eventHero'),title=hero&&hero.querySelector('.eventHeroCopy h1');if(styleDefault(el,'event',title&&title.textContent,title&&title.textContent)){el.dataset.defaultCover='1';el.textContent=''}});
+    root.querySelectorAll('.eventHeroPlaceholder:not([data-default-cover])').forEach(function(el){var hero=el.closest('.eventHero'),title=hero&&hero.querySelector('.eventHeroCopy h1');if(styleDefault(el,'event',window.__lyaActiveEventId||title&&title.textContent,title&&title.textContent)){el.dataset.defaultCover='1';el.textContent=''}});
     root.querySelectorAll('.communityDetailHero:not(.has-cover):not([data-default-cover])').forEach(function(el){var title=el.querySelector('.communityDetailHeroCopy h1');if(styleDefault(el,'community',activeCommunityId||title&&title.textContent,title&&title.textContent)){el.dataset.defaultCover='1';el.classList.add('has-default-cover')}});
     root.querySelectorAll('.socialCommunityCard').forEach(function(card){var mark=card.querySelector('.socialCommunityMark:not(.socialCommunityPhoto):not([data-default-cover])'),title=card.querySelector('h3');if(mark&&styleDefault(mark,'community',title&&title.textContent,title&&title.textContent)){mark.dataset.defaultCover='1';mark.textContent='';mark.classList.add('socialCommunityPhoto','default-cover')}});
     root.querySelectorAll('.chronicleV2Card.no-cover:not([data-default-cover])').forEach(function(card){var title=card.querySelector('h2');if(styleDefault(card,'event',card.dataset.chronicleId||title&&title.textContent,title&&title.textContent)){card.dataset.defaultCover='1';card.classList.remove('no-cover');card.classList.add('has-default-cover')}})
@@ -43,11 +53,11 @@
 
   function patchOpenEvent(){
     if(openEventPatched||typeof window.openEventView!=='function')return;
-    var base=window.openEventView;window.openEventView=function(id,source){var f=source==='create'?pendingEventCover:null;if(f){pendingEventCover=null;cleanObjectUrl()}var r=base.apply(this,arguments);if(f)setTimeout(function(){uploadCreatedEventCover(id,f)},120);return r};openEventPatched=true
+    var base=window.openEventView;window.openEventView=function(id,source){window.__lyaActiveEventId=id;var f=source==='create'?pendingEventCover:null;if(f){pendingEventCover=null;cleanObjectUrl()}var r=base.apply(this,arguments);if(f)setTimeout(function(){uploadCreatedEventCover(id,f)},120);return r};openEventPatched=true
   }
   function patchOpenCommunity(){
     if(openCommunityPatched||typeof window.openCommunityDetail!=='function')return;
-    var base=window.openCommunityDetail;window.openCommunityDetail=function(id){activeCommunityId=id;var r=base.apply(this,arguments);setTimeout(function(){decorateDefaults(document);enhanceCommunityManagement()},0);return r};openCommunityPatched=true
+    var base=window.openCommunityDetail;window.openCommunityDetail=function(id){activeCommunityId=id;window.__lyaActiveCommunityId=id;var r=base.apply(this,arguments);setTimeout(function(){decorateDefaults(document);enhanceCommunityManagement()},0);return r};openCommunityPatched=true
   }
 
   function routeLegacyCommunityCreate(e){
@@ -77,7 +87,7 @@
       if(sheet.dataset.imageManage==='1')return;sheet.dataset.imageManage='1';var cover=sheet.querySelector('.eventEditCover'),form=sheet.querySelector('.eventEditForm');if(!cover||!form)return;
       var heroHasImage=!!document.querySelector('[data-view="event"].active .eventHero>img');if(!heroHasImage)return;
       var btn=document.createElement('button');btn.type='button';btn.className='eventEditRemoveCover';btn.textContent='Удалить обложку';cover.insertAdjacentElement('afterend',btn);
-      btn.onclick=async function(){if(!confirm('Удалить обложку события?'))return;var id=window.activeEventId||(typeof activeEventId!=='undefined'?activeEventId:null),raw=window.eventRaw||(typeof eventRaw==='function'?eventRaw:null);if(!id||!raw)return;btn.disabled=true;try{await raw('remove_cover',{event_id:id});sheet.closest('.eventEditOverlay')?.remove();var reload=window.loadEventDetail||(typeof loadEventDetail==='function'?loadEventDetail:null);if(reload)await reload(id)}catch(err){alert(err.message||'Не удалось удалить обложку');btn.disabled=false}}
+      btn.onclick=async function(){if(!confirm('Удалить обложку события?'))return;var id=window.__lyaActiveEventId;if(!id)return;btn.disabled=true;try{await removeEventCover(id,true);sheet.closest('.eventEditOverlay')?.remove();var reload=window.loadEventDetail||(typeof loadEventDetail==='function'?loadEventDetail:null);if(reload)await reload(id)}catch(err){alert(err.message||'Не удалось удалить обложку');btn.disabled=false}}
     })
   }
 
