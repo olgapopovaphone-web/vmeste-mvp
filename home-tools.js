@@ -34,6 +34,6 @@
   import('/event-group-prototype.js?v=20260916-1').then(function(){return import('/event-edit.js?v=20260916-1')}).then(function(){return import('/event-circle-invite.js?v=20260916-2')});
   import('/place-detail.js?v=20260915-2').then(function(){return import('/home-discovery.js?v=20260916-3')}).then(function(){return import('/around-people.js?v=20260916-1')});
   import('/chronicle-v2.js?v=20260916-1');
-  import('/event-media.js?v=20260917-2');
+  import('/event-media.js?v=20260917-2').then(function(){return import('/event-media-upload-fix.js?v=20260917-1')});
   import('/brand-lya.js?v=20260917-1').then(function(){return import('/header-kit-v1.js?v=20260917-1')});
 })();
