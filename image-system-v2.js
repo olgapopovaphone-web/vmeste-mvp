@@ -68,7 +68,7 @@
   }
 
   function imageToCommunityData(file){
-    return new Promise(function(resolve,reject){var url=URL.createObjectURL(file),img=new Image();img.onload=function(){try{var c=document.createElement('canvas');c.width=1200;c.height=960;c.getContext('2d').drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(url);resolve(c.toDataURL('image/jpeg',.82))}catch(e){URL.revokeObjectURL(url);reject(e)}};img.onerror=function(){URL.revokeObjectURL(url);reject(new Error('Не удалось прочитать изображение'))};img.src=url})
+    return new Promise(function(resolve,reject){var url=URL.createObjectURL(file),img=new Image();img.onload=function(){try{var c=document.createElement('canvas');c.width=1200;c.height=900;c.getContext('2d').drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(url);resolve(c.toDataURL('image/jpeg',.82))}catch(e){URL.revokeObjectURL(url);reject(e)}};img.onerror=function(){URL.revokeObjectURL(url);reject(new Error('Не удалось прочитать изображение'))};img.src=url})
   }
 
   function enhanceCommunityManagement(){
