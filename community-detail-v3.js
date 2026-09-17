@@ -15,8 +15,9 @@
   function links(){var m=read(LINKS_KEY,{});return m&&typeof m==='object'?m:{}}
   function chats(){var m=read(CHAT_KEY,{});return m&&typeof m==='object'?m:{}}
   function session(){try{return JSON.parse(localStorage.getItem('vmeste_session_v1')||'null')}catch(e){return null}}
+  function hasSession(){var s=session();return !!(s&&s.access_token)}
   function currentUserId(){var s=session();return s&&s.user&&s.user.id||window.account&&window.account.user&&window.account.user.id||''}
-  function accountName(){return window.account&&window.account.profile&&window.account.profile.display_name||window.account&&window.account.user&&window.account.user.email||'Вы'}
+  function accountName(){var s=session(),u=s&&s.user,meta=u&&u.user_metadata||{};return window.account&&window.account.profile&&window.account.profile.display_name||window.account&&window.account.user&&window.account.user.email||meta.display_name||meta.name||u&&u.email||'Вы'}
   function memberWord(n){var m=Math.abs(n)%100,d=m%10;if(m>10&&m<20)return'участников';if(d===1)return'участник';if(d>1&&d<5)return'участника';return'участников'}
   function memberCopy(){return groups().find(function(g){return g.id===activeGroupId})||null}
   function inviteCopy(){return invites().find(function(g){return g.id===activeGroupId})||null}
@@ -28,7 +29,6 @@
   function chatEnabled(g){return g.chat_enabled!==false}
   function groupEventIds(){var m=links();return Object.keys(m).filter(function(id){return m[id]===activeGroupId})}
   function eventParts(v){try{var p=new Intl.DateTimeFormat('ru-RU',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit',timeZone:'Europe/Moscow'}).formatToParts(new Date(v)),f=function(t){var x=p.find(function(a){return a.type===t});return x?x.value:''};return{day:f('day'),month:f('month').replace('.','').toUpperCase(),time:f('hour')+':'+f('minute')}}catch(e){return{day:'',month:'',time:''}}}
-  function dateLabel(v){try{return new Intl.DateTimeFormat('ru-RU',{day:'numeric',month:'long',timeZone:'Europe/Moscow'}).format(new Date(v))}catch(e){return''}}
 
   function ensure(){
     if(document.querySelector('[data-view="community-detail"]'))return;
@@ -54,7 +54,7 @@
   function eventsPanel(g){
     if(g.access==='closed'&&!isMember())return closedGate();
     var ids=groupEventIds();
-    if(!window.account)return '<div class="communityDetailEmpty"><h3>Войдите, чтобы увидеть события</h3><p>После входа здесь появятся события сообщества.</p></div>';
+    if(!hasSession())return '<div class="communityDetailEmpty"><h3>Войдите, чтобы увидеть события</h3><p>После входа здесь появятся события сообщества.</p></div>';
     if(lastEvents===null)return '<div class="communityDetailEmpty">Загружаю события…</div>';
     var all=[];(lastEvents.events||[]).forEach(function(e){all.push(e)});(lastEvents.invited_events||[]).forEach(function(e){if(e.invitation_status==='accepted')all.push(e)});
     var now=Date.now(),future=all.filter(function(e){return ids.indexOf(e.id)>=0&&!['finished','cancelled'].includes(e.status)&&new Date(e.starts_at).getTime()>=now}).sort(function(a,b){return new Date(a.starts_at)-new Date(b.starts_at)});
@@ -114,8 +114,8 @@
     var chat=root.querySelector('[data-community-chat-open]');if(chat){var y0=null;chat.onclick=function(){openChat(g)};chat.addEventListener('touchstart',function(e){y0=e.touches&&e.touches[0]?e.touches[0].clientY:null},{passive:true});chat.addEventListener('touchend',function(e){if(y0==null)return;var y=e.changedTouches&&e.changedTouches[0]?e.changedTouches[0].clientY:y0;if(y-y0<-32)openChat(g);y0=null},{passive:true})}
   }
 
-  async function loadEvents(){if(!window.account||typeof api!=='function')return;try{lastEvents=await api('list_events');if(activeTab==='events')render()}catch(e){lastEvents={events:[],invited_events:[]};if(activeTab==='events')render()}}
-  async function loadChronicle(){if(!window.account||typeof eventRaw!=='function')return;try{lastChronicle=await eventRaw('list_chronicle',{});}catch(e){lastChronicle={events:[]}}}
+  async function loadEvents(){if(!hasSession())return;var fn=typeof window.api==='function'?window.api:(typeof api==='function'?api:null);if(!fn)return;try{lastEvents=await fn('list_events');if(activeTab==='events')render()}catch(e){lastEvents={events:[],invited_events:[]};if(activeTab==='events')render()}}
+  async function loadChronicle(){if(!hasSession())return;var fn=typeof window.eventRaw==='function'?window.eventRaw:(typeof eventRaw==='function'?eventRaw:null);if(!fn)return;try{lastChronicle=await fn('list_chronicle',{});}catch(e){lastChronicle={events:[]}}}
   async function loadAlbum(){
     if(!isMember()){lastAlbum=[];albumLoading=false;render();return}
     albumLoading=true;lastAlbum=null;render();
@@ -131,44 +131,26 @@
   }
 
   function saveMemberGroup(g,extra){var mine=groups(),i=mine.findIndex(function(x){return x.id===g.id}),copy=Object.assign({},g,extra||{});if(i>=0)mine[i]=Object.assign({},mine[i],copy);else mine.unshift(copy);write(GROUPS_KEY,mine);activeSnapshot=Object.assign({},copy)}
-  function joinGroup(g){
-    var invited=isInvited(),base=Object.assign({},g,{member_count:Number(g.member_count||0)+1,role:'member',joined_via_invite:invited||true});saveMemberGroup(base);
-    if(invited)write(INVITES_KEY,invites().filter(function(x){return x.id!==g.id}));activeSnapshot=base;render();loadEvents();
-  }
+  function joinGroup(g){var base=Object.assign({},g,{member_count:Number(g.member_count||0)+1,role:'member',joined_via_invite:true});saveMemberGroup(base);if(isInvited())write(INVITES_KEY,invites().filter(function(x){return x.id!==g.id}));activeSnapshot=base;render();loadEvents()}
   function declineInvite(g){write(INVITES_KEY,invites().filter(function(x){return x.id!==g.id}));close()}
-  function leaveGroup(g){
-    if(!confirm('Покинуть сообщество «'+g.name+'»?'))return;
-    var mine=groups().filter(function(x){return x.id!==g.id});write(GROUPS_KEY,mine);activeSnapshot=Object.assign({},g,{member_count:Math.max(0,Number(g.member_count||1)-1),role:null,joined_via_invite:false});render();
-  }
+  function leaveGroup(g){if(!confirm('Покинуть сообщество «'+g.name+'»?'))return;write(GROUPS_KEY,groups().filter(function(x){return x.id!==g.id}));activeSnapshot=Object.assign({},g,{member_count:Math.max(0,Number(g.member_count||1)-1),role:null,joined_via_invite:false});render()}
 
   function openCreateEvent(g){
     sessionStorage.setItem('vmeste_group_event_context_v1',g.id);
     if(typeof openView==='function')openView('create');
-    setTimeout(function(){
-      var action=document.querySelector('[data-view="create"] [data-create-action="event"]');if(action)action.click();
-      var form=document.getElementById('event-form');if(!form)return;
-      document.querySelector('.communityCreateContext')?.remove();var box=document.createElement('div');box.className='communityCreateContext';box.innerHTML='<span>СОБЫТИЕ СООБЩЕСТВА</span><strong>'+esc(g.name)+'</strong><small>Сообщество уже выбрано — после создания событие появится здесь автоматически.</small>';form.insertAdjacentElement('beforebegin',box);
-    },60)
+    setTimeout(function(){var action=document.querySelector('[data-view="create"] [data-create-action="event"]');if(action)action.click();var form=document.getElementById('event-form');if(!form)return;document.querySelector('.communityCreateContext')?.remove();var box=document.createElement('div');box.className='communityCreateContext';box.innerHTML='<span>СОБЫТИЕ СООБЩЕСТВА</span><strong>'+esc(g.name)+'</strong><small>Сообщество уже выбрано — после создания событие появится здесь автоматически.</small>';form.insertAdjacentElement('beforebegin',box)},60)
   }
 
-  async function shareInvite(g){
-    var text='Присоединяйся к сообществу «'+g.name+'» в ЛЯ.';try{if(navigator.share)await navigator.share({title:g.name||'ЛЯ',text:text,url:APP_URL});else if(navigator.clipboard)await navigator.clipboard.writeText(text+' '+APP_URL)}catch(e){}
-  }
-  async function shareCommunity(g){
-    var text='«'+g.name+'» — сообщество в ЛЯ.';try{if(navigator.share)await navigator.share({title:g.name||'ЛЯ',text:text,url:APP_URL});else if(navigator.clipboard)await navigator.clipboard.writeText(text+' '+APP_URL)}catch(e){}
-  }
+  async function shareInvite(g){var text='Присоединяйся к сообществу «'+g.name+'» в ЛЯ.';try{if(navigator.share)await navigator.share({title:g.name||'ЛЯ',text:text,url:APP_URL});else if(navigator.clipboard)await navigator.clipboard.writeText(text+' '+APP_URL)}catch(e){}}
+  async function shareCommunity(g){var text='«'+g.name+'» — сообщество в ЛЯ.';try{if(navigator.share)await navigator.share({title:g.name||'ЛЯ',text:text,url:APP_URL});else if(navigator.clipboard)await navigator.clipboard.writeText(text+' '+APP_URL)}catch(e){}}
 
   function openMenu(g){
-    document.querySelector('.communityActionOverlay')?.remove();var owner=isOwner(g),member=isMember();var o=document.createElement('div');o.className='communityActionOverlay';
-    var rows='<button type="button" class="communityManageRow" data-community-share>Поделиться <b>›</b></button>';
-    if(owner){rows='<button type="button" class="communityManageRow" data-community-edit>Редактировать сообщество <b>›</b></button><div class="communityManageSetting"><span><strong>Кто создаёт события</strong><small>Право на кнопку «＋»</small></span><select data-community-event-permission><option value="all">Все участники</option><option value="owner">Только создатель</option></select></div><label class="communityManageToggle"><span><strong>Чат сообщества</strong><small>Показывать нижнее окно чата</small></span><input type="checkbox" data-community-chat-toggle '+(chatEnabled(g)?'checked':'')+'><i></i></label><button type="button" class="communityManageRow" data-community-invite>Пригласить людей <b>›</b></button>'+rows+'<button type="button" class="communityManageDanger" data-community-delete>Удалить сообщество</button>'}
-    else if(member){rows='<button type="button" class="communityManageRow" data-community-invite>Пригласить людей <b>›</b></button>'+rows+'<button type="button" class="communityManageDanger" data-community-leave>Покинуть сообщество</button>'}
+    document.querySelector('.communityActionOverlay')?.remove();var owner=isOwner(g),member=isMember(),o=document.createElement('div');o.className='communityActionOverlay';var rows='<button type="button" class="communityManageRow" data-community-share>Поделиться <b>›</b></button>';
+    if(owner)rows='<button type="button" class="communityManageRow" data-community-edit>Редактировать сообщество <b>›</b></button><div class="communityManageSetting"><span><strong>Кто создаёт события</strong><small>Право на кнопку «＋»</small></span><select data-community-event-permission><option value="all">Все участники</option><option value="owner">Только создатель</option></select></div><label class="communityManageToggle"><span><strong>Чат сообщества</strong><small>Показывать нижнее окно чата</small></span><input type="checkbox" data-community-chat-toggle '+(chatEnabled(g)?'checked':'')+'><i></i></label><button type="button" class="communityManageRow" data-community-invite>Пригласить людей <b>›</b></button>'+rows+'<button type="button" class="communityManageDanger" data-community-delete>Удалить сообщество</button>';
+    else if(member)rows='<button type="button" class="communityManageRow" data-community-invite>Пригласить людей <b>›</b></button>'+rows+'<button type="button" class="communityManageDanger" data-community-leave>Покинуть сообщество</button>';
     o.innerHTML='<div class="communityActionSheet"><div class="communityActionHead"><div><span class="ey">СООБЩЕСТВО</span><h2>'+esc(g.name)+'</h2></div><button type="button" data-close>×</button></div>'+rows+'</div>';document.body.appendChild(o);
     var closeSheet=function(){o.remove()};o.querySelector('[data-close]').onclick=closeSheet;o.onclick=function(e){if(e.target===o)closeSheet()};
-    var share=o.querySelector('[data-community-share]');if(share)share.onclick=function(){shareCommunity(g);closeSheet()};
-    var inv=o.querySelector('[data-community-invite]');if(inv)inv.onclick=function(){shareInvite(g);closeSheet()};
-    var leave=o.querySelector('[data-community-leave]');if(leave)leave.onclick=function(){closeSheet();leaveGroup(g)};
-    var edit=o.querySelector('[data-community-edit]');if(edit)edit.onclick=function(){closeSheet();openEditGroup(g)};
+    var share=o.querySelector('[data-community-share]');if(share)share.onclick=function(){shareCommunity(g);closeSheet()};var inv=o.querySelector('[data-community-invite]');if(inv)inv.onclick=function(){shareInvite(g);closeSheet()};var leave=o.querySelector('[data-community-leave]');if(leave)leave.onclick=function(){closeSheet();leaveGroup(g)};var edit=o.querySelector('[data-community-edit]');if(edit)edit.onclick=function(){closeSheet();openEditGroup(g)};
     var sel=o.querySelector('[data-community-event-permission]');if(sel){sel.value=g.event_permission||'all';sel.onchange=function(){var mine=groups(),x=mine.find(function(q){return q.id===g.id});if(x){x.event_permission=sel.value;write(GROUPS_KEY,mine);activeSnapshot=Object.assign({},x);render()}}}
     var chat=o.querySelector('[data-community-chat-toggle]');if(chat)chat.onchange=function(){var mine=groups(),x=mine.find(function(q){return q.id===g.id});if(x){x.chat_enabled=chat.checked;write(GROUPS_KEY,mine);activeSnapshot=Object.assign({},x);render()}};
     var del=o.querySelector('[data-community-delete]');if(del)del.onclick=function(){if(!confirm('Удалить сообщество «'+g.name+'»?'))return;write(GROUPS_KEY,groups().filter(function(q){return q.id!==g.id}));var m=links();Object.keys(m).forEach(function(id){if(m[id]===g.id)delete m[id]});write(LINKS_KEY,m);closeSheet();close()};
@@ -179,17 +161,14 @@
   }
 
   function openMemberMenu(g,id){
-    var member=normalizedMembers(g).find(function(m){return String(m.id||'')===String(id||'')});if(!member)return;
-    document.querySelector('.communityActionOverlay')?.remove();var o=document.createElement('div');o.className='communityActionOverlay';o.innerHTML='<div class="communityActionSheet"><div class="communityActionHead"><h2>'+esc(member.display_name||member.name||'Участник')+'</h2><button type="button">×</button></div><button type="button" class="communityManageDanger" data-remove-member>Удалить из сообщества</button></div>';document.body.appendChild(o);o.querySelector('.communityActionHead button').onclick=function(){o.remove()};o.onclick=function(e){if(e.target===o)o.remove()};o.querySelector('[data-remove-member]').onclick=function(){if(!confirm('Удалить участника из сообщества?'))return;var mine=groups(),x=mine.find(function(q){return q.id===g.id});if(x&&Array.isArray(x.members)){x.members=x.members.filter(function(m){return String(m.id||'')!==String(id||'')});x.member_count=Math.max(1,Number(x.member_count||1)-1);write(GROUPS_KEY,mine);activeSnapshot=Object.assign({},x)}o.remove();render()};
+    var member=normalizedMembers(g).find(function(m){return String(m.id||'')===String(id||'')});if(!member)return;document.querySelector('.communityActionOverlay')?.remove();var o=document.createElement('div');o.className='communityActionOverlay';o.innerHTML='<div class="communityActionSheet"><div class="communityActionHead"><h2>'+esc(member.display_name||member.name||'Участник')+'</h2><button type="button">×</button></div><button type="button" class="communityManageDanger" data-remove-member>Удалить из сообщества</button></div>';document.body.appendChild(o);o.querySelector('.communityActionHead button').onclick=function(){o.remove()};o.onclick=function(e){if(e.target===o)o.remove()};o.querySelector('[data-remove-member]').onclick=function(){if(!confirm('Удалить участника из сообщества?'))return;var mine=groups(),x=mine.find(function(q){return q.id===g.id});if(x&&Array.isArray(x.members)){x.members=x.members.filter(function(m){return String(m.id||'')!==String(id||'')});x.member_count=Math.max(1,Number(x.member_count||1)-1);write(GROUPS_KEY,mine);activeSnapshot=Object.assign({},x)}o.remove();render()};
   }
 
   function openChat(g){
     document.querySelector('.communityChatSheet')?.remove();var o=document.createElement('div');o.className='communityChatSheet';o.innerHTML='<div class="communityChatPull"><span></span></div><header class="communityChatHead"><strong>'+esc(g.name)+'</strong><small>Чат сообщества</small></header><div class="communityChatMessages"></div><form class="communityChatForm"><textarea maxlength="1500" rows="1" placeholder="Сообщение"></textarea><button type="submit">↑</button></form>';document.body.appendChild(o);document.body.classList.add('communityChatOpen');
     function draw(){var box=o.querySelector('.communityChatMessages'),list=chatMessages(g);box.innerHTML=list.length?list.map(function(m){return '<div class="communityChatBubble '+(m.mine?'mine':'')+'"><span>'+esc(m.text)+'</span><small>'+esc(m.author||'Участник')+'</small></div>'}).join(''):'<div class="communityChatEmpty"><strong>Чат открыт</strong><span>Напишите первое сообщение.</span></div>';box.scrollTop=box.scrollHeight}
     function closeChat(){document.body.classList.remove('communityChatOpen');o.remove();render()}
-    var form=o.querySelector('form'),text=form.querySelector('textarea');form.onsubmit=function(e){e.preventDefault();var v=text.value.trim();if(!v)return;var all=chats(),list=Array.isArray(all[g.id])?all[g.id]:[];list.push({id:'m_'+Date.now(),text:v,author:accountName(),mine:true,created_at:new Date().toISOString()});all[g.id]=list.slice(-200);write(CHAT_KEY,all);text.value='';draw()};
-    var y0=null;o.querySelector('.communityChatPull').addEventListener('touchstart',function(e){y0=e.touches&&e.touches[0]?e.touches[0].clientY:null},{passive:true});o.querySelector('.communityChatPull').addEventListener('touchend',function(e){if(y0==null)return;var y=e.changedTouches&&e.changedTouches[0]?e.changedTouches[0].clientY:y0;if(y-y0>45)closeChat();y0=null},{passive:true});
-    o.querySelector('.communityChatPull').onclick=closeChat;draw();setTimeout(function(){text.focus({preventScroll:true})},120)
+    var form=o.querySelector('form'),text=form.querySelector('textarea');form.onsubmit=function(e){e.preventDefault();var v=text.value.trim();if(!v)return;var all=chats(),list=Array.isArray(all[g.id])?all[g.id]:[];list.push({id:'m_'+Date.now(),text:v,author:accountName(),mine:true,created_at:new Date().toISOString()});all[g.id]=list.slice(-200);write(CHAT_KEY,all);text.value='';draw()};var y0=null;o.querySelector('.communityChatPull').addEventListener('touchstart',function(e){y0=e.touches&&e.touches[0]?e.touches[0].clientY:null},{passive:true});o.querySelector('.communityChatPull').addEventListener('touchend',function(e){if(y0==null)return;var y=e.changedTouches&&e.changedTouches[0]?e.changedTouches[0].clientY:y0;if(y-y0>45)closeChat();y0=null},{passive:true});o.querySelector('.communityChatPull').onclick=closeChat;draw();setTimeout(function(){try{text.focus({preventScroll:true})}catch(e){text.focus()}},120)
   }
 
   window.openCommunityDetail=function(id,snapshot){activeGroupId=id;activeSnapshot=snapshot||null;activeTab='events';lastEvents=null;lastChronicle=null;lastAlbum=null;albumLoading=false;ensure();if(typeof openView==='function')openView('community-detail');render();loadEvents()};
