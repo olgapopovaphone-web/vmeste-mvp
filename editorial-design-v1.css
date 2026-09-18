@@ -108,14 +108,13 @@
 [data-view="create"].createLandingV2.createFlowCommunity .createSwitchRow{position:relative;margin:0 0 12px!important;border:1px solid var(--lya-editorial-line)!important;border-radius:22px!important;background:var(--lya-editorial-surface)!important;box-shadow:none!important}
 [data-view="create"].createLandingV2.createFlowCommunity .lyaCreateFieldRow{display:grid!important;grid-template-columns:48px minmax(0,1fr);gap:14px;align-items:center;min-height:84px;padding:13px 18px!important}
 .lyaCreateFieldIcon{width:38px;height:38px;display:grid;place-items:center;color:#121210}
-.lyaCreateFieldIcon svg{width:29px;height:29px;fill:none;stroke:currentColor;stroke-width:1.55;stroke-linecap:round;stroke-linejoin:round}
+.lyaCreateFieldIcon svg{width:29px;height:29px;fill:none;stroke:currentColor;stroke-width:1.55;stroke-linecap:round;stroke-linejoin:round}.lyaChoiceIcon{position:absolute!important;left:18px;top:17px;z-index:2}
 .lyaCreateFieldCopy{min-width:0;display:block}.lyaCreateFieldCopy strong{display:block;margin-bottom:3px;color:#121210;font:600 14px/1.2 Manrope,Arial,sans-serif}
 [data-view="create"].createLandingV2.createFlowCommunity .lyaCreateFieldRow input,
 [data-view="create"].createLandingV2.createFlowCommunity .lyaCreateFieldRow textarea{width:100%;min-height:0!important;margin:0!important;padding:0!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;color:var(--lya-editorial-muted);font:400 13px/1.4 Manrope,Arial,sans-serif;resize:none}
 [data-view="create"].createLandingV2.createFlowCommunity .lyaCreateFieldRow textarea{height:40px}
 [data-view="create"].createLandingV2.createFlowCommunity .createChoiceField{padding:14px 14px 14px 80px!important;min-height:160px}
 [data-view="create"].createLandingV2.createFlowCommunity .createChoiceField legend{float:left;width:100%;margin:0 0 10px;padding:0;color:#121210;font:600 14px/1.2 Manrope,Arial,sans-serif}
-[data-view="create"].createLandingV2.createFlowCommunity .createChoiceField:before{content:"";position:absolute;left:18px;top:18px;width:38px;height:38px;background:center/30px 30px no-repeat}
 [data-view="create"].createLandingV2.createFlowCommunity .createSegmented{clear:both;display:grid;grid-template-columns:1fr 1fr;gap:9px}
 [data-view="create"].createLandingV2.createFlowCommunity .createSegmented span{min-height:102px;padding:13px 13px 12px;border:1px solid var(--lya-editorial-line);border-radius:19px;background:#FFFDF9;justify-content:flex-start}
 [data-view="create"].createLandingV2.createFlowCommunity .createSegmented strong{font-size:14px}.createSegmented small{font-size:11px}
