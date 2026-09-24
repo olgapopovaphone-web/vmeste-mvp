@@ -220,22 +220,22 @@
 
 /* PROFILE SPACING PASS · 2026-09-25
    tighter text gutters + full-bleed image content */
-.profileV2Head{padding-left:12px;padding-right:12px}
-.profileV2Actions{padding-left:12px;padding-right:12px}
-.profileV2Section{padding-left:12px;padding-right:12px}
-.profileV2Want{margin-left:12px;margin-right:12px}
-.profileV2CircleSection{padding-left:12px;padding-right:12px}
-.profileV2Signout{margin-left:12px;margin-right:12px;width:calc(100% - 24px)}
-.profileV2PinnedEmpty{margin-left:12px;margin-right:12px}
+.profileV2Head{padding-left:18px;padding-right:18px}
+.profileV2Actions{padding-left:18px;padding-right:18px}
+.profileV2Section{padding-left:18px;padding-right:18px}
+.profileV2Want{margin-left:18px;margin-right:18px}
+.profileV2CircleSection{padding-left:18px;padding-right:18px}
+.profileV2Signout{margin-left:18px;margin-right:18px;width:calc(100% - 36px)}
+.profileV2PinnedEmpty{margin-left:18px;margin-right:18px}
 
 /* images go edge-to-edge */
 .profileV2PlaceHero{
-  margin-left:-12px;
-  width:calc(100% + 24px);
+  margin-left:-18px;
+  width:calc(100% + 36px);
 }
 .profileV2Moments{
-  margin-left:-12px;
-  width:calc(100% + 24px);
+  margin-left:-18px;
+  width:calc(100% + 36px);
   border-radius:0;
 }
 .profileV2Pinned{
@@ -244,15 +244,15 @@
   border-radius:0;
 }
 .profileV2PinImage{height:180px}
-.profileV2PinBody{padding-left:12px;padding-right:12px}
+.profileV2PinBody{padding-left:18px;padding-right:18px}
 
 /* keep text headers aligned while scrollers/media can bleed */
 .profileV2Upcoming{padding-right:0}
-.profileV2Upcoming>.profileV2Title{padding-right:12px}
+.profileV2Upcoming>.profileV2Title{padding-right:18px}
 .profileV2EventScroller{
-  margin-left:-12px;
-  padding-left:12px;
-  padding-right:12px;
+  margin-left:-18px;
+  padding-left:18px;
+  padding-right:18px;
 }
 
 
@@ -280,3 +280,26 @@
   margin:0!important;
   border-radius:0!important;
 }
+
+
+/* PROFILE SETTINGS OPAQUE SHEET · 2026-09-25 */
+.profileV2EditOverlay,.profileV2InviteOverlay{
+  --t:#EF5A3C;
+  --g:#0E3D2E;
+  --bg:#F7F4EF;
+  --ink:#111;
+  --mut:#6F736F;
+  --line:rgba(17,17,17,.11);
+  --soft:#EEEAE4;
+  background:rgba(17,18,16,.48)!important;
+  backdrop-filter:none!important;
+}
+.profileV2EditSheet,.profileV2InviteSheet{
+  background:#F7F4EF!important;
+  color:#111!important;
+  opacity:1!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:0 -14px 44px rgba(0,0,0,.16)!important;
+}
+.profileV2EditSheet::before,.profileV2InviteSheet::before{display:none!important}
