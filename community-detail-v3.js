@@ -75,6 +75,11 @@
     var owner=m.role==='owner'||m.is_owner===true,canRemove=isOwner(g)&&!owner&&String(m.id||'')!==String(currentUserId()||'');
     return '<div class="communityMemberRow" data-community-member="'+esc(m.id||'')+'">'+photo+'<span class="communityMemberCopy"><strong>'+esc(name)+'</strong><small>'+(owner?'Создатель':'Участник')+'</small></span>'+(canRemove?'<button type="button" class="communityMemberMore" data-community-member-menu="'+esc(m.id||'')+'" aria-label="Действия">•••</button>':'')+'</div>';
   }
+  function openCommunityPerson(p){
+    if(!p||!p.id)return;
+    if(String(p.id)===String(currentUserId())){if(typeof openView==='function')openView('profile');return}
+    if(typeof window.openLyaPersonProfile==='function')window.openLyaPersonProfile({id:p.id,display_name:p.display_name||p.name||'Участник',avatar_url:p.avatar_url||null,city:p.city||null});
+  }
   function membersPanel(g){
     if(g.access==='closed'&&!isMember())return closedGate();
     var list=normalizedMembers(g),n=Math.max(Number(g.member_count||1),list.length),canInvite=isMember();
@@ -94,8 +99,7 @@
   function chatMessages(g){var m=chats();return Array.isArray(m[g.id])?m[g.id]:[]}
   function chatTeaser(g){
     if(!isMember()||!chatEnabled(g))return'';
-    var list=chatMessages(g),last=list[list.length-1];
-    return '<button type="button" class="communityChatPeek" data-community-chat-open><span class="communityChatHandle"></span><span class="communityChatPeekCopy"><strong>Чат сообщества</strong><small>'+(last?esc((last.author||'Участник')+': '+last.text):'Пока тихо — напишите первым')+'</small></span><span class="communityChatPeekArrow">⌃</span></button>';
+    return '<button type="button" class="communityChatPeek" data-community-chat-open><span class="communityChatHandle"></span><span class="communityChatPeekCopy"><strong>Чат сообщества</strong><small>Сообщения участников сообщества</small></span><span class="communityChatPeekArrow">⌃</span></button>';
   }
 
   function render(){
@@ -111,6 +115,7 @@
     var join=root.querySelector('[data-community-join]');if(join)join.onclick=function(){joinGroup(g)};
     var decline=root.querySelector('[data-community-decline]');if(decline)decline.onclick=function(){declineInvite(g)};
     var invite=root.querySelector('.communityInviteMembers');if(invite)invite.onclick=function(){openInvitePicker(g)};
+    root.querySelectorAll('[data-community-member]').forEach(function(row){row.onclick=function(e){if(e.target.closest('[data-community-member-menu]'))return;var m=normalizedMembers(g).find(function(x){return String(x.id||'')===String(row.dataset.communityMember||'')});if(m)openCommunityPerson(m)}});
     root.querySelectorAll('[data-community-member-menu]').forEach(function(b){b.onclick=function(){openMemberMenu(g,b.dataset.communityMemberMenu)}});
     root.querySelectorAll('[data-community-media]').forEach(function(b){b.onclick=function(){var i=Number(b.dataset.communityMedia)||0;if(typeof window.openEventMediaViewerReadOnly==='function')window.openEventMediaViewerReadOnly(lastAlbum,i)}});
     var chat=root.querySelector('[data-community-chat-open]');if(chat){var y0=null;chat.onclick=function(){openChat(g)};chat.addEventListener('touchstart',function(e){y0=e.touches&&e.touches[0]?e.touches[0].clientY:null},{passive:true});chat.addEventListener('touchend',function(e){if(y0==null)return;var y=e.changedTouches&&e.changedTouches[0]?e.changedTouches[0].clientY:y0;if(y-y0<-32)openChat(g);y0=null},{passive:true})}
@@ -179,11 +184,28 @@
     var member=normalizedMembers(g).find(function(m){return String(m.id||'')===String(id||'')});if(!member)return;document.querySelector('.communityActionOverlay')?.remove();var o=document.createElement('div');o.className='communityActionOverlay';o.innerHTML='<div class="communityActionSheet"><div class="communityActionHead"><h2>'+esc(member.display_name||member.name||'Участник')+'</h2><button type="button">×</button></div><button type="button" class="communityManageDanger" data-remove-member>Удалить из сообщества</button></div>';document.body.appendChild(o);o.querySelector('.communityActionHead button').onclick=function(){o.remove()};o.onclick=function(e){if(e.target===o)o.remove()};o.querySelector('[data-remove-member]').onclick=function(){if(!confirm('Удалить участника из сообщества?'))return;var mine=groups(),x=mine.find(function(q){return q.id===g.id});if(x&&Array.isArray(x.members)){x.members=x.members.filter(function(m){return String(m.id||'')!==String(id||'')});x.member_count=Math.max(1,Number(x.member_count||1)-1);write(GROUPS_KEY,mine);activeSnapshot=Object.assign({},x)}o.remove();render()};
   }
 
+  function openChatThemePicker(g,currentTheme,applyTheme){
+    document.querySelector('.communityChatThemeOverlay')?.remove();
+    var t=document.createElement('div');t.className='communityChatThemeOverlay';
+    var themes=[['paper','Светлая'],['sage','Шалфей'],['graphite','Графит'],['sky','Серо-голубая']];
+    t.innerHTML='<div class="communityChatThemeSheet"><div class="communityChatThemeHead"><div><span class="ey">ОФОРМЛЕНИЕ</span><h3>Ваш вид чата</h3></div><button type="button">×</button></div><p>Настройка меняет чат только у вас.</p><div class="communityChatThemes">'+themes.map(function(x){return '<button type="button" data-chat-theme="'+x[0]+'" class="'+(x[0]===currentTheme?'active':'')+'"><i></i><span>'+x[1]+'</span></button>'}).join('')+'</div></div>';
+    document.body.appendChild(t);var close=function(){t.remove()};t.querySelector('.communityChatThemeHead button').onclick=close;t.onclick=function(e){if(e.target===t)close()};
+    t.querySelectorAll('[data-chat-theme]').forEach(function(btn){btn.onclick=async function(){var theme=btn.dataset.chatTheme;try{await circleApi('set_community_chat_preference',{community_id:g.id,owner_id:g.owner_id||'',theme:theme});applyTheme(theme);close()}catch(e){alert(e.message)}}})
+  }
+
   function openChat(g){
-    document.querySelector('.communityChatSheet')?.remove();var o=document.createElement('div');o.className='communityChatSheet';o.innerHTML='<div class="communityChatPull"><span></span></div><header class="communityChatHead"><strong>'+esc(g.name)+'</strong><small>Чат сообщества</small></header><div class="communityChatMessages"></div><form class="communityChatForm"><textarea maxlength="1500" rows="1" placeholder="Сообщение"></textarea><button type="submit">↑</button></form>';document.body.appendChild(o);document.body.classList.add('communityChatOpen');
-    function draw(){var box=o.querySelector('.communityChatMessages'),list=chatMessages(g);box.innerHTML=list.length?list.map(function(m){return '<div class="communityChatBubble '+(m.mine?'mine':'')+'"><span>'+esc(m.text)+'</span><small>'+esc(m.author||'Участник')+'</small></div>'}).join(''):'<div class="communityChatEmpty"><strong>Чат открыт</strong><span>Напишите первое сообщение.</span></div>';box.scrollTop=box.scrollHeight}
-    function closeChat(){document.body.classList.remove('communityChatOpen');o.remove();render()}
-    var form=o.querySelector('form'),text=form.querySelector('textarea');form.onsubmit=function(e){e.preventDefault();var v=text.value.trim();if(!v)return;var all=chats(),list=Array.isArray(all[g.id])?all[g.id]:[];list.push({id:'m_'+Date.now(),text:v,author:accountName(),mine:true,created_at:new Date().toISOString()});all[g.id]=list.slice(-200);write(CHAT_KEY,all);text.value='';draw()};var y0=null;o.querySelector('.communityChatPull').addEventListener('touchstart',function(e){y0=e.touches&&e.touches[0]?e.touches[0].clientY:null},{passive:true});o.querySelector('.communityChatPull').addEventListener('touchend',function(e){if(y0==null)return;var y=e.changedTouches&&e.changedTouches[0]?e.changedTouches[0].clientY:y0;if(y-y0>45)closeChat();y0=null},{passive:true});o.querySelector('.communityChatPull').onclick=closeChat;draw();setTimeout(function(){try{text.focus({preventScroll:true})}catch(e){text.focus()}},120)
+    document.querySelector('.communityChatSheet')?.remove();var o=document.createElement('div');o.className='communityChatSheet theme-paper';o.innerHTML='<div class="communityChatPull"><span></span></div><header class="communityChatHead"><div><strong>'+esc(g.name)+'</strong><small>Чат сообщества</small></div><button type="button" class="communityChatCustomize" aria-label="Оформление чата">Aa</button></header><div class="communityChatMessages"><div class="communityChatEmpty"><span>Загружаю сообщения…</span></div></div><form class="communityChatForm"><textarea maxlength="1500" rows="1" placeholder="Сообщение"></textarea><button type="submit">↑</button></form>';document.body.appendChild(o);document.body.classList.add('communityChatOpen');
+    var messages=[],theme='paper',timer=null,box=o.querySelector('.communityChatMessages');
+    function applyTheme(next){theme=next||'paper';o.classList.remove('theme-paper','theme-sage','theme-graphite','theme-sky');o.classList.add('theme-'+theme)}
+    function avatar(m){if(m.avatar_url)return '<span class="communityChatAvatar has-photo" style="background-image:url(\''+esc(String(m.avatar_url).replace(/'/g,'%27'))+'\')"></span>';return '<span class="communityChatAvatar">'+esc(String(m.display_name||'У').trim().slice(0,1).toUpperCase()||'У')+'</span>'}
+    function draw(){box.innerHTML=messages.length?messages.map(function(m){var who='<button type="button" class="communityChatAuthor" data-chat-user="'+esc(m.user_id||'')+'">'+avatar(m)+'<span><b>'+esc(m.display_name||'Участник')+'</b><small>'+new Intl.DateTimeFormat('ru-RU',{hour:'2-digit',minute:'2-digit'}).format(new Date(m.created_at))+'</small></span></button>';return '<div class="communityChatMessage '+(m.mine?'mine':'')+'">'+who+'<div class="communityChatBubble"><span>'+esc(m.body||'')+'</span></div></div>'}).join(''):'<div class="communityChatEmpty"><strong>Чат открыт</strong><span>Напишите первое сообщение.</span></div>';box.querySelectorAll('[data-chat-user]').forEach(function(btn){btn.onclick=function(){var m=messages.find(function(x){return String(x.user_id)===String(btn.dataset.chatUser)});if(m)openCommunityPerson(m)}});box.scrollTop=box.scrollHeight}
+    async function load(silent){try{var d=await circleApi('list_community_messages',{community_id:g.id,owner_id:g.owner_id||''});messages=d.messages||[];draw()}catch(e){if(!silent)box.innerHTML='<div class="communityChatEmpty"><strong>Не удалось загрузить чат</strong><span>'+esc(e.message)+'</span></div>'}}
+    async function loadTheme(){try{var d=await circleApi('get_community_chat_preference',{community_id:g.id,owner_id:g.owner_id||''});applyTheme(d.theme||'paper')}catch(e){applyTheme('paper')}}
+    function closeChat(){if(timer)clearInterval(timer);document.body.classList.remove('communityChatOpen');o.remove();render()}
+    var form=o.querySelector('form'),text=form.querySelector('textarea');form.onsubmit=async function(e){e.preventDefault();var v=text.value.trim();if(!v)return;var send=form.querySelector('button');send.disabled=true;try{await circleApi('send_community_message',{community_id:g.id,owner_id:g.owner_id||'',text:v});text.value='';await load(true)}catch(err){alert(err.message)}finally{send.disabled=false}};
+    o.querySelector('.communityChatCustomize').onclick=function(){openChatThemePicker(g,theme,applyTheme)};
+    var y0=null;o.querySelector('.communityChatPull').addEventListener('touchstart',function(e){y0=e.touches&&e.touches[0]?e.touches[0].clientY:null},{passive:true});o.querySelector('.communityChatPull').addEventListener('touchend',function(e){if(y0==null)return;var y=e.changedTouches&&e.changedTouches[0]?e.changedTouches[0].clientY:y0;if(y-y0>45)closeChat();y0=null},{passive:true});o.querySelector('.communityChatPull').onclick=closeChat;
+    loadTheme();load(false);timer=setInterval(function(){if(document.body.contains(o))load(true)},4000);setTimeout(function(){try{text.focus({preventScroll:true})}catch(e){text.focus()}},120)
   }
 
   async function loadCommunityMembers(g){if(!g||!g.id||!hasSession())return;try{var d=await circleApi('list_community_members',{community_id:g.id});serverMembers=d.members||[];if(serverMembers.length){var mine=groups(),x=mine.find(function(q){return q.id===g.id});if(x){x.members=serverMembers;x.member_count=Math.max(Number(x.member_count||1),serverMembers.length);write(GROUPS_KEY,mine);activeSnapshot=Object.assign({},x)}}if(activeTab==='members')render()}catch(e){}}
