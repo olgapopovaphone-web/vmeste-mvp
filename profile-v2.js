@@ -76,8 +76,11 @@
     return Array.from(map.values()).slice(0,6)
   }
 
+  function profileLogo(){
+    return '<svg class="profileV2Logo" viewBox="0 0 32.61 20.96" aria-label="ЛЯ"><path fill="#FD4F2F" d="M4.24 0h5.67a2.26 2.26 0 0 1 0 4.52H6.49a2.62 2.62 0 0 0-2.62 2.62v3.12c0 .13-.1.22-.23.2A4.25 4.25 0 0 1 0 6.26V4.23A4.25 4.25 0 0 1 4.24 0z"/><path fill="#2B2A29" d="M13.47 20.75V9.8a.2.2 0 0 0-.2-.2h-2.98a.2.2 0 0 0-.2.18l-.24 1.89c-1.05 7.91-2.8 9.26-8.48 9.29a.2.2 0 0 1-.21-.2l-.02-1.28a1.45 1.45 0 0 1 1.1-1.42c2.71-.65 3.13-3.87 3.55-7.04L6.29 7a.2.2 0 0 1 .2-.18c1.68 0 11.08-.02 11.08.03v13.91a.2.2 0 0 1-.2.2h-3.69a.2.2 0 0 1-.2-.2z"/><path fill="#2B2A29" d="M22.13 16.22a4.82 4.82 0 0 1 1.55-9.39l8.72.03a.2.2 0 0 1 .2.2v13.7a.2.2 0 0 1-.2.2h-3.69a.2.2 0 0 1-.2-.2v-4.08a.2.2 0 0 0-.2-.2h-1.12a.2.2 0 0 0-.17.1l-3.07 4.3a.2.2 0 0 1-.17.1h-4.32a.2.2 0 0 1-.18-.32l2.97-4.13a.2.2 0 0 0-.12-.3zm6.38-2.73V9.81a.2.2 0 0 0-.2-.2h-3.3a2.05 2.05 0 1 0 0 4.1l3.3-.01a.2.2 0 0 0 .2-.2z"/></svg>'
+  }
   function actions(detail){
-    var p=detail.profile||{},r=detail.relation||{};
+    var r=detail.relation||{};
     if(r.status==='self')return '';
     var circleLabel='В круг',circleClass='primary',circleAttr='data-profile-add';
     if(r.status==='accepted'){circleLabel='В кругу';circleClass='';circleAttr='disabled'}
@@ -87,102 +90,100 @@
     return '<div class="profileV2Actions">'+
       '<button type="button" class="profileV2Action '+circleClass+'" '+circleAttr+'>'+circleLabel+'</button>'+
       '<button type="button" class="profileV2Action" data-profile-chat '+(accepted?'':'disabled')+'>Написать</button>'+
-      '<button type="button" class="profileV2Action" data-profile-invite '+(accepted?'':'disabled')+'>Пригласить</button>'+
+      '<button type="button" class="profileV2Action invite" data-profile-invite '+(accepted?'':'disabled')+'>Пригласить на событие</button>'+
     '</div>'
   }
-
+  function dayPart(value){try{var d=new Date(value);return {day:new Intl.DateTimeFormat('ru-RU',{day:'2-digit',timeZone:'Europe/Moscow'}).format(d),month:new Intl.DateTimeFormat('ru-RU',{month:'short',timeZone:'Europe/Moscow'}).format(d).replace('.','').toUpperCase(),time:new Intl.DateTimeFormat('ru-RU',{hour:'2-digit',minute:'2-digit',timeZone:'Europe/Moscow'}).format(d)}}catch(e){return{day:'',month:'',time:''}}}
   function pinnedBlock(detail,isSelf){
-    var x=detail.pinned;if(!x){if(!isSelf)return'';return '<section class="profileV2Section"><div class="profileV2SectionHead"><div><span class="ey">ЗАКРЕПЛЕНО</span><h2>Главное сейчас</h2></div>'+privacyBadge(detail,'pinned',isSelf)+'</div><div class="profileV2Empty">Выберите событие, сообщество или место в настройках профиля.</div></section>'}
-    var title=x.type==='place'?(x.name||'Место'):(x.name||x.title||'Событие'),meta=x.type==='event'?'Событие · '+fmtDate(x.starts_at):x.type==='community'?'Сообщество':'Место · '+(x.city||'');
-    var cover=x.cover_url?' style="background-image:url(\''+esc(String(x.cover_url).replace(/'/g,'%27'))+'\')"':'';
-    return '<section class="profileV2Section"><div class="profileV2SectionHead"><div><span class="ey">ЗАКРЕПЛЕНО</span><h2>Главное сейчас</h2></div>'+privacyBadge(detail,'pinned',isSelf)+'</div><button type="button" class="profileV2Pinned" data-profile-pinned="'+esc(x.type)+':'+esc(x.id)+'"'+cover+'><span>'+esc(meta)+'</span><strong>'+esc(title)+'</strong></button></section>'
+    var x=detail.pinned;
+    if(!x){if(!isSelf)return'';return '<section class="profileV2PinnedEmpty" data-block="pinned"><div class="profileV2Eyebrow">ЗАКРЕПЛЕНО</div><p>Выберите событие, сообщество или место в настройках профиля.</p></section>'}
+    var title=x.type==='place'?(x.name||'Место'):(x.name||x.title||'Событие');
+    var meta=x.type==='event'?'Событие · '+fmtDate(x.starts_at):x.type==='community'?'Сообщество':'Место · '+(x.city||'');
+    return '<section class="profileV2Pinned" data-block="pinned"><button type="button" data-profile-pinned="'+esc(x.type)+':'+esc(x.id)+'">'+
+      '<span class="profileV2PinImage">'+(x.cover_url?'<img src="'+esc(x.cover_url)+'" alt="">':'<i></i>')+'<em>Закреплено</em></span>'+
+      '<span class="profileV2PinBody"><small>'+esc(meta)+'</small><strong>'+esc(title)+'</strong></span>'+
+    '</button></section>'
   }
-
   function wantBlock(detail,isSelf){
     var p=detail.profile||{};
-    if(!p.want_text){if(!isSelf)return'';return '<button type="button" class="profileV2Want profileV2WantEmpty" data-profile-edit-want><span class="ey">СЕЙЧАС ХОЧУ…</span><p>Добавить статус</p><small>Например: на выставку, гулять вечером, найти компанию на концерт.</small></button>'}
-    var invite=!isSelf&&detail.relation&&detail.relation.status==='accepted'?'<button type="button" data-profile-want-invite>Пригласить</button>':'';
-    return '<section class="profileV2Want"><div class="profileV2WantTop"><span class="ey">СЕЙЧАС ХОЧУ…</span>'+privacyBadge(detail,'want',isSelf)+'</div><p>'+esc(p.want_text)+'</p><div class="profileV2WantActions">'+(isSelf?'<button type="button" data-profile-edit-want>Изменить</button>':invite)+'</div></section>'
+    if(!p.want_text){if(!isSelf)return'';return '<button type="button" class="profileV2Want profileV2WantEmpty" data-profile-edit-want data-block="status"><span class="profileV2Eyebrow">Сейчас хочу</span><p>Добавить статус</p><small>Например: на выставку, прогулку или концерт.</small></button>'}
+    var invite=!isSelf&&detail.relation&&detail.relation.status==='accepted'?'<button type="button" data-profile-want-invite>Пригласить '+esc((p.display_name||'').split(' ')[0]||'')+' ↗</button>':'';
+    return '<section class="profileV2Want" data-block="status"><span class="profileV2Eyebrow">Сейчас хочу</span>'+privacyBadge(detail,'want',isSelf)+'<p>'+esc(p.want_text)+'</p>'+(isSelf?'<button type="button" data-profile-edit-want>Изменить</button>':invite)+'</section>'
   }
-
   function circleBlock(detail,isSelf){
-    var people=detail.circle_people||[];
+    var people=detail.circle_people||[],common=Number(detail.common_people_count||0),shown=people.slice(0,4);
     if(!people.length&&!isSelf)return'';
-    return '<section class="profileV2Section"><div class="profileV2SectionHead"><div><span class="ey">МОЙ КРУГ</span><h2>'+(people.length?people.length+' '+(people.length===1?'человек':'людей'):'Пока пусто')+'</h2></div>'+privacyBadge(detail,'circle',isSelf)+'</div>'+
-      (people.length?'<div class="profileV2Circle">'+people.map(function(p){return '<button type="button" data-profile-person="'+esc(p.id)+'">'+avatarHtml(p,'small')+'<span>'+esc(p.display_name||'Участник')+'</span></button>'}).join('')+'</div>':'<div class="profileV2Empty">Добавляйте знакомых во «В кругу».</div>')+
-    '</section>'
+    var stack=shown.length?'<div class="profileV2CircleStack">'+shown.map(function(p){return '<button type="button" data-profile-person="'+esc(p.id)+'">'+avatarHtml(p,'small')+'</button>'}).join('')+'</div>':'';
+    var note=!isSelf&&common?common+' '+(common===1?'человек знаком с вами':'человек знакомы с вами'):(people.length?'Люди, которых вы добавили в круг':'Добавляйте людей во «В кругу»');
+    return '<section class="profileV2CircleSection" data-block="circle"><div class="profileV2Title"><div><span class="profileV2Eyebrow">Люди рядом</span><h2>Мой круг</h2></div><span class="profileV2Count">'+people.length+'</span></div><div class="profileV2CircleLine">'+stack+'<p>'+esc(note)+'</p></div></section>'
   }
-
   function commonBlock(detail){
     var people=Number(detail.common_people_count||0),events=detail.common_events||[];
     if(!people&&!events.length)return'';
-    return '<section class="profileV2Section"><div class="profileV2SectionHead"><div><span class="ey">У ВАС ЕСТЬ ОБЩЕЕ</span><h2>Уже пересекались</h2></div></div><div class="profileV2CommonGrid">'+
-      '<div><strong>'+people+'</strong><span>общих знакомых</span></div><div><strong>'+events.length+'</strong><span>общих событий</span></div></div>'+
-      (events.length?'<div class="profileV2CommonEvents">'+events.slice(0,3).map(function(e){return '<button type="button" data-profile-event="'+esc(e.id)+'"><span>'+esc(fmtDate(e.starts_at))+'</span><b>'+esc(e.title)+'</b></button>'}).join('')+'</div>':'')+
-    '</section>'
+    return '<section class="profileV2Section profileV2Common" data-block="mutuals"><div class="profileV2Title"><div><span class="profileV2Eyebrow">Пересечения</span><h2>Общее</h2></div></div><div class="profileV2Rows">'+
+      (people?'<div class="profileV2Row"><span class="profileV2RowIco">◉</span><span><b>'+people+' '+(people===1?'общий знакомый':'общих знакомых')+'</b><small>Люди из ваших кругов</small></span><i>›</i></div>':'')+
+      (events.length?'<button type="button" class="profileV2Row" data-profile-event="'+esc(events[0].id)+'"><span class="profileV2RowIco">□</span><span><b>'+events.length+' '+(events.length===1?'общее событие':'общих события')+'</b><small>'+esc(events.slice(0,2).map(function(e){return e.title}).join(', '))+'</small></span><i>›</i></button>':'')+
+    '</div></section>'
   }
-
   function interestBlock(detail,isSelf){
     var items=(detail.profile&&detail.profile.interests)||[];
     if(!items.length&&!isSelf)return'';
-    return '<section class="profileV2Section"><div class="profileV2SectionHead"><div><span class="ey">ИНТЕРЕСЫ</span><h2>Что нравится</h2></div>'+privacyBadge(detail,'interests',isSelf)+'</div>'+
-      (items.length?'<div class="profileV2Interests">'+items.slice(0,7).map(function(x){return '<span>'+esc(x)+'</span>'}).join('')+'</div>':'<div class="profileV2Empty">Выберите до 7 интересов.</div>')+
+    return '<section class="profileV2Section" data-block="interests"><div class="profileV2Title"><div><span class="profileV2Eyebrow">Совпадения</span><h2>Интересы</h2></div></div>'+
+      (items.length?'<div class="profileV2Interests">'+items.slice(0,7).map(function(x,i){return '<span class="'+(i===1?'em':'')+'">'+esc(x)+'</span>'}).join('')+'</div>':'<div class="profileV2Empty">Выберите до 7 интересов.</div>')+
     '</section>'
   }
-
   function eventCards(events){
     if(!events||!events.length)return '<div class="profileV2Empty">Пока ничего не запланировано.</div>';
-    return '<div class="profileV2EventList">'+events.map(function(e){return '<button type="button" class="profileV2Event" data-profile-event="'+esc(e.id)+'"><span>'+esc(fmtDate(e.starts_at))+'</span><strong>'+esc(e.title||'Событие')+'</strong><small>'+esc(e.location_name||'Место не указано')+'</small></button>'}).join('')+'</div>'
+    return '<div class="profileV2EventScroller">'+events.map(function(e){var d=dayPart(e.starts_at);return '<button type="button" class="profileV2Event" data-profile-event="'+esc(e.id)+'"><span class="profileV2EventTop"><span><b>'+esc(d.day)+'</b><small>'+esc(d.month)+'</small></span><em>Открытый план</em></span><strong>'+esc(e.title||'Событие')+'</strong><small>'+esc(e.location_name||'Место не указано')+(d.time?' · '+esc(d.time):'')+'</small></button>'}).join('')+'</div>'
   }
   function communityCards(items){
     if(!items||!items.length)return '<div class="profileV2Empty">Сообщества пока не добавлены.</div>';
-    return '<div class="profileV2CommunityList">'+items.map(function(c){var style=c.cover_url?' style="background-image:url(\''+esc(String(c.cover_url).replace(/'/g,'%27'))+'\')"':'';return '<button type="button" class="profileV2Community" data-profile-community="'+esc(c.id)+'"'+style+'><span>'+esc(c.role==='owner'?'Создатель':'Сообщество')+'</span><strong>'+esc(c.name||'Сообщество')+'</strong></button>'}).join('')+'</div>'
+    return '<div class="profileV2CommunityList">'+items.map(function(c,i){var n=(c.name||'Сообщество').trim().split(/\s+/).map(function(x){return x[0]}).join('').slice(0,2).toUpperCase();return '<button type="button" class="profileV2Community" data-profile-community="'+esc(c.id)+'"><span class="profileV2CommunityBadge '+(i===0?'first':'')+'">'+esc(n||'ЛЯ')+'</span><span><b>'+esc(c.name||'Сообщество')+'</b><small>'+esc(c.role==='owner'?'Создатель':'Участник сообщества')+'</small></span><i>›</i></button>'}).join('')+'</div>'
   }
   function placesBlock(detail,isSelf){
     var items=detail.places||[];
     if(!items.length&&!isSelf)return'';
-    return '<section class="profileV2Section"><div class="profileV2SectionHead"><div><span class="ey">МОИ МЕСТА</span><h2>Куда люблю ходить</h2></div>'+privacyBadge(detail,'places',isSelf)+'</div>'+
-      (items.length?'<div class="profileV2Places">'+items.map(function(p){var style=p.cover_url?' style="background-image:url(\''+esc(String(p.cover_url).replace(/'/g,'%27'))+'\')"':'';return '<button type="button" data-profile-place="'+esc(p.id)+'"'+style+'><span>'+esc(p.kind||'Место')+'</span><strong>'+esc(p.name)+'</strong><small>'+esc(p.city||'')+'</small></button>'}).join('')+'</div>':'<div class="profileV2Empty">Сохраните места и выберите 3–5 любимых в настройках.</div>')+
+    if(!items.length)return '<section class="profileV2Section" data-block="places"><div class="profileV2Title"><div><span class="profileV2Eyebrow">Личная карта</span><h2>Мои места</h2></div></div><div class="profileV2Empty">Сохраните места и выберите любимые в настройках.</div></section>';
+    var main=items[0],rest=items.slice(1,5);
+    return '<section class="profileV2Section" data-block="places"><div class="profileV2Title"><div><span class="profileV2Eyebrow">Личная карта</span><h2>Мои места</h2></div><span class="profileV2Count">'+items.length+'</span></div>'+
+      '<button type="button" class="profileV2PlaceHero" data-profile-place="'+esc(main.id)+'">'+(main.cover_url?'<img src="'+esc(main.cover_url)+'" alt="">':'<i></i>')+'<span><small>Главное место</small><b>'+esc(main.name)+'</b><em>'+esc(main.city||main.kind||'')+'</em></span></button>'+
+      (rest.length?'<div class="profileV2PlaceMini">'+rest.map(function(p){return '<button type="button" data-profile-place="'+esc(p.id)+'">'+esc(p.name)+'</button>'}).join('')+'</div>':'')+
     '</section>'
   }
   function momentsBlock(detail,isSelf){
     var items=detail.moments||[];
     if(!items.length&&!isSelf)return'';
-    return '<section class="profileV2Section"><div class="profileV2SectionHead"><div><span class="ey">МОМЕНТЫ</span><h2>Из Хроники</h2></div>'+privacyBadge(detail,'moments',isSelf)+'</div>'+
-      (items.length?'<div class="profileV2Moments">'+items.map(function(m,i){return '<button type="button" data-profile-moment="'+i+'"><img src="'+esc(m.url)+'" alt=""></button>'}).join('')+'</div>':'<div class="profileV2Empty">Выберите несколько фотографий из завершённых событий.</div>')+
-    '</section>'
+    if(!items.length)return '<section class="profileV2Section" data-block="chronicle"><div class="profileV2Title"><div><span class="profileV2Eyebrow">Хроника</span><h2>Недавние моменты</h2></div></div><div class="profileV2Empty">Выберите фотографии из завершённых событий.</div></section>';
+    return '<section class="profileV2Section" data-block="chronicle"><div class="profileV2Title"><div><span class="profileV2Eyebrow">Хроника</span><h2>Недавние моменты</h2></div><span class="profileV2Count">'+items.length+'</span></div><div class="profileV2Moments">'+
+      '<button type="button" class="big" data-profile-moment="0"><img src="'+esc(items[0].url)+'" alt=""></button>'+
+      (items[1]?'<button type="button" data-profile-moment="1"><img src="'+esc(items[1].url)+'" alt=""></button>':'<span></span>')+
+      (items.length>2?'<button type="button" class="more" data-profile-moment="2"><b>+'+(items.length-2)+'</b><span>момента</span></button>':'<span class="more"><b>1</b><span>момент</span></span>')+
+    '</div></section>'
   }
-
   function profileMarkup(detail,isSelf){
-    var p=detail.profile||{},comms=mergeCommunities(detail,isSelf);
-    var about=p.bio?'<section class="profileV2Section"><div class="profileV2SectionHead"><div><span class="ey">О СЕБЕ</span></div>'+privacyBadge(detail,'bio',isSelf)+'</div><p class="profileV2Bio">'+esc(p.bio)+'</p></section>':(isSelf?'<button type="button" class="profileV2AddSection" data-profile-edit>＋ Добавить «О себе»</button>':'');
-    var upcoming=(detail.events&&detail.events.length)||isSelf?'<section class="profileV2Section"><div class="profileV2SectionHead"><div><span class="ey">СКОРО БУДУ</span><h2>Ближайшие события</h2></div>'+privacyBadge(detail,'events',isSelf)+'</div>'+eventCards(detail.events||[])+'</section>':'';
-    var communities=(comms.length||isSelf)?'<section class="profileV2Section"><div class="profileV2SectionHead"><div><span class="ey">СООБЩЕСТВА</span><h2>Где я состою</h2></div>'+privacyBadge(detail,'communities',isSelf)+'</div>'+communityCards(comms)+'</section>':'';
+    var p=detail.profile||{},comms=mergeCommunities(detail,isSelf),events=detail.events||[];
+    var about=p.bio?'<p class="profileV2Bio">'+esc(p.bio)+'</p>':(isSelf?'<button type="button" class="profileV2AddBio" data-profile-edit>＋ Добавить «О себе»</button>':'');
+    var topLeft=isSelf?'<button type="button" class="profileV2Brand" data-profile-back>'+profileLogo()+'</button>':'<button type="button" class="profileV2TopIcon profileV2Back" data-profile-back>‹</button>';
+    var topRight=isSelf?'<div class="profileV2TopBtns"><label class="profileV2TopIcon" for="profile-cover-input-v3" data-profile-cover aria-label="Загрузить фон">◫</label><button type="button" class="profileV2TopIcon" data-profile-edit aria-label="Настройки">⚙</button></div>':'';
     return '<article class="profileV2">'+
-      '<header class="profileV2Hero '+(p.cover_url?'has-cover':'standard-cover')+'"'+coverStyle(p)+'>'+
-        '<div class="profileV2HeroShade"></div>'+
-        '<button type="button" class="profileV2Back" data-profile-back>‹</button>'+
-        (isSelf?'<button type="button" class="profileV2Edit" data-profile-edit>Настроить</button><label class="profileV2CoverButton" for="profile-cover-input-v3" data-profile-cover>'+(p.cover_url?'Сменить фон':'Загрузить фон')+'</label>':'')+
-      '</header>'+
-      '<div class="profileV2Main">'+
-        '<div class="profileV2Identity">'+
-          '<button type="button" class="profileV2AvatarButton" '+(isSelf?'data-profile-avatar':'')+'>'+avatarHtml(p,'large')+'</button>'+
-          '<div><h1>'+esc(p.display_name||'Участник')+'</h1><p>'+esc(p.city||'Город не указан')+'</p></div>'+
-        '</div>'+
-        actions(detail)+
-        notificationBlock(detail,isSelf)+
+      '<header class="profileV2Hero '+(p.cover_url?'has-cover':'standard-cover')+'"'+coverStyle(p)+'><div class="profileV2HeroShade"></div><div class="profileV2Top">'+topLeft+topRight+'</div></header>'+
+      '<div class="profileV2Head">'+
+        '<button type="button" class="profileV2AvatarButton" '+(isSelf?'data-profile-avatar':'')+'>'+avatarHtml(p,'large')+'</button>'+
+        '<div class="profileV2NameRow"><div><h1>'+esc(p.display_name||'Участник')+'</h1><p>⌖ '+esc(p.city||'Город не указан')+'</p></div><i></i></div>'+
         about+
-        pinnedBlock(detail,isSelf)+
-        wantBlock(detail,isSelf)+
-        (!isSelf?commonBlock(detail):'')+
-        circleBlock(detail,isSelf)+
-        interestBlock(detail,isSelf)+
-        upcoming+
-        communities+
-        placesBlock(detail,isSelf)+
-        momentsBlock(detail,isSelf)+
-        (isSelf?'<button type="button" class="profileV2Signout" data-profile-signout>Выйти из аккаунта</button>':'')+
       '</div>'+
+      actions(detail)+
+      wantBlock(detail,isSelf)+
+      circleBlock(detail,isSelf)+
+      interestBlock(detail,isSelf)+
+      (!isSelf?commonBlock(detail):'')+
+      ((events.length||isSelf)?'<section class="profileV2Section profileV2Upcoming" data-block="upcoming"><div class="profileV2Title"><div><span class="profileV2Eyebrow">Открытые планы</span><h2>Скоро буду</h2></div><span class="profileV2Count">'+events.length+'</span></div>'+eventCards(events)+'</section>':'')+
+      ((comms.length||isSelf)?'<section class="profileV2Section" data-block="communities"><div class="profileV2Title"><div><span class="profileV2Eyebrow">В кругу</span><h2>Сообщества</h2></div></div>'+communityCards(comms)+'</section>':'')+
+      placesBlock(detail,isSelf)+
+      momentsBlock(detail,isSelf)+
+      pinnedBlock(detail,isSelf)+
+      (isSelf?'<button type="button" class="profileV2Signout" data-profile-signout>Выйти из аккаунта</button>':'')+
+      '<div class="profileV2Foot">ЛЯ · 2026</div>'+
       '<input id="profile-cover-input-v3" class="profileV2FileInput" type="file" data-profile-cover-input accept="image/jpeg,image/png,image/webp">'+
       '<input id="profile-avatar-input-v3" class="profileV2FileInput" type="file" data-profile-avatar-input accept="image/jpeg,image/png,image/webp">'+
     '</article>'
@@ -239,7 +240,7 @@
           '<label>Срок статуса<select name="want_ttl"><option value="none">Пока не удалю</option><option value="day">24 часа</option><option value="week" selected>7 дней</option></select></label>'+
         '</section>'+
         '<section class="profileV2EditorGroup"><h3>Интересы · до 7</h3>'+interestEditor(p.interests||[])+'</section>'+
-        '<section class="profileV2EditorGroup" data-notification-settings><div class="profileV2EditorTitleRow"><h3>Уведомления</h3><button type="button" class="profileV2SoundTest" data-test-notification-sound>Проверить звук</button></div>'+notificationEditor(p.notification_settings||{})+'</section>'+
+        '<section class="profileV2EditorGroup" data-notification-settings><div class="profileV2EditorTitleRow"><h3>Уведомления</h3><button type="button" class="profileV2SoundTest" data-test-notification-sound>Проверить звук</button></div>'+notificationEditor(p.notification_settings||{})+'<button type="button" class="profileV2OpenNotifications" data-open-all-notifications>Открыть все уведомления</button></section>'+
         '<section class="profileV2EditorGroup"><h3>Что показывать другим</h3>'+visibilityEditor(p.profile_visibility||{})+'</section>'+
         '<section class="profileV2EditorGroup"><h3>Мои места · до 5</h3>'+placesEditor(detail)+'</section>'+
         '<section class="profileV2EditorGroup"><h3>Моменты · до 6</h3>'+momentsEditor(detail)+'</section>'+
@@ -254,6 +255,7 @@
     }
     limitChecked('.profileV2InterestEditor input',7);limitChecked('[data-place-pick]',5);limitChecked('[data-moment-pick]',6);
     var soundTest=o.querySelector('[data-test-notification-sound]');if(soundTest)soundTest.onclick=function(){if(typeof window.playLyaNotificationSound==='function')window.playLyaNotificationSound(true);else alert('Звук уведомлений ещё загружается. Закройте настройки и откройте снова.')};
+    var allNotifications=o.querySelector('[data-open-all-notifications]');if(allNotifications)allNotifications.onclick=function(e){if(typeof window.openLyaNotifications==='function'){close();window.openLyaNotifications(e)}};
 
     var remove=o.querySelector('.profileV2RemoveCover');if(remove)remove.onclick=async function(){if(!confirm('Вернуть стандартный фон ЛЯ?'))return;remove.disabled=true;try{await avatarRequest('remove_cover');if(typeof account!=='undefined'&&account&&account.profile)account.profile.cover_url=null;detail.profile.cover_url=null;close();renderSelf()}catch(e){alert(e.message);remove.disabled=false}};
 
