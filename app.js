@@ -168,8 +168,13 @@ $('#auth-form').onsubmit=async e=>{
       saveSession(data.session);
       const ok=await loadAccount();
       if(!ok)throw new Error('Вход выполнен, но профиль не загрузился');
+      status.hidden=false;status.className='status';status.textContent='Вход выполнен';
       if(pendingInviteToken)await showPendingInvite();
-      else location.replace(location.pathname+location.search);
+      else {
+        openView('home');
+        document.dispatchEvent(new CustomEvent('vmeste-auth-changed',{detail:{signedIn:true}}));
+        window.scrollTo(0,0);
+      }
     }
   }catch(err){status.hidden=false;status.className='status error';status.textContent=err.message}
 };
