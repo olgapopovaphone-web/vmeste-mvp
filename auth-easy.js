@@ -51,7 +51,7 @@ const PASSWORDLESS_API='https://nmeoakrpafxhpdrplsuo.supabase.co/functions/v1/vm
       let data={};try{data=await response.json()}catch{}
       if(!response.ok)throw new Error(data.error||'Не удалось отправить ссылку');
       status.className='quickAuthSuccess';
-      status.innerHTML='Ссылка отправлена. Откройте письмо и нажмите кнопку входа — «Вместе» откроется уже авторизованным.';
+      status.innerHTML='Ссылка отправлена. Откройте письмо и нажмите кнопку входа — «ЛЯ» откроется уже авторизованным.';
       submit.textContent='Отправить ещё раз';
     }catch(err){
       status.className='status error';
