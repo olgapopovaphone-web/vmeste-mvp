@@ -367,6 +367,7 @@
                 outputHeight:765,
                 maxZoom:4,
                 quality:.9,
+                touchOnly:true,
                 title:'Настроить обложку'
               });
               if(!blob){cover.classList.remove('is-loading');cover.removeAttribute('aria-busy');return}
