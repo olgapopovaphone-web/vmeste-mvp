@@ -357,16 +357,28 @@
       if(cover&&coverInput){
         coverInput.addEventListener('change',async function(){
           var file=coverInput.files&&coverInput.files[0];if(!file)return;
-          var originalText=cover.textContent;cover.textContent='Загружаю…';cover.classList.add('is-loading');
+          var originalHtml=cover.innerHTML;cover.classList.add('is-loading');cover.setAttribute('aria-busy','true');
           try{
-            var blob=await prepareImage(file,1400,650,.87);
+            var blob=null;
+            if(typeof window.openImageCropperV2==='function'){
+              blob=await window.openImageCropperV2(file,{
+                aspect:430/235,
+                outputWidth:1400,
+                outputHeight:765,
+                maxZoom:4,
+                quality:.9,
+                title:'Настроить обложку'
+              });
+              if(!blob){cover.classList.remove('is-loading');cover.removeAttribute('aria-busy');return}
+            }else{
+              blob=await prepareImage(file,1400,765,.9)
+            }
             var d=await avatarRequest('upload_cover',blob);
             if(!d||!d.cover_url)throw new Error('Сервер не вернул адрес обложки');
             if(typeof account!=='undefined'&&account&&account.profile)account.profile.cover_url=d.cover_url;
-            cover.textContent='Фон загружен';
-            setTimeout(function(){renderSelf()},250);
+            setTimeout(function(){renderSelf()},120);
           }catch(e){
-            cover.textContent=originalText||'Загрузить фон';cover.classList.remove('is-loading');alert((e&&e.message)||'Не удалось загрузить фон');
+            cover.innerHTML=originalHtml;cover.classList.remove('is-loading');cover.removeAttribute('aria-busy');alert((e&&e.message)||'Не удалось загрузить фон');
           }finally{coverInput.value=''}
         })
       }
