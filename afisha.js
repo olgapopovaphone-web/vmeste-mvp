@@ -62,9 +62,14 @@ function onboardingHtml(){
 }
 
 function afishaCard(e){
-  const liked=afishaLiked.has(e.id),compared=afishaCompared.has(e.id);const category=AFISHA_CATEGORIES[e.category]||'Событие';
   const cover=e.cover_url?afEsc(e.cover_url):'';
   const coverStyle=cover?` style="background-image:linear-gradient(180deg,rgba(0,0,0,.08),rgba(0,0,0,.48)),url('${cover}')"`:'';
+  if(e.source_type==='lya'){
+    const mine=e.is_mine?'<span class="afishaLyaMine">МОЁ</span>':'';
+    const desc=e.description?`<p>${afEsc(e.description)}</p>`:`<p>Организатор · ${afEsc(e.creator_name||'Участник ЛЯ')}</p>`;
+    return `<article class="afishaCard afishaLyaCard" data-lya-event-id="${afEsc(e.event_id||e.id)}"><div class="afishaVisual lya${cover?' hasCover':''}"${coverStyle}><span class="afishaCategory">СОБЫТИЕ ЛЯ</span>${mine}<div class="afishaDateArt">${afDay(e.starts_at)}<span>${afMonth(e.starts_at)} · ${new Intl.DateTimeFormat('ru-RU',{hour:'2-digit',minute:'2-digit',timeZone:'Europe/Moscow'}).format(new Date(e.starts_at))}</span></div></div><div class="afishaBody"><h2>${afEsc(e.title)}</h2>${desc}<div class="afishaFacts"><span>${afEsc(e.venue||'Место уточняется')}</span><span>${afEsc(e.is_free?'Бесплатно':e.price_text||'Цена у организатора')}</span></div><div class="afishaActions afishaLyaActions"><button class="openLyaEvent" data-id="${afEsc(e.event_id||e.id)}">${e.is_mine?'Открыть моё событие':'Посмотреть событие'}</button></div><div class="afishaSource afishaLyaSource">Организатор: ${afEsc(e.creator_name||'Участник ЛЯ')}</div></div></article>`;
+  }
+  const liked=afishaLiked.has(e.id),compared=afishaCompared.has(e.id);const category=AFISHA_CATEGORIES[e.category]||'Событие';
   return `<article class="afishaCard" data-afisha-id="${afEsc(e.id)}"><div class="afishaVisual ${afEsc(e.category)}${cover?' hasCover':''}"${coverStyle}><span class="afishaCategory">${afEsc(category)}</span><div class="afishaDateArt">${afDay(e.starts_at)}<span>${afMonth(e.starts_at)} · ${new Intl.DateTimeFormat('ru-RU',{hour:'2-digit',minute:'2-digit',timeZone:'Europe/Moscow'}).format(new Date(e.starts_at))}</span></div></div><div class="afishaBody"><h2>${afEsc(e.title)}</h2>${e.description?`<p>${afEsc(e.description)}</p>`:''}<div class="afishaFacts"><span>${afEsc(e.venue||'Место уточняется')}</span><span>${afEsc(e.is_free?'Бесплатно':e.price_text||'Цена у организатора')}</span></div><div class="afishaActions"><button class="af-like ${liked?'active':''}" data-id="${afEsc(e.id)}">${liked?'♥':'♡'} Нравится</button><button class="af-compare ${compared?'active':''}" data-id="${afEsc(e.id)}">⇄ ${compared?'Выбрано':'Сравнить'}</button><button class="collectCompany" data-id="${afEsc(e.id)}">Собрать компанию</button></div><a class="afishaSource" href="${afEsc(e.source_url)}" target="_blank" rel="noopener">Источник: ${afEsc(e.source_name)} ↗</a></div></article>`;
 }
 
@@ -83,6 +88,7 @@ function bindAfishaActions(){
   document.querySelectorAll('.af-like').forEach(b=>b.onclick=()=>toggleAfisha('like',b.dataset.id));
   document.querySelectorAll('.af-compare').forEach(b=>b.onclick=()=>toggleAfisha('compare',b.dataset.id));
   document.querySelectorAll('.collectCompany').forEach(b=>b.onclick=()=>collectCompany(b.dataset.id));
+  document.querySelectorAll('.openLyaEvent').forEach(b=>b.onclick=()=>{if(typeof openEventView==='function')openEventView(b.dataset.id,'home')});
 }
 
 async function saveAfishaPreferences(){
