@@ -67,15 +67,12 @@
   }
   function notificationCenterBlock(isSelf){
     if(!isSelf)return '';
-    return '<section class="profileV2Section profileV2NotificationCenter" data-profile-notification-center>'+
-      '<div class="profileV2Title"><div><span class="profileV2Eyebrow">ЛЯ</span><h2>Оповещения</h2></div><button type="button" class="profileV2NotificationAll" data-profile-notification-category="all"><span data-profile-notification-total>0</span> все ›</button></div>'+
-      '<div class="profileV2NotificationCategories">'+
-        '<button type="button" data-profile-notification-category="events"><span><b>Приглашения</b><small>На события</small></span><strong data-profile-notification-count="events">0</strong></button>'+
-        '<button type="button" data-profile-notification-category="circle"><span><b>Круг</b><small>Заявки в круг</small></span><strong data-profile-notification-count="circle">0</strong></button>'+
-        '<button type="button" data-profile-notification-category="community"><span><b>Сообщества</b><small>Приглашения</small></span><strong data-profile-notification-count="community">0</strong></button>'+
-        '<button type="button" data-profile-notification-category="reminders"><span><b>Напоминания</b><small>Перед событиями</small></span><strong data-profile-notification-count="reminders">0</strong></button>'+
-      '</div>'+
-    '</section>'
+    return '<div class="profileV2NotificationChips" data-profile-notification-center>'+
+      '<button type="button" data-profile-notification-category="events"><span>События</span><b data-profile-notification-count="events">0</b></button>'+
+      '<button type="button" data-profile-notification-category="circle"><span>Круг</span><b data-profile-notification-count="circle">0</b></button>'+
+      '<button type="button" data-profile-notification-category="community"><span>Сообщества</span><b data-profile-notification-count="community">0</b></button>'+
+      '<button type="button" data-profile-notification-category="reminders"><span>Напоминания</span><b data-profile-notification-count="reminders">0</b></button>'+
+    '</div>'
   }
 
   async function hydrateNotificationCenter(root){
@@ -89,10 +86,10 @@
         community:(d.community||[]).length,
         reminders:(d.reminders||[]).length
       };
-      var total=counts.events+counts.circle+counts.community+counts.reminders;
-      var t=box.querySelector('[data-profile-notification-total]');if(t)t.textContent=String(total);
-      Object.keys(counts).forEach(function(k){var el=box.querySelector('[data-profile-notification-count="'+k+'"]');if(el)el.textContent=String(counts[k])});
-      box.classList.toggle('has-notifications',total>0)
+      Object.keys(counts).forEach(function(k){
+        var el=box.querySelector('[data-profile-notification-count="'+k+'"]');
+        if(el){el.textContent=String(counts[k]);el.hidden=counts[k]<=0;el.closest('button')?.classList.toggle('has-count',counts[k]>0)}
+      })
     }catch(e){}
   }
 
