@@ -101,7 +101,7 @@ async function saveProfile(e){
 async function signOut(){try{if(session?.access_token)await api('logout')}catch{}clearSession();openView('home')}
 
 
-const PASSKEY_SUPPORTED=!!(window.PublicKeyCredential&&navigator.credentials);
+const PASSKEY_SUPPORTED=false; // Disabled until Supabase passkey endpoints are available.
 function updateQuickLoginUI(){
   const login=$('#passkey-login'),hint=$('#passkey-hint'),enroll=$('#passkey-enroll');
   if(login){login.hidden=!PASSKEY_SUPPORTED;login.onclick=signInWithDevicePasskey}
@@ -163,7 +163,13 @@ $('#auth-form').onsubmit=async e=>{
       if(data.session){saveSession(data.session);await loadAccount();if(pendingInviteToken)await showPendingInvite();else openView('profile')}
       else{setAuthMode('login');status.hidden=false;status.className='status';status.textContent='Аккаунт создан. Подтвердите email по ссылке из письма — приглашение сохранится.'}
     }else{
-      const data=await api('login',{email,password},false);saveSession(data.session);await loadAccount();if(pendingInviteToken)await showPendingInvite();else openView('profile')
+      const data=await api('login',{email,password},false);
+      if(!data.session)throw new Error('Сессия входа не получена');
+      saveSession(data.session);
+      const ok=await loadAccount();
+      if(!ok)throw new Error('Вход выполнен, но профиль не загрузился');
+      if(pendingInviteToken)await showPendingInvite();
+      else location.replace(location.pathname+location.search);
     }
   }catch(err){status.hidden=false;status.className='status error';status.textContent=err.message}
 };
@@ -227,7 +233,7 @@ async function showInviteLink(eventId,eventTitle){
     const data=await api('create_invite_link',{event_id:eventId});const url=data.invite_url;
     area.innerHTML=`<div class="inviteBox"><div class="ey">ССЫЛКА-ПРИГЛАШЕНИЕ</div><p class="muted" style="margin:6px 0 10px">Можно отправить в любой мессенджер.</p><input class="inviteLink" value="${escapeHtml(url)}" readonly><div class="inviteLinkActions"><button class="repeat copy-invite">Копировать</button><button class="smallPrimary share-invite">Поделиться</button></div><div class="shareOk" hidden></div></div>`;
     const ok=area.querySelector('.shareOk');area.querySelector('.copy-invite').onclick=async()=>{try{await navigator.clipboard.writeText(url);ok.hidden=false;ok.textContent='Ссылка скопирована'}catch{const input=area.querySelector('.inviteLink');input.select();document.execCommand('copy');ok.hidden=false;ok.textContent='Ссылка скопирована'}};
-    area.querySelector('.share-invite').onclick=async()=>{if(navigator.share){try{await navigator.share({title:eventTitle,text:`Приглашаю на «${eventTitle}» во «Вместе»`,url})}catch{}}else{await navigator.clipboard.writeText(url);ok.hidden=false;ok.textContent='Ссылка скопирована — вставьте её в мессенджер'}};
+    area.querySelector('.share-invite').onclick=async()=>{if(navigator.share){try{await navigator.share({title:eventTitle,text:`Приглашаю на «${eventTitle}» в ЛЯ`,url})}catch{}}else{await navigator.clipboard.writeText(url);ok.hidden=false;ok.textContent='Ссылка скопирована — вставьте её в мессенджер'}};
   }catch(err){area.innerHTML=`<div class="status error">${escapeHtml(err.message)}</div>`}
 }
 async function respondInvitation(invitationId,response){try{await api('respond_invitation',{invitation_id:invitationId,response});await loadEvents()}catch(err){alert(err.message)}}
@@ -246,7 +252,7 @@ async function showPendingInvite(){
   try{
     const data=await api('preview_invite_link',{token:pendingInviteToken},false);const ev=data.event;
     const overlay=document.createElement('div');overlay.className='inviteOverlay';
-    overlay.innerHTML=`<div class="inviteSheet"><div class="ey">ВАС ПРИГЛАСИЛИ</div><h2>${escapeHtml(ev.title)}</h2><p class="muted">${escapeHtml(ev.creator_name)} приглашает вас во «Вместе».</p><div class="inviteSheetMeta"><b>${formatEventDate(ev.starts_at)}</b><p class="muted" style="margin-top:6px">${ev.location_name?escapeHtml(ev.location_name)+' · ':''}${eventPrice(ev)}</p></div><div class="inviteSheetActions">${account?'<button class="primary accept-link-invite">Принять приглашение</button>':'<button class="primary login-for-invite">Войти или зарегистрироваться</button>'}</div><button class="inviteClose">Не сейчас</button><div class="status invite-overlay-status" hidden></div></div>`;
+    overlay.innerHTML=`<div class="inviteSheet"><div class="ey">ВАС ПРИГЛАСИЛИ</div><h2>${escapeHtml(ev.title)}</h2><p class="muted">${escapeHtml(ev.creator_name)} приглашает вас в ЛЯ.</p><div class="inviteSheetMeta"><b>${formatEventDate(ev.starts_at)}</b><p class="muted" style="margin-top:6px">${ev.location_name?escapeHtml(ev.location_name)+' · ':''}${eventPrice(ev)}</p></div><div class="inviteSheetActions">${account?'<button class="primary accept-link-invite">Принять приглашение</button>':'<button class="primary login-for-invite">Войти или зарегистрироваться</button>'}</div><button class="inviteClose">Не сейчас</button><div class="status invite-overlay-status" hidden></div></div>`;
     document.body.appendChild(overlay);
     overlay.querySelector('.inviteClose').onclick=removeInviteOverlay;
     if(account){overlay.querySelector('.accept-link-invite').onclick=async()=>{const status=overlay.querySelector('.invite-overlay-status');status.hidden=false;status.className='status';status.textContent='Добавляю событие в календарь…';try{await api('accept_invite_link',{token:pendingInviteToken});clearInviteFromUrl();removeInviteOverlay();selectedDateKey=dateKey(ev.starts_at);calendarYear=Number(selectedDateKey.slice(0,4));calendarMonth=Number(selectedDateKey.slice(5,7))-1;calendarMode='day';await loadEvents();openView('calendar')}catch(err){status.className='status error';status.textContent=err.message}}}
