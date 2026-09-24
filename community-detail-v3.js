@@ -4,8 +4,9 @@
   var LINKS_KEY='vmeste_event_group_proto_v1';
   var CHAT_KEY='vmeste_community_chat_proto_v1';
   var APP_URL='https://vmeste-app-omega.vercel.app';
+  var CIRCLE_API='https://nmeoakrpafxhpdrplsuo.supabase.co/functions/v1/vmeste-circle-api';
   var activeGroupId=null,activeSnapshot=null,activeTab='events';
-  var lastEvents=null,lastChronicle=null,lastAlbum=null,albumLoading=false;
+  var lastEvents=null,lastChronicle=null,lastAlbum=null,albumLoading=false,serverMembers=null;
 
   function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
   function read(key,fallback){try{var v=JSON.parse(localStorage.getItem(key)||'');return v||fallback}catch(e){return fallback}}
@@ -16,6 +17,7 @@
   function chats(){var m=read(CHAT_KEY,{});return m&&typeof m==='object'?m:{}}
   function session(){try{return JSON.parse(localStorage.getItem('vmeste_session_v1')||'null')}catch(e){return null}}
   function hasSession(){var s=session();return !!(s&&s.access_token)}
+  async function circleApi(action,payload){var ss=session();if(!ss||!ss.access_token)throw new Error('Войдите в ЛЯ');var r=await fetch(CIRCLE_API,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+ss.access_token},body:JSON.stringify(Object.assign({action:action},payload||{}))});var d=await r.json().catch(function(){return{error:'Некорректный ответ сервера'}});if(!r.ok)throw new Error(d.error||'Ошибка запроса');return d}
   function currentUserId(){var s=session();return s&&s.user&&s.user.id||window.account&&window.account.user&&window.account.user.id||''}
   function accountName(){var s=session(),u=s&&s.user,meta=u&&u.user_metadata||{};return window.account&&window.account.profile&&window.account.profile.display_name||window.account&&window.account.user&&window.account.user.email||meta.display_name||meta.name||u&&u.email||'Вы'}
   function memberWord(n){var m=Math.abs(n)%100,d=m%10;if(m>10&&m<20)return'участников';if(d===1)return'участник';if(d>1&&d<5)return'участника';return'участников'}
@@ -64,7 +66,7 @@
   }
 
   function normalizedMembers(g){
-    var list=Array.isArray(g.members)?g.members.slice():[];
+    var list=Array.isArray(serverMembers)&&serverMembers.length?serverMembers.slice():(Array.isArray(g.members)?g.members.slice():[]);
     if(!list.length&&isMember())list.push({id:currentUserId()||'me',display_name:accountName(),role:isOwner(g)?'owner':'member'});
     return list;
   }
@@ -75,8 +77,8 @@
   }
   function membersPanel(g){
     if(g.access==='closed'&&!isMember())return closedGate();
-    var n=Number(g.member_count||1),list=normalizedMembers(g),canInvite=isMember();
-    return '<div class="communityMembersHead"><strong>'+n+' '+memberWord(n)+'</strong>'+(canInvite?'<button type="button" class="communityInviteMembers">＋ Пригласить</button>':'')+'</div><div class="communityMemberList">'+list.map(function(m){return memberRow(g,m)}).join('')+'</div>'+(n>list.length?'<p class="communityMembersNote">Остальные участники появятся здесь после подключения серверного членства.</p>':'');
+    var list=normalizedMembers(g),n=Math.max(Number(g.member_count||1),list.length),canInvite=isMember();
+    return '<div class="communityMembersHead"><strong>'+n+' '+memberWord(n)+'</strong>'+(canInvite?'<button type="button" class="communityInviteMembers">＋ Пригласить</button>':'')+'</div><div class="communityMemberList">'+list.map(function(m){return memberRow(g,m)}).join('')+'</div>';
   }
 
   function albumTitleMap(){var map={};function add(ev){if(ev&&ev.id)map[ev.id]=ev.title||'Событие'};(lastChronicle&&lastChronicle.events||[]).forEach(add);(lastEvents&&lastEvents.events||[]).forEach(add);(lastEvents&&lastEvents.invited_events||[]).forEach(add);return map}
@@ -108,7 +110,7 @@
     root.querySelectorAll('[data-community-event]').forEach(function(b){b.onclick=function(){if(typeof openEventView==='function')openEventView(b.dataset.communityEvent,'communities')}});
     var join=root.querySelector('[data-community-join]');if(join)join.onclick=function(){joinGroup(g)};
     var decline=root.querySelector('[data-community-decline]');if(decline)decline.onclick=function(){declineInvite(g)};
-    var invite=root.querySelector('.communityInviteMembers');if(invite)invite.onclick=function(){shareInvite(g)};
+    var invite=root.querySelector('.communityInviteMembers');if(invite)invite.onclick=function(){openInvitePicker(g)};
     root.querySelectorAll('[data-community-member-menu]').forEach(function(b){b.onclick=function(){openMemberMenu(g,b.dataset.communityMemberMenu)}});
     root.querySelectorAll('[data-community-media]').forEach(function(b){b.onclick=function(){var i=Number(b.dataset.communityMedia)||0;if(typeof window.openEventMediaViewerReadOnly==='function')window.openEventMediaViewerReadOnly(lastAlbum,i)}});
     var chat=root.querySelector('[data-community-chat-open]');if(chat){var y0=null;chat.onclick=function(){openChat(g)};chat.addEventListener('touchstart',function(e){y0=e.touches&&e.touches[0]?e.touches[0].clientY:null},{passive:true});chat.addEventListener('touchend',function(e){if(y0==null)return;var y=e.changedTouches&&e.changedTouches[0]?e.changedTouches[0].clientY:y0;if(y-y0<-32)openChat(g);y0=null},{passive:true})}
@@ -131,8 +133,8 @@
   }
 
   function saveMemberGroup(g,extra){var mine=groups(),i=mine.findIndex(function(x){return x.id===g.id}),copy=Object.assign({},g,extra||{});if(i>=0)mine[i]=Object.assign({},mine[i],copy);else mine.unshift(copy);write(GROUPS_KEY,mine);activeSnapshot=Object.assign({},copy)}
-  function joinGroup(g){var invitedBefore=isInvited(),base=Object.assign({},g,{member_count:Number(g.member_count||0)+1,role:'member',joined_via_invite:true});saveMemberGroup(base);if(invitedBefore)write(INVITES_KEY,invites().filter(function(x){return x.id!==g.id}));activeSnapshot=base;render();loadEvents()}
-  function declineInvite(g){write(INVITES_KEY,invites().filter(function(x){return x.id!==g.id}));close()}
+  async function joinGroup(g){try{if(g._server_invitation_id)await circleApi('respond_community_invite',{invitation_id:g._server_invitation_id,response:'accepted'});var invitedBefore=isInvited(),base=Object.assign({},g,{member_count:Number(g.member_count||0)+1,role:'member',joined_via_invite:true});delete base._server_invitation_id;saveMemberGroup(base);if(invitedBefore)write(INVITES_KEY,invites().filter(function(x){return x.id!==g.id}));activeSnapshot=base;serverMembers=null;render();loadEvents();loadCommunityMembers(base);document.dispatchEvent(new CustomEvent('vmeste-community-invites-changed'))}catch(e){alert(e.message)}}
+  async function declineInvite(g){try{if(g._server_invitation_id)await circleApi('respond_community_invite',{invitation_id:g._server_invitation_id,response:'declined'});write(INVITES_KEY,invites().filter(function(x){return x.id!==g.id}));document.dispatchEvent(new CustomEvent('vmeste-community-invites-changed'));close()}catch(e){alert(e.message)}}
   function leaveGroup(g){if(!confirm('Покинуть сообщество «'+g.name+'»?'))return;write(GROUPS_KEY,groups().filter(function(x){return x.id!==g.id}));activeSnapshot=Object.assign({},g,{member_count:Math.max(0,Number(g.member_count||1)-1),role:null,joined_via_invite:false});render()}
 
   function openCreateEvent(g){
@@ -141,7 +143,20 @@
     setTimeout(function(){var action=document.querySelector('[data-view="create"] [data-create-action="event"]');if(action)action.click();var form=document.getElementById('event-form');if(!form)return;document.querySelector('.communityCreateContext')?.remove();var box=document.createElement('div');box.className='communityCreateContext';box.innerHTML='<span>СОБЫТИЕ СООБЩЕСТВА</span><strong>'+esc(g.name)+'</strong><small>Сообщество уже выбрано — после создания событие появится здесь автоматически.</small>';form.insertAdjacentElement('beforebegin',box)},60)
   }
 
-  async function shareInvite(g){var text='Присоединяйся к сообществу «'+g.name+'» в ЛЯ.';try{if(navigator.share)await navigator.share({title:g.name||'ЛЯ',text:text,url:APP_URL});else if(navigator.clipboard)await navigator.clipboard.writeText(text+' '+APP_URL)}catch(e){}}
+  function communitySnapshot(g){return{id:g.id,name:g.name||'Сообщество',description:g.description||'',access:g.access||'closed',cover_url:g.cover_url||null,event_permission:g.event_permission||'all',chat_enabled:g.chat_enabled!==false,member_count:Number(g.member_count||1),owner_id:g.owner_id||currentUserId()}}
+  async function shareInviteExternal(g){var text='Присоединяйся к сообществу «'+g.name+'» в ЛЯ.';try{if(navigator.share)await navigator.share({title:g.name||'ЛЯ',text:text,url:APP_URL});else if(navigator.clipboard){await navigator.clipboard.writeText(text+' '+APP_URL);alert('Ссылка скопирована')}}catch(e){}}
+  async function openInvitePicker(g){
+    if(!hasSession()){alert('Войдите в ЛЯ, чтобы приглашать участников');return}
+    document.querySelector('.communityActionOverlay')?.remove();var o=document.createElement('div');o.className='communityActionOverlay communityInvitePickerOverlay';
+    o.innerHTML='<div class="communityActionSheet communityInvitePicker"><div class="communityActionHead"><div><span class="ey">ПРИГЛАСИТЬ</span><h2>Участники ЛЯ</h2></div><button type="button">×</button></div><div class="communityInvitePickerBody"><div class="communityDetailEmpty">Загружаю людей…</div></div><button type="button" class="communityManageRow communityInviteExternal">Поделиться ссылкой <b>↗</b></button></div>';
+    document.body.appendChild(o);var close=function(){o.remove()};o.querySelector('.communityActionHead button').onclick=close;o.onclick=function(e){if(e.target===o)close()};o.querySelector('.communityInviteExternal').onclick=function(){shareInviteExternal(g)};
+    var body=o.querySelector('.communityInvitePickerBody');
+    try{
+      var data=await circleApi('list_people',{}),memberIds=new Set(normalizedMembers(g).map(function(m){return String(m.id||'')})),people=(data.people||[]).filter(function(p){return !p.is_self&&!memberIds.has(String(p.id))});
+      body.innerHTML=people.length?people.map(function(p){var n=p.display_name||'Участник',photo=p.avatar_url?'<span class="communityInvitePersonAvatar has-photo" style="background-image:url(\''+esc(String(p.avatar_url).replace(/'/g,'%27'))+'\')"></span>':'<span class="communityInvitePersonAvatar">'+esc(String(n).trim().slice(0,1).toUpperCase()||'У')+'</span>';return '<div class="communityInvitePerson">'+photo+'<span class="communityInvitePersonCopy"><strong>'+esc(n)+'</strong><small>'+esc(p.city||'Участник ЛЯ')+'</small></span><button type="button" data-community-direct-invite="'+esc(p.id)+'">Пригласить</button></div>'}).join(''):'<div class="communityDetailEmpty">Все участники ЛЯ уже в сообществе.</div>';
+      body.querySelectorAll('[data-community-direct-invite]').forEach(function(b){b.onclick=async function(){b.disabled=true;b.textContent='Отправляю…';try{await circleApi('send_community_invite',{target_user_id:b.dataset.communityDirectInvite,community:communitySnapshot(g)});b.textContent='Отправлено ✓';document.dispatchEvent(new CustomEvent('vmeste-community-invites-changed'))}catch(e){b.disabled=false;b.textContent='Пригласить';alert(e.message)}}})
+    }catch(e){body.innerHTML='<div class="communityDetailEmpty">'+esc(e.message)+'</div>'}
+  }
   async function shareCommunity(g){var text='«'+g.name+'» — сообщество в ЛЯ.';try{if(navigator.share)await navigator.share({title:g.name||'ЛЯ',text:text,url:APP_URL});else if(navigator.clipboard)await navigator.clipboard.writeText(text+' '+APP_URL)}catch(e){}}
 
   function openMenu(g){
@@ -150,7 +165,7 @@
     else if(member)rows='<button type="button" class="communityManageRow" data-community-invite>Пригласить людей <b>›</b></button>'+rows+'<button type="button" class="communityManageDanger" data-community-leave>Покинуть сообщество</button>';
     o.innerHTML='<div class="communityActionSheet"><div class="communityActionHead"><div><span class="ey">СООБЩЕСТВО</span><h2>'+esc(g.name)+'</h2></div><button type="button" data-close>×</button></div>'+rows+'</div>';document.body.appendChild(o);
     var closeSheet=function(){o.remove()};o.querySelector('[data-close]').onclick=closeSheet;o.onclick=function(e){if(e.target===o)closeSheet()};
-    var share=o.querySelector('[data-community-share]');if(share)share.onclick=function(){shareCommunity(g);closeSheet()};var inv=o.querySelector('[data-community-invite]');if(inv)inv.onclick=function(){shareInvite(g);closeSheet()};var leave=o.querySelector('[data-community-leave]');if(leave)leave.onclick=function(){closeSheet();leaveGroup(g)};var edit=o.querySelector('[data-community-edit]');if(edit)edit.onclick=function(){closeSheet();openEditGroup(g)};
+    var share=o.querySelector('[data-community-share]');if(share)share.onclick=function(){shareCommunity(g);closeSheet()};var inv=o.querySelector('[data-community-invite]');if(inv)inv.onclick=function(){closeSheet();openInvitePicker(g)};var leave=o.querySelector('[data-community-leave]');if(leave)leave.onclick=function(){closeSheet();leaveGroup(g)};var edit=o.querySelector('[data-community-edit]');if(edit)edit.onclick=function(){closeSheet();openEditGroup(g)};
     var sel=o.querySelector('[data-community-event-permission]');if(sel){sel.value=g.event_permission||'all';sel.onchange=function(){var mine=groups(),x=mine.find(function(q){return q.id===g.id});if(x){x.event_permission=sel.value;write(GROUPS_KEY,mine);activeSnapshot=Object.assign({},x);render()}}}
     var chat=o.querySelector('[data-community-chat-toggle]');if(chat)chat.onchange=function(){var mine=groups(),x=mine.find(function(q){return q.id===g.id});if(x){x.chat_enabled=chat.checked;write(GROUPS_KEY,mine);activeSnapshot=Object.assign({},x);render()}};
     var del=o.querySelector('[data-community-delete]');if(del)del.onclick=function(){if(!confirm('Удалить сообщество «'+g.name+'»?'))return;write(GROUPS_KEY,groups().filter(function(q){return q.id!==g.id}));var m=links();Object.keys(m).forEach(function(id){if(m[id]===g.id)delete m[id]});write(LINKS_KEY,m);closeSheet();close()};
@@ -171,7 +186,8 @@
     var form=o.querySelector('form'),text=form.querySelector('textarea');form.onsubmit=function(e){e.preventDefault();var v=text.value.trim();if(!v)return;var all=chats(),list=Array.isArray(all[g.id])?all[g.id]:[];list.push({id:'m_'+Date.now(),text:v,author:accountName(),mine:true,created_at:new Date().toISOString()});all[g.id]=list.slice(-200);write(CHAT_KEY,all);text.value='';draw()};var y0=null;o.querySelector('.communityChatPull').addEventListener('touchstart',function(e){y0=e.touches&&e.touches[0]?e.touches[0].clientY:null},{passive:true});o.querySelector('.communityChatPull').addEventListener('touchend',function(e){if(y0==null)return;var y=e.changedTouches&&e.changedTouches[0]?e.changedTouches[0].clientY:y0;if(y-y0>45)closeChat();y0=null},{passive:true});o.querySelector('.communityChatPull').onclick=closeChat;draw();setTimeout(function(){try{text.focus({preventScroll:true})}catch(e){text.focus()}},120)
   }
 
-  window.openCommunityDetail=function(id,snapshot){activeGroupId=id;activeSnapshot=snapshot||null;activeTab='events';lastEvents=null;lastChronicle=null;lastAlbum=null;albumLoading=false;ensure();if(typeof openView==='function')openView('community-detail');render();loadEvents()};
+  async function loadCommunityMembers(g){if(!g||!g.id||!hasSession())return;try{var d=await circleApi('list_community_members',{community_id:g.id});serverMembers=d.members||[];if(serverMembers.length){var mine=groups(),x=mine.find(function(q){return q.id===g.id});if(x){x.members=serverMembers;x.member_count=Math.max(Number(x.member_count||1),serverMembers.length);write(GROUPS_KEY,mine);activeSnapshot=Object.assign({},x)}}if(activeTab==='members')render()}catch(e){}}
+  window.openCommunityDetail=function(id,snapshot){activeGroupId=id;activeSnapshot=snapshot||null;activeTab='events';lastEvents=null;lastChronicle=null;lastAlbum=null;albumLoading=false;serverMembers=null;ensure();if(typeof openView==='function')openView('community-detail');render();loadEvents();loadCommunityMembers(group())};
   window.refreshCommunityDetailV3=function(){if(activeGroupId)render()};
   ensure();
 })();
