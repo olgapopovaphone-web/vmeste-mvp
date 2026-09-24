@@ -189,7 +189,12 @@
     '</div></section>'
   }
   function profileMarkup(detail,isSelf){
-    var p=detail.profile||{},comms=mergeCommunities(detail,isSelf),events=detail.events||[];
+    var p=detail.profile||{},comms=mergeCommunities(detail,isSelf),now=Date.now();
+    var events=(detail.events||[]).filter(function(e){
+      var t=Date.parse(e.starts_at||'');return Number.isFinite(t)&&t>=now-60000
+    }).sort(function(a,b){
+      return Date.parse(a.starts_at||'')-Date.parse(b.starts_at||'')
+    }).slice(0,5);
     var about=p.bio?'<p class="profileV2Bio">'+esc(p.bio)+'</p>':(isSelf?'<button type="button" class="profileV2AddBio" data-profile-edit>＋ Добавить «О себе»</button>':'');
     var topLeft=isSelf?'<button type="button" class="profileV2Brand" data-profile-back>'+profileLogo()+'</button>':'<button type="button" class="profileV2TopIcon profileV2Back" data-profile-back>‹</button>';
     var topRight=isSelf?'<div class="profileV2TopBtns"><label class="profileV2TopIcon" for="profile-cover-input-v3" data-profile-cover aria-label="Загрузить фон">◫</label><button type="button" class="profileV2TopIcon" data-profile-edit aria-label="Настройки">⚙</button></div>':'';
