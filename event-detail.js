@@ -46,7 +46,7 @@ function avatarHtml(person){
   const letter=(person.display_name||'У').trim().slice(0,1).toUpperCase();
   return `<span class="personAvatar">${eventEsc(letter)}</span>`;
 }
-function statusLabel(s){return s==='going'?'Пойдёт':s==='interested'?'Возможно':s==='declined'?'Не сможет':'Участник'}
+function statusLabel(s){return s==='going'?'Пойдёт':s==='declined'?'Не пойдёт':'Участник'}
 
 async function loadEventDetail(eventId){
   const root=document.querySelector('#event-detail-root');if(!root)return;
@@ -64,10 +64,10 @@ function renderEventDetail(data){
   const ev=data.event;
   const finished=ev.status==='finished';
   const participants=data.participants||[];
-  const counts={going:0,interested:0,declined:0};participants.forEach(p=>{if(counts[p.status]!==undefined)counts[p.status]++});
+  const counts={going:0,declined:0};participants.forEach(p=>{if(counts[p.status]!==undefined)counts[p.status]++});
   const cover=ev.cover_url?`<img src="${eventEsc(ev.cover_url)}" alt="Обложка события">`:`<div class="eventCoverPlaceholder">В</div>`;
   const upload=data.is_creator&&!finished?`<input type="file" id="event-cover-input" accept="image/jpeg,image/png,image/webp" hidden><button class="coverEdit" id="event-cover-button">${ev.cover_url?'Сменить обложку':'Добавить обложку'}</button><div class="coverUploadStatus" id="cover-upload-status" hidden></div>`:'';
-  const rsvp=data.is_creator||finished?'':`<div class="eventSection"><div class="eventSectionHead"><div><span class="ey">МОЙ ОТВЕТ</span><h3>Вы пойдёте?</h3></div></div><div class="rsvp"><button data-rsvp="going" class="${data.my_status==='going'?'active':''}">Пойду</button><button data-rsvp="interested" class="${data.my_status==='interested'?'active':''}">Возможно</button><button data-rsvp="declined" class="${data.my_status==='declined'?'active':''}">Не смогу</button></div></div>`;
+  const rsvp=data.is_creator||finished?'':`<div class="eventSection"><div class="eventSectionHead"><div><span class="ey">МОЙ ОТВЕТ</span><h3>Вы пойдёте?</h3></div></div><div class="rsvp"><button data-rsvp="going" class="${data.my_status==='going'?'active':''}">Пойду</button><button data-rsvp="declined" class="${data.my_status==='declined'?'active':''}">Не пойду</button></div></div>`;
   const people=[{...data.creator,status:'creator'},...participants];
   const peopleHtml=people.map(p=>`<div class="personRow">${avatarHtml(p)}<div><strong>${eventEsc(p.display_name)}</strong><small>${p.status==='creator'?'Организатор':statusLabel(p.status)}</small></div></div>`).join('');
   const invite=data.is_creator&&!finished?(ev.visibility==='invite_only'?`<div class="eventSection"><div class="eventSectionHead"><div><span class="ey">ПРИГЛАШЕНИЕ</span><h3>Позвать людей</h3></div></div><div class="eventActions"><button class="primary" id="event-invite-link">Получить ссылку</button></div><div id="event-invite-box" class="inviteBox"></div></div>`:`<div class="eventSection"><div class="eventSectionHead"><div><span class="ey">ВИДИМОСТЬ</span><h3>Открытое событие</h3></div></div><div class="chatLocked">Событие опубликовано во «Вокруг» и доступно участникам ЛЯ.</div></div>`):'';
@@ -76,10 +76,10 @@ function renderEventDetail(data){
   if(data.can_read_chat){
     chat=`<div class="eventSection"><div class="eventSectionHead"><div><span class="ey">ЧАТ</span><h3>${finished?'История разговора':'Разговор события'}</h3></div>${!finished?'<button class="repeat" id="chat-refresh">Обновить</button>':''}</div><div class="chatBox"><div id="chat-messages" class="chatMessages"><p class="muted">Загружаю сообщения…</p></div>${data.can_chat?'<form id="chat-form" class="chatForm"><textarea id="chat-text" maxlength="2000" placeholder="Написать сообщение"></textarea><button>↑</button></form>':'<p class="eventHint">Событие завершено — чат сохранён только для чтения.</p>'}</div></div>`;
   }else{
-    chat=`<div class="eventSection"><div class="eventSectionHead"><div><span class="ey">ЧАТ</span><h3>Разговор события</h3></div></div><div class="chatLocked">Чат открывается организатору и участникам со статусом «Пойду» или «Возможно».</div></div>`;
+    chat=`<div class="eventSection"><div class="eventSectionHead"><div><span class="ey">ЧАТ</span><h3>Разговор события</h3></div></div><div class="chatLocked">Чат открывается организатору и участникам со статусом «Пойду».</div></div>`;
   }
   const lifecycle=data.is_creator?`<div class="eventSection eventDanger"><div class="eventSectionHead"><div><span class="ey">УПРАВЛЕНИЕ</span><h3>${finished?'Событие завершено':'Событие'}</h3></div></div>${finished?'<p class="muted">Оно находится в Хронике.</p>':`<button class="finishEvent" id="finish-event">Завершить событие</button>`}<button class="deleteEvent" id="delete-event">Удалить событие</button></div>`:'';
-  root.innerHTML=`<div class="eventCover">${cover}${upload}</div><span class="ey">${finished?'ЗАВЕРШЕНО':data.is_creator?'МОЁ СОБЫТИЕ':'СОБЫТИЕ'}</span><h1 class="eventDetailTitle">${eventEsc(ev.title)}</h1>${ev.description?`<p class="muted">${eventEsc(ev.description)}</p>`:''}<div class="eventMeta"><div><small>КОГДА</small><b>${eventEsc(eventDateTime(ev.starts_at))}</b></div><div><small>ГДЕ</small><b>${eventEsc(ev.location_name||'Место не указано')}</b></div><div><small>ОРГАНИЗАТОР</small><b>${eventEsc(data.creator.display_name)}</b></div></div>${rsvp}<div class="eventSection"><div class="eventSectionHead"><div><span class="ey">УЧАСТНИКИ</span><h3>Кто будет</h3></div></div><div class="participantSummary"><span>Пойдут · ${counts.going}</span><span>Возможно · ${counts.interested}</span><span>Не смогут · ${counts.declined}</span></div><div class="participantList">${peopleHtml}</div></div>${source}${invite}${chat}${lifecycle}`;
+  root.innerHTML=`<div class="eventCover">${cover}${upload}</div><span class="ey">${finished?'ЗАВЕРШЕНО':data.is_creator?'МОЁ СОБЫТИЕ':'СОБЫТИЕ'}</span><h1 class="eventDetailTitle">${eventEsc(ev.title)}</h1>${ev.description?`<p class="muted">${eventEsc(ev.description)}</p>`:''}<div class="eventMeta"><div><small>КОГДА</small><b>${eventEsc(eventDateTime(ev.starts_at))}</b></div><div><small>ГДЕ</small><b>${eventEsc(ev.location_name||'Место не указано')}</b></div><div><small>ОРГАНИЗАТОР</small><b>${eventEsc(data.creator.display_name)}</b></div></div>${rsvp}<div class="eventSection"><div class="eventSectionHead"><div><span class="ey">УЧАСТНИКИ</span><h3>Кто будет</h3></div></div><div class="participantSummary"><span>Пойдут · ${counts.going}</span><span>Не пойдут · ${counts.declined}</span></div><div class="participantList">${peopleHtml}</div></div>${source}${invite}${chat}${lifecycle}`;
   bindEventDetail(data);
 }
 
