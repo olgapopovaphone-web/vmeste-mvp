@@ -516,3 +516,115 @@ html body > [class][class],
 html body > [class][class] *{
   font-family:Manrope,system-ui,sans-serif!important;
 }
+
+
+/* =========================================================
+   PROFILE NOTIFICATION CENTER · 2026-09-25
+   Real categorized notifications, separate from settings.
+   ========================================================= */
+.profileV2NotificationCenter{padding-top:24px!important}
+.profileV2NotificationAll{
+  border:0;background:transparent;color:var(--lya-mut);
+  padding:0;font:700 9px/1 Manrope,system-ui,sans-serif!important;
+  display:flex;align-items:center;gap:4px
+}
+.profileV2NotificationAll span{
+  min-width:19px;height:19px;padding:0 5px;border-radius:999px;
+  display:grid;place-items:center;background:var(--lya-soft);color:var(--lya-ink);
+  font-size:9px
+}
+.profileV2NotificationCenter.has-notifications .profileV2NotificationAll span{
+  background:var(--lya-t);color:#fff
+}
+.profileV2NotificationCategories{
+  margin-top:10px;border-block:1px solid var(--lya-line)
+}
+.profileV2NotificationCategories>button{
+  width:100%;min-height:52px;border:0;border-bottom:1px solid var(--lya-line);
+  background:transparent;color:var(--lya-ink);padding:0;
+  display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;
+  text-align:left
+}
+.profileV2NotificationCategories>button:last-child{border-bottom:0}
+.profileV2NotificationCategories>button span{min-width:0}
+.profileV2NotificationCategories>button b{
+  display:block;font:700 11.5px/1.15 Manrope,system-ui,sans-serif!important
+}
+.profileV2NotificationCategories>button small{
+  display:block;margin-top:3px;color:var(--lya-mut);
+  font:500 9px/1.25 Manrope,system-ui,sans-serif!important
+}
+.profileV2NotificationCategories>button strong{
+  min-width:26px;height:26px;padding:0 7px;border-radius:50%;
+  display:grid;place-items:center;background:var(--lya-soft);color:var(--lya-mut);
+  font:800 10px/1 Manrope,system-ui,sans-serif!important
+}
+.profileV2NotificationCenter.has-notifications .profileV2NotificationCategories>button strong:not(:empty){
+  color:var(--lya-ink)
+}
+
+/* Expanded categorized notification sheet */
+.homeNotificationsSheet{padding-left:18px!important;padding-right:18px!important}
+.homeNotificationsSheet .homeToolsHead{margin-bottom:10px!important}
+.homeNotificationsSheet .homeToolsHead .ey{
+  display:block;margin-bottom:5px;color:var(--lya-mut)!important;
+  font:800 8.5px/1 Manrope,system-ui,sans-serif!important;letter-spacing:.11em
+}
+.homeNotificationsSheet .homeToolsHead h2{
+  margin:0;font:800 23px/1 Manrope,system-ui,sans-serif!important;
+  letter-spacing:-.025em;color:var(--lya-ink)!important
+}
+.homeNotificationTabs{
+  display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;
+  margin:0 -18px 14px;padding:2px 18px 4px
+}
+.homeNotificationTabs::-webkit-scrollbar{display:none}
+.homeNotificationTabs button{
+  flex:0 0 auto;height:32px;border:1px solid var(--lya-line);border-radius:999px;
+  background:transparent;color:var(--lya-ink);padding:0 10px;
+  display:flex;align-items:center;gap:6px;
+  font:700 9px/1 Manrope,system-ui,sans-serif!important
+}
+.homeNotificationTabs button b{
+  min-width:17px;height:17px;padding:0 4px;border-radius:999px;
+  background:var(--lya-soft);display:grid;place-items:center;
+  font-size:8px;color:var(--lya-mut)
+}
+.homeNotificationTabs button.active{
+  background:var(--lya-ink);color:#fff;border-color:var(--lya-ink)
+}
+.homeNotificationTabs button.active b{
+  background:rgba(255,255,255,.16);color:#fff
+}
+.homeNotificationsSheet .homeToolsBody{display:grid;gap:0}
+.homeNotificationsSheet .homeNotification{
+  margin:0!important;padding:14px 0!important;border:0!important;
+  border-bottom:1px solid var(--lya-line)!important;border-radius:0!important;
+  background:transparent!important
+}
+.homeNotificationsSheet .homeNotification:last-child{border-bottom:0!important}
+.homeNotificationsSheet .homeNotification small{
+  color:var(--lya-g)!important;font:800 8px/1 Manrope,system-ui,sans-serif!important;
+  letter-spacing:.08em
+}
+.homeNotificationsSheet .homeNotification h3{
+  margin:6px 0 4px!important;
+  font:800 15px/1.15 Manrope,system-ui,sans-serif!important;
+  color:var(--lya-ink)!important
+}
+.homeNotificationsSheet .homeNotification p{
+  margin:0 0 10px!important;color:var(--lya-mut)!important;
+  font:500 10px/1.4 Manrope,system-ui,sans-serif!important
+}
+.homeNotificationsSheet .homeNotificationActions{gap:6px!important}
+.homeNotificationsSheet .homeNotificationActions button{
+  min-height:34px;border-radius:999px!important;padding:0 12px!important;
+  font:700 9px/1 Manrope,system-ui,sans-serif!important
+}
+.homeNotificationsSheet .homeNotificationActions .smallPrimary{
+  background:var(--lya-ink)!important;color:#fff!important;border:0!important
+}
+.homeNotificationsSheet .homeNotificationActions .repeat{
+  background:transparent!important;color:var(--lya-ink)!important;
+  border:1px solid var(--lya-line)!important
+}
