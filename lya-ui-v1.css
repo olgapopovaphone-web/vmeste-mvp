@@ -519,48 +519,32 @@ html body > [class][class] *{
 
 
 /* =========================================================
-   PROFILE NOTIFICATION CENTER · 2026-09-25
-   Real categorized notifications, separate from settings.
+   PROFILE NOTIFICATION CHIPS · 2026-09-25
+   Compact entry points to categorized notifications.
    ========================================================= */
-.profileV2NotificationCenter{padding-top:24px!important}
-.profileV2NotificationAll{
-  border:0;background:transparent;color:var(--lya-mut);
-  padding:0;font:700 9px/1 Manrope,system-ui,sans-serif!important;
-  display:flex;align-items:center;gap:4px
+.profileV2NotificationChips{
+  display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;
+  padding:18px 18px 2px;margin:0 -18px;
 }
-.profileV2NotificationAll span{
-  min-width:19px;height:19px;padding:0 5px;border-radius:999px;
-  display:grid;place-items:center;background:var(--lya-soft);color:var(--lya-ink);
-  font-size:9px
+.profileV2NotificationChips::-webkit-scrollbar{display:none}
+.profileV2NotificationChips>button{
+  flex:0 0 auto;height:32px;border:1px solid var(--lya-line);
+  border-radius:999px;background:transparent;color:var(--lya-ink);
+  padding:0 10px;display:flex;align-items:center;gap:6px;
+  font:700 9.5px/1 Manrope,system-ui,sans-serif!important
 }
-.profileV2NotificationCenter.has-notifications .profileV2NotificationAll span{
+.profileV2NotificationChips>button b{
+  min-width:16px;height:16px;padding:0 4px;border-radius:999px;
+  background:var(--lya-soft);color:var(--lya-mut);
+  display:grid;place-items:center;
+  font:800 8px/1 Manrope,system-ui,sans-serif!important
+}
+.profileV2NotificationChips>button b[hidden]{display:none}
+.profileV2NotificationChips>button.has-count{
+  border-color:rgba(239,90,60,.28)
+}
+.profileV2NotificationChips>button.has-count b{
   background:var(--lya-t);color:#fff
-}
-.profileV2NotificationCategories{
-  margin-top:10px;border-block:1px solid var(--lya-line)
-}
-.profileV2NotificationCategories>button{
-  width:100%;min-height:52px;border:0;border-bottom:1px solid var(--lya-line);
-  background:transparent;color:var(--lya-ink);padding:0;
-  display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;
-  text-align:left
-}
-.profileV2NotificationCategories>button:last-child{border-bottom:0}
-.profileV2NotificationCategories>button span{min-width:0}
-.profileV2NotificationCategories>button b{
-  display:block;font:700 11.5px/1.15 Manrope,system-ui,sans-serif!important
-}
-.profileV2NotificationCategories>button small{
-  display:block;margin-top:3px;color:var(--lya-mut);
-  font:500 9px/1.25 Manrope,system-ui,sans-serif!important
-}
-.profileV2NotificationCategories>button strong{
-  min-width:26px;height:26px;padding:0 7px;border-radius:50%;
-  display:grid;place-items:center;background:var(--lya-soft);color:var(--lya-mut);
-  font:800 10px/1 Manrope,system-ui,sans-serif!important
-}
-.profileV2NotificationCenter.has-notifications .profileV2NotificationCategories>button strong:not(:empty){
-  color:var(--lya-ink)
 }
 
 /* Expanded categorized notification sheet */
