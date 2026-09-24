@@ -9,7 +9,7 @@ let afishaProfile=null;
 let afishaFilter='for-me';
 let afishaCity='Ростов-на-Дону';
 
-const AFISHA_CATEGORIES={music:'Музыка',theatre:'Театр',humor:'Юмор',exhibition:'Выставки',kids:'С детьми',walks:'Прогулки',food:'Еда',sport:'Спорт'};
+const AFISHA_CATEGORIES={cinema:'Кино',music:'Музыка',theatre:'Театр',humor:'Юмор',exhibition:'Выставки',kids:'С детьми',walks:'Прогулки',food:'Еда',sport:'Спорт'};
 const AFISHA_TIMES={weekdays:'Будни',weekends:'Выходные',day:'Днём',evening:'Вечером'};
 function afEsc(s){return String(s??'').replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':'&quot;',"'":'&#39;'}[c]))}
 function afDate(v){return new Intl.DateTimeFormat('ru-RU',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit',timeZone:'Europe/Moscow'}).format(new Date(v))}
