@@ -26,10 +26,10 @@
 
   import('/image-cropper.js?v=20260918-2').then(function(){return import('/image-upload-bridge.js?v=20260918-3')});
   import('/default-covers-v1.js?v=20260918-2');
-  import('/home-core.js?v=20260916-4');
-  import('/calendar-reminders.js?v=20260915-2').then(function(){return import('/calendar-reminder-cleanup.js?v=20260917-1')});
+  import('/home-core.js?v=20260924-11');
+  import('/calendar-reminders.js?v=20260924-11').then(function(){return import('/calendar-reminder-cleanup.js?v=20260917-1')});
   import('/my-events.js?v=20260915-1').then(function(){simplifyTabHeaders();return import('/calendar-month-only.js?v=20260916-1')}).then(function(){return import('/calendar-day-v2.js?v=20260916-1')});
-  import('/social-hub.js?v=20260918-3').then(function(){return import('/circle-labels.js?v=20260916-2')}).then(function(){return import('/social-cleanup.js?v=20260916-2')}).then(function(){return import('/people-tab-v2.js?v=20260916-1')}).then(function(){return import('/people-invite-app.js?v=20260917-2')}).then(function(){return import('/communities-tab-v2.js?v=20260917-2')});
+  import('/social-hub.js?v=20260918-3').then(function(){return import('/circle-labels.js?v=20260916-2')}).then(function(){return import('/social-cleanup.js?v=20260916-2')}).then(function(){return import('/people-tab-v2.js?v=20260924-11')}).then(function(){return import('/people-invite-app.js?v=20260917-2')}).then(function(){return import('/communities-tab-v2.js?v=20260917-2')});
   import('/community-detail.js?v=20260917-3').then(function(){return import('/community-media-bridge.js?v=20260917-1')}).then(function(){return import('/community-detail-v3.js?v=20260917-3')}).then(function(){var s=document.querySelector('[data-view="community-detail"]');if(s)s.classList.add('communityDetailV3');return import('/community-detail-link.js?v=20260917-3')});
   import('/event-group-prototype.js?v=20260916-1').then(function(){return import('/event-edit.js?v=20260916-1')}).then(function(){return import('/event-circle-invite.js?v=20260916-2')});
   import('/place-detail.js?v=20260924-1').then(function(){return import('/home-discovery.js?v=20260924-4')}).then(function(){return import('/around-people.js?v=20260916-1')});
