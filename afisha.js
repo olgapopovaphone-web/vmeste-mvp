@@ -2,6 +2,7 @@ const AFISHA_API='https://nmeoakrpafxhpdrplsuo.supabase.co/functions/v1/vmeste-a
 const SUPABASE_REST='https://nmeoakrpafxhpdrplsuo.supabase.co/rest/v1';
 const SUPABASE_PUBLISHABLE_KEY='sb_publishable_44_6dVen8Hq25CDywZKLwA_8PWV4-24';
 const PENDING_AFISHA_KEY='vmeste_pending_afisha_action_v1';
+const AFISHA_ONBOARDING_DISMISSED_KEY='lya_afisha_onboarding_dismissed_v1';
 let afishaEvents=[];
 let afishaLiked=new Set();
 let afishaCompared=new Set();
@@ -55,9 +56,9 @@ function filteredAfisha(){
 }
 
 function onboardingHtml(){
-  if(!account||afishaProfile?.city)return '';
+  if(!account||afishaProfile?.city||localStorage.getItem(AFISHA_ONBOARDING_DISMISSED_KEY)==='1')return '';
   const interests=afishaProfile?.interests||[];const times=afishaProfile?.preferred_times||[];
-  return `<section class="onboardingCard" id="afisha-onboarding"><span class="ey">НАСТРОИМ ЛЕНТУ</span><h2>Что вам интересно?</h2><p>Три коротких выбора — и «ЛЯ» начнёт поднимать подходящие события выше. В тестовой версии Афиша работает для Ростова-на-Дону.</p><div class="onboardingGroup"><small>ГОРОД</small><select class="onboardingCity" id="afisha-city"><option value="Ростов-на-Дону">Ростов-на-Дону</option></select></div><div class="onboardingGroup"><small>ИНТЕРЕСЫ</small><div class="onboardingChips" id="interest-chips">${Object.entries(AFISHA_CATEGORIES).map(([k,v])=>`<button type="button" data-value="${k}" class="${interests.includes(k)?'active':''}">${v}</button>`).join('')}</div></div><div class="onboardingGroup"><small>КОГДА УДОБНО</small><div class="onboardingChips" id="time-chips">${Object.entries(AFISHA_TIMES).map(([k,v])=>`<button type="button" data-value="${k}" class="${times.includes(k)?'active':''}">${v}</button>`).join('')}</div></div><button class="primary onboardingSave" id="save-afisha-prefs">Показать мои события</button></section>`;
+  return `<section class="onboardingCard" id="afisha-onboarding"><button class="onboardingClose" id="close-afisha-onboarding" type="button" aria-label="Закрыть">×</button><span class="ey">НАСТРОИМ ЛЕНТУ</span><h2>Что вам интересно?</h2><p>Три коротких выбора — и «ЛЯ» начнёт поднимать подходящие события выше. В тестовой версии Афиша работает для Ростова-на-Дону.</p><div class="onboardingGroup"><small>ГОРОД</small><select class="onboardingCity" id="afisha-city"><option value="Ростов-на-Дону">Ростов-на-Дону</option></select></div><div class="onboardingGroup"><small>ИНТЕРЕСЫ</small><div class="onboardingChips" id="interest-chips">${Object.entries(AFISHA_CATEGORIES).map(([k,v])=>`<button type="button" data-value="${k}" class="${interests.includes(k)?'active':''}">${v}</button>`).join('')}</div></div><div class="onboardingGroup"><small>КОГДА УДОБНО</small><div class="onboardingChips" id="time-chips">${Object.entries(AFISHA_TIMES).map(([k,v])=>`<button type="button" data-value="${k}" class="${times.includes(k)?'active':''}">${v}</button>`).join('')}</div></div><button class="primary onboardingSave" id="save-afisha-prefs">Показать мои события</button></section>`;
 }
 
 function afishaCard(e){
@@ -77,6 +78,7 @@ function renderAfisha(){
 
 function bindAfishaActions(){
   document.querySelectorAll('#interest-chips button,#time-chips button').forEach(b=>b.onclick=()=>b.classList.toggle('active'));
+  const closeOnboarding=document.querySelector('#close-afisha-onboarding');if(closeOnboarding)closeOnboarding.onclick=()=>{localStorage.setItem(AFISHA_ONBOARDING_DISMISSED_KEY,'1');document.querySelector('#afisha-onboarding')?.remove()};
   const save=document.querySelector('#save-afisha-prefs');if(save)save.onclick=saveAfishaPreferences;
   document.querySelectorAll('.af-like').forEach(b=>b.onclick=()=>toggleAfisha('like',b.dataset.id));
   document.querySelectorAll('.af-compare').forEach(b=>b.onclick=()=>toggleAfisha('compare',b.dataset.id));
@@ -87,7 +89,7 @@ async function saveAfishaPreferences(){
   const interests=[...document.querySelectorAll('#interest-chips button.active')].map(b=>b.dataset.value);
   const times=[...document.querySelectorAll('#time-chips button.active')].map(b=>b.dataset.value);
   const btn=document.querySelector('#save-afisha-prefs');btn.disabled=true;btn.textContent='Сохраняю…';
-  try{const data=await afRaw('save_preferences',{city:document.querySelector('#afisha-city').value,interests,preferred_times:times},true);afishaProfile=data.profile;afishaCity=data.profile.city;afToast('Лента настроена');await loadAfisha()}catch(err){afToast(err.message);btn.disabled=false;btn.textContent='Показать мои события'}
+  try{const data=await afRaw('save_preferences',{city:document.querySelector('#afisha-city').value,interests,preferred_times:times},true);afishaProfile=data.profile;afishaCity=data.profile.city;localStorage.setItem(AFISHA_ONBOARDING_DISMISSED_KEY,'1');afToast('Лента настроена');await loadAfisha()}catch(err){afToast(err.message);btn.disabled=false;btn.textContent='Показать мои события'}
 }
 
 function requireAfishaLogin(action,id){
