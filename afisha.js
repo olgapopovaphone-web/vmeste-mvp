@@ -63,7 +63,7 @@ function onboardingHtml(){
 function afishaCard(e){
   const liked=afishaLiked.has(e.id),compared=afishaCompared.has(e.id);const category=AFISHA_CATEGORIES[e.category]||'Событие';
   const cover=e.cover_url?afEsc(e.cover_url):'';
-  const coverStyle=cover?` style="background-image:linear-gradient(180deg,rgba(0,0,0,.08),rgba(0,0,0,.48)),url('&quot;${cover}&quot;')"`:'';
+  const coverStyle=cover?` style="background-image:linear-gradient(180deg,rgba(0,0,0,.08),rgba(0,0,0,.48)),url('${cover}')"`:'';
   return `<article class="afishaCard" data-afisha-id="${afEsc(e.id)}"><div class="afishaVisual ${afEsc(e.category)}${cover?' hasCover':''}"${coverStyle}><span class="afishaCategory">${afEsc(category)}</span><div class="afishaDateArt">${afDay(e.starts_at)}<span>${afMonth(e.starts_at)} · ${new Intl.DateTimeFormat('ru-RU',{hour:'2-digit',minute:'2-digit',timeZone:'Europe/Moscow'}).format(new Date(e.starts_at))}</span></div></div><div class="afishaBody"><h2>${afEsc(e.title)}</h2>${e.description?`<p>${afEsc(e.description)}</p>`:''}<div class="afishaFacts"><span>${afEsc(e.venue||'Место уточняется')}</span><span>${afEsc(e.is_free?'Бесплатно':e.price_text||'Цена у организатора')}</span></div><div class="afishaActions"><button class="af-like ${liked?'active':''}" data-id="${afEsc(e.id)}">${liked?'♥':'♡'} Нравится</button><button class="af-compare ${compared?'active':''}" data-id="${afEsc(e.id)}">⇄ ${compared?'Выбрано':'Сравнить'}</button><button class="collectCompany" data-id="${afEsc(e.id)}">Собрать компанию</button></div><a class="afishaSource" href="${afEsc(e.source_url)}" target="_blank" rel="noopener">Источник: ${afEsc(e.source_name)} ↗</a></div></article>`;
 }
 
@@ -126,7 +126,8 @@ async function loadAfisha(){
         data=await loadPublicAfishaFeed(afishaCity);
       }
     }else{
-      data=await loadPublicAfishaFeed(afishaCity);
+      try{ data=await afRaw('feed',{city:afishaCity},false); }
+      catch(publicApiError){ console.warn('Afisha API unavailable, using REST fallback',publicApiError); data=await loadPublicAfishaFeed(afishaCity); }
     }
     afishaEvents=data.events||[];
     afishaProfile=data.profile||null;
