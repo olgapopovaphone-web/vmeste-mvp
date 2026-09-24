@@ -112,8 +112,16 @@ $('#auth-form').onsubmit=async e=>{
   try{
     if(authMode==='signup'){
       const data=await api('signup',{email,password,display_name:$('#auth-name').value.trim(),invite_token:pendingInviteToken||null},false);
-      if(data.session){saveSession(data.session);await loadAccount();if(pendingInviteToken)await showPendingInvite();else openView('profile')}
-      else{setAuthMode('login');status.hidden=false;status.className='status';status.textContent='Аккаунт создан. Подтвердите email по ссылке из письма — приглашение сохранится.'}
+      if(!data.session)throw new Error('Аккаунт создан, но сессия не получена');
+      saveSession(data.session);
+      const ok=await loadAccount();
+      if(!ok)throw new Error('Аккаунт создан, но профиль не загрузился');
+      status.hidden=false;status.className='status';status.textContent='Готово';
+      if(pendingInviteToken)await showPendingInvite();
+      else{
+        openView('home');
+        document.dispatchEvent(new CustomEvent('vmeste-auth-changed',{detail:{signedIn:true}}));
+      }
     }else{
       if(!email||password.length<6)throw new Error('Введите почту и пароль');
       const data=await api('login',{email,password},false);
