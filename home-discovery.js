@@ -3,8 +3,8 @@
   function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
   function city(){try{return afishaCity||'Ростов-на-Дону'}catch(e){return'Ростов-на-Дону'}}
   function when(v){try{return new Intl.DateTimeFormat('ru-RU',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit',timeZone:'Europe/Moscow'}).format(new Date(v)).replace('.','')}catch(e){return''}}
-  function placeKind(p){return({restaurant:'РЕСТОРАН',bar:'БАР',cinema:'КИНОТЕАТР',museum:'МУЗЕЙ',gallery:'ГАЛЕРЕЯ',venue:'МЕСТО'})[p.kind]||'МЕСТО'}
-  function placeCover(p){return p.cover_url?'<div class="placeCover" style="background-image:url(\''+esc(p.cover_url)+'\')"></div>':''}
+  function placeKind(p){return({restaurant:'РЕСТОРАН',bar:'БАР',cafe:'КАФЕ',cinema:'КИНОТЕАТР',museum:'МУЗЕЙ',gallery:'ГАЛЕРЕЯ',theatre:'ТЕАТР',club:'КЛУБ',park:'ПАРК',venue:'МЕСТО'})[p.kind]||'МЕСТО'}
+  function placeCover(p){var kind=esc(p.kind||'venue');if(p.cover_url)return '<div class="placeCover hasCover" style="background-image:url(&quot;'+esc(p.cover_url)+'&quot;)"></div>';return '<div class="placeCover placeCoverFallback kind-'+kind+'"><span class="placeCoverMark">ЛЯ</span><span class="placeCoverKind">'+placeKind(p)+'</span></div>'}
   function plural(n){var a=n%10,b=n%100;if(a===1&&b!==11)return n+' событие';if(a>=2&&a<=4&&(b<12||b>14))return n+' события';return n+' событий'}
   async function load(force){if(loaded&&!force)return places;try{var d=await afRaw('places_feed',{city:city()});places=d.places||[];loaded=true;window.vmestePlaces=places}catch(e){places=[]}return places}
   function mini(p){return'<button class="placeMini" data-place-open="'+esc(p.id)+'">'+placeCover(p)+'<small>'+placeKind(p)+' · '+esc(plural(p.event_count))+'</small><h3>'+esc(p.name)+'</h3><p>'+(p.next_event?esc(when(p.next_event.starts_at)+' · '+p.next_event.title):esc(p.city))+'</p></button>'}
