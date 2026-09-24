@@ -1,6 +1,8 @@
 const API='https://nmeoakrpafxhpdrplsuo.supabase.co/functions/v1/vmeste-api';
 const STORAGE_KEY='vmeste_session_v1';
 const PENDING_INVITE_KEY='vmeste_pending_invite_v1';
+const PIN_CONFIG_KEY='lya_device_pin_v1';
+const PIN_UNLOCK_KEY='lya_pin_unlocked_v1';
 const TZ='Europe/Moscow';
 let session=loadSession();
 let account=null;
@@ -19,7 +21,7 @@ const escapeHtml=s=>String(s??'').replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;"
 
 function loadSession(){try{return JSON.parse(localStorage.getItem(STORAGE_KEY)||'null')}catch{return null}}
 function saveSession(value){session=value;if(value)localStorage.setItem(STORAGE_KEY,JSON.stringify(value));else localStorage.removeItem(STORAGE_KEY)}
-function clearSession(){saveSession(null);account=null;updateAvatars()}
+function clearSession(){saveSession(null);account=null;try{sessionStorage.removeItem(PIN_UNLOCK_KEY)}catch{}updateAvatars()}
 function pad(n){return String(n).padStart(2,'0')}
 function keyFromUTCDate(d){return `${d.getUTCFullYear()}-${pad(d.getUTCMonth()+1)}-${pad(d.getUTCDate())}`}
 function utcDateFromKey(key){const [y,m,d]=key.split('-').map(Number);return new Date(Date.UTC(y,m-1,d,12))}
@@ -85,14 +87,14 @@ $$('.repeat').forEach(b=>b.addEventListener('click',()=>alert('«Повтори�
 function updateAvatars(){const letter=(account?.profile?.display_name||account?.user?.email||'В').trim().slice(0,1).toUpperCase()||'В';$$('.avatar').forEach(a=>a.textContent=letter)}
 async function loadAccount(){
   if(!session?.access_token){account=null;updateAvatars();renderProfile();return false}
-  try{account=await api('me');updateAvatars();renderProfile();updateQuickLoginUI();return true}catch(e){clearSession();renderProfile();return false}
+  try{account=await api('me');updateAvatars();renderProfile();return true}catch(e){clearSession();renderProfile();return false}
 }
 function renderProfile(){
   const root=$('#profile-root');if(!root)return;
   if(!account){root.innerHTML='<div class="mark">В</div><span class="ey">ПРОФИЛЬ</span><h1>Вы пока гость</h1><p class="muted">Главную можно смотреть без входа. Для приглашений и собственных событий нужен аккаунт.</p><div class="panel"><button class="primary" id="enter-account">Войти или зарегистрироваться</button></div>';$('#enter-account').onclick=()=>openView('login');return}
   const p=account.profile||{};const name=p.display_name||'Участник';
-  root.innerHTML=`<div class="mark">${escapeHtml(name.slice(0,1).toUpperCase())}</div><span class="ey">ПРОФИЛЬ</span><h1>${escapeHtml(name)}</h1><p class="muted">${escapeHtml(account.user?.email||'')}</p><form class="panel" id="profile-form"><label>Имя<input id="profile-name" value="${escapeHtml(name)}" required></label><label>Дата рождения<input id="profile-birth" type="date" value="${escapeHtml(p.birth_date||'')}"></label><p class="muted">Тип аккаунта: ${p.account_type==='business'?'бизнес':'личный'}${p.business_verified?' · подтверждён':''}</p><div id="profile-status" class="status" hidden></div><button class="primary">Сохранить</button></form><button class="repeat" id="signout" style="margin-top:18px">Выйти</button>`;
-  $('#profile-form').onsubmit=saveProfile;$('#signout').onclick=signOut;
+  root.innerHTML=`<div class="mark">${escapeHtml(name.slice(0,1).toUpperCase())}</div><span class="ey">ПРОФИЛЬ</span><h1>${escapeHtml(name)}</h1><p class="muted">${escapeHtml(account.user?.email||'')}</p><form class="panel" id="profile-form"><label>Имя<input id="profile-name" value="${escapeHtml(name)}" required></label><label>Дата рождения<input id="profile-birth" type="date" value="${escapeHtml(p.birth_date||'')}"></label><p class="muted">Тип аккаунта: ${p.account_type==='business'?'бизнес':'личный'}${p.business_verified?' · подтверждён':''}</p><div id="profile-status" class="status" hidden></div><button class="primary">Сохранить</button></form><div class="panel pinPanel"><span class="ey">БЫСТРЫЙ ВХОД</span><h3>PIN-код</h3><p class="muted">${hasDevicePin()?'PIN включён на этом устройстве. При следующем открытии ЛЯ понадобится только 4 цифры.':'Задайте 4 цифры для быстрого входа на этом устройстве.'}</p><div class="pinButtons"><button class="repeat" id="pin-manage" type="button">${hasDevicePin()?'Изменить PIN':'Задать PIN'}</button>${hasDevicePin()?'<button class="repeat" id="pin-remove" type="button">Удалить PIN</button>':''}</div></div><button class="repeat" id="signout" style="margin-top:18px">Выйти</button>`;
+  $('#profile-form').onsubmit=saveProfile;$('#signout').onclick=signOut;$('#pin-manage').onclick=openPinSetup;const pinRemove=$('#pin-remove');if(pinRemove)pinRemove.onclick=removeDevicePin;
 }
 async function saveProfile(e){
   e.preventDefault();const status=$('#profile-status');status.hidden=false;status.className='status';status.textContent='Сохраняю…';
@@ -101,56 +103,57 @@ async function saveProfile(e){
 async function signOut(){try{if(session?.access_token)await api('logout')}catch{}clearSession();openView('home')}
 
 
-const PASSKEY_SUPPORTED=false; // Disabled until Supabase passkey endpoints are available.
-function updateQuickLoginUI(){
-  const login=$('#passkey-login'),hint=$('#passkey-hint'),enroll=$('#passkey-enroll');
-  if(login){login.hidden=!PASSKEY_SUPPORTED;login.onclick=signInWithDevicePasskey}
-  if(hint)hint.hidden=!PASSKEY_SUPPORTED;
-  if(enroll)enroll.hidden=!(PASSKEY_SUPPORTED&&account);
-  const eb=$('#passkey-enroll-button');if(eb)eb.onclick=registerDevicePasskey;
+function readPinConfig(){try{return JSON.parse(localStorage.getItem(PIN_CONFIG_KEY)||'null')}catch{return null}}
+function hasDevicePin(){const c=readPinConfig();return !!(c&&c.salt&&c.hash)}
+function bytesToB64(bytes){let x='';for(const b of bytes)x+=String.fromCharCode(b);return btoa(x)}
+function b64ToBytes(value){const x=atob(String(value||''));return Uint8Array.from(x,c=>c.charCodeAt(0))}
+async function pinHash(pin,saltB64){
+  if(!crypto?.subtle)throw new Error('PIN не поддерживается этим браузером');
+  const key=await crypto.subtle.importKey('raw',new TextEncoder().encode(pin),'PBKDF2',false,['deriveBits']);
+  const bits=await crypto.subtle.deriveBits({name:'PBKDF2',salt:b64ToBytes(saltB64),iterations:120000,hash:'SHA-256'},key,256);
+  return bytesToB64(new Uint8Array(bits))
 }
-function bytesFromB64url(s){const p=String(s).replace(/-/g,'+').replace(/_/g,'/');const raw=atob(p+'='.repeat((4-p.length%4)%4));return Uint8Array.from(raw,c=>c.charCodeAt(0))}
-function b64url(v){const a=new Uint8Array(v);let s='';a.forEach(x=>s+=String.fromCharCode(x));return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')}
-function credentialJSON(cred){
-  const r=cred.response,o={id:cred.id,rawId:b64url(cred.rawId),type:cred.type,response:{clientDataJSON:b64url(r.clientDataJSON)}};
-  if(r.attestationObject)o.response.attestationObject=b64url(r.attestationObject);
-  if(r.authenticatorData)o.response.authenticatorData=b64url(r.authenticatorData);
-  if(r.signature)o.response.signature=b64url(r.signature);
-  if(r.userHandle)o.response.userHandle=b64url(r.userHandle);
-  if(cred.authenticatorAttachment)o.authenticatorAttachment=cred.authenticatorAttachment;
-  if(cred.getClientExtensionResults)o.clientExtensionResults=cred.getClientExtensionResults();
-  return o;
+async function saveDevicePin(pin){
+  if(!/^\d{4}$/.test(pin))throw new Error('PIN должен состоять из 4 цифр');
+  const salt=new Uint8Array(16);crypto.getRandomValues(salt);const saltB64=bytesToB64(salt);
+  const hash=await pinHash(pin,saltB64);
+  localStorage.setItem(PIN_CONFIG_KEY,JSON.stringify({v:1,salt:saltB64,hash}));
+  sessionStorage.setItem(PIN_UNLOCK_KEY,'1');
 }
-async function passkeyApi(path,body,token=''){
-  const headers={'Content-Type':'application/json','apikey':SUPABASE_PUBLISHABLE_KEY};if(token)headers.Authorization='Bearer '+token;
-  const r=await fetch('https://nmeoakrpafxhpdrplsuo.supabase.co/auth/v1/'+path,{method:'POST',headers,body:JSON.stringify(body||{})});
-  const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.msg||d.message||d.error_description||d.error||'Не удалось выполнить быстрый вход');return d;
+async function verifyDevicePin(pin){
+  const c=readPinConfig();if(!c)return false;
+  const hash=await pinHash(pin,c.salt);return hash===c.hash
 }
-function webauthnOptions(src){
-  const o=structuredClone(src);o.challenge=bytesFromB64url(o.challenge);
-  if(o.user?.id)o.user.id=bytesFromB64url(o.user.id);
-  if(o.excludeCredentials)o.excludeCredentials=o.excludeCredentials.map(x=>({...x,id:bytesFromB64url(x.id)}));
-  if(o.allowCredentials)o.allowCredentials=o.allowCredentials.map(x=>({...x,id:bytesFromB64url(x.id)}));
-  return o;
+function pinStyle(){
+  if(document.getElementById('lya-pin-style'))return;
+  const st=document.createElement('style');st.id='lya-pin-style';st.textContent='.lyaPinOverlay{position:fixed;inset:0;z-index:999;background:#f4f0e8;display:grid;place-items:center;padding:24px}.lyaPinCard{width:min(100%,420px);background:#fffdfa;border:1px solid #ddd7ce;border-radius:28px;padding:28px}.lyaPinCard h2{font-size:34px;margin:8px 0 10px}.lyaPinCard p{color:#77776f;line-height:1.45}.lyaPinFields{display:grid;gap:10px;margin:20px 0}.lyaPinInput{width:100%;font:600 28px/1 system-ui;text-align:center;letter-spacing:12px;border:1px solid #d8d1c6;border-radius:18px;padding:18px;background:#fff}.lyaPinActions{display:grid;gap:10px}.lyaPinSecondary{border:0;background:transparent;padding:12px;text-decoration:underline}.lyaPinError{font-size:12px;color:#8a2e25;margin-top:10px}.pinPanel h3{margin:6px 0 8px;font-size:22px}.pinPanel .pinButtons{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.pinPanel .pinButtons button{flex:1;min-width:130px}';document.head.appendChild(st)
 }
-async function registerDevicePasskey(){
-  const btn=$('#passkey-enroll-button');if(!PASSKEY_SUPPORTED||!session?.access_token)return;
-  try{btn.disabled=true;btn.textContent='Открываю защиту устройства…';
-    const start=await passkeyApi('passkeys/registration/options',{},session.access_token);
-    const cred=await navigator.credentials.create({publicKey:webauthnOptions(start.options)});
-    await passkeyApi('passkeys/registration/verify',{challenge_id:start.challenge_id,credential:credentialJSON(cred)},session.access_token);
-    btn.textContent='Быстрый вход настроен ✓';
-  }catch(e){btn.disabled=false;btn.textContent='Настроить быстрый вход';alert(e.message)}
+function pinInputHtml(id,label){return '<label>'+label+'<input id="'+id+'" class="lyaPinInput" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off"></label>'}
+function digitsOnly(input){input.addEventListener('input',()=>{input.value=input.value.replace(/\D/g,'').slice(0,4)})}
+function openPinSetup(){
+  pinStyle();document.querySelector('.lyaPinOverlay')?.remove();
+  const o=document.createElement('div');o.className='lyaPinOverlay';
+  o.innerHTML='<div class="lyaPinCard"><span class="ey">БЫСТРЫЙ ВХОД</span><h2>'+ (hasDevicePin()?'Изменить PIN':'Задать PIN') +'</h2><p>4 цифры. PIN хранится только на этом устройстве и не использует отпечаток или Face ID.</p><div class="lyaPinFields">'+pinInputHtml('lya-pin-new','Новый PIN')+pinInputHtml('lya-pin-repeat','Повторите PIN')+'</div><div class="lyaPinActions"><button class="primary" id="lya-pin-save">Сохранить PIN</button><button class="lyaPinSecondary" id="lya-pin-cancel" type="button">Отмена</button></div><div class="lyaPinError" id="lya-pin-error" hidden></div></div>';
+  document.body.appendChild(o);const a=o.querySelector('#lya-pin-new'),b=o.querySelector('#lya-pin-repeat'),err=o.querySelector('#lya-pin-error');digitsOnly(a);digitsOnly(b);setTimeout(()=>a.focus(),50);
+  o.querySelector('#lya-pin-cancel').onclick=()=>o.remove();
+  o.querySelector('#lya-pin-save').onclick=async()=>{err.hidden=true;if(a.value.length!==4||b.value.length!==4){err.hidden=false;err.textContent='Введите 4 цифры';return}if(a.value!==b.value){err.hidden=false;err.textContent='PIN-коды не совпадают';return}const btn=o.querySelector('#lya-pin-save');btn.disabled=true;btn.textContent='Сохраняю…';try{await saveDevicePin(a.value);o.remove();renderProfile()}catch(e){err.hidden=false;err.textContent=e.message;btn.disabled=false;btn.textContent='Сохранить PIN'}};
 }
-async function signInWithDevicePasskey(){
-  const btn=$('#passkey-login');if(!PASSKEY_SUPPORTED)return;
-  try{btn.disabled=true;btn.textContent='Проверяю…';
-    const start=await passkeyApi('passkeys/authentication/options',{});
-    const cred=await navigator.credentials.get({publicKey:webauthnOptions(start.options)});
-    const data=await passkeyApi('passkeys/authentication/verify',{challenge_id:start.challenge_id,credential:credentialJSON(cred)});
-    if(!data.session)throw new Error('Сессия не получена');
-    saveSession(data.session);await loadAccount();openView('home');
-  }catch(e){btn.disabled=false;btn.textContent='Войти по отпечатку / Face ID';if(e.name!=='NotAllowedError')alert(e.message)}
+function removeDevicePin(){
+  if(!hasDevicePin())return;
+  if(!confirm('Удалить PIN на этом устройстве?'))return;
+  localStorage.removeItem(PIN_CONFIG_KEY);sessionStorage.removeItem(PIN_UNLOCK_KEY);renderProfile()
+}
+function requirePinUnlock(){
+  if(!session?.access_token||!hasDevicePin()||sessionStorage.getItem(PIN_UNLOCK_KEY)==='1')return Promise.resolve(true);
+  pinStyle();
+  return new Promise(resolve=>{
+    document.querySelector('.lyaPinOverlay')?.remove();const o=document.createElement('div');o.className='lyaPinOverlay';
+    o.innerHTML='<div class="lyaPinCard"><span class="ey">ЛЯ</span><h2>Введите PIN</h2><p>Быстрый вход на этом устройстве.</p><div class="lyaPinFields">'+pinInputHtml('lya-pin-unlock','PIN-код')+'</div><div class="lyaPinActions"><button class="primary" id="lya-pin-enter">Войти</button><button class="lyaPinSecondary" id="lya-pin-password" type="button">Войти по почте и паролю</button></div><div class="lyaPinError" id="lya-pin-error" hidden></div></div>';
+    document.body.appendChild(o);const input=o.querySelector('#lya-pin-unlock'),err=o.querySelector('#lya-pin-error');digitsOnly(input);setTimeout(()=>input.focus(),50);
+    const submit=async()=>{if(input.value.length!==4)return;const btn=o.querySelector('#lya-pin-enter');btn.disabled=true;try{if(await verifyDevicePin(input.value)){sessionStorage.setItem(PIN_UNLOCK_KEY,'1');o.remove();resolve(true)}else{err.hidden=false;err.textContent='Неверный PIN';input.value='';input.focus();btn.disabled=false}}catch(e){err.hidden=false;err.textContent=e.message;btn.disabled=false}};
+    o.querySelector('#lya-pin-enter').onclick=submit;input.addEventListener('keydown',e=>{if(e.key==='Enter')submit()});
+    o.querySelector('#lya-pin-password').onclick=()=>{o.remove();clearSession();openView('login');resolve(false)};
+  })
 }
 
 function setAuthMode(mode){authMode=mode;$('#signup-tab').classList.toggle('active',mode==='signup');$('#login-tab').classList.toggle('active',mode==='login');$('#name-field').style.display=mode==='signup'?'grid':'none';$('#auth-name').required=mode==='signup';$('#auth-submit').textContent=mode==='signup'?'Создать аккаунт':'Войти';$('#auth-status').hidden=true}
@@ -160,12 +163,13 @@ $('#auth-form').onsubmit=async e=>{
   try{
     if(authMode==='signup'){
       const data=await api('signup',{email,password,display_name:$('#auth-name').value.trim(),invite_token:pendingInviteToken||null},false);
-      if(data.session){saveSession(data.session);await loadAccount();if(pendingInviteToken)await showPendingInvite();else openView('profile')}
+      if(data.session){saveSession(data.session);sessionStorage.setItem(PIN_UNLOCK_KEY,'1');await loadAccount();if(pendingInviteToken)await showPendingInvite();else openView('profile')}
       else{setAuthMode('login');status.hidden=false;status.className='status';status.textContent='Аккаунт создан. Подтвердите email по ссылке из письма — приглашение сохранится.'}
     }else{
       const data=await api('login',{email,password},false);
       if(!data.session)throw new Error('Сессия входа не получена');
       saveSession(data.session);
+      sessionStorage.setItem(PIN_UNLOCK_KEY,'1');
       const ok=await loadAccount();
       if(!ok)throw new Error('Вход выполнен, но профиль не загрузился');
       status.hidden=false;status.className='status';status.textContent='Вход выполнен';
@@ -267,4 +271,4 @@ async function showPendingInvite(){
   }
 }
 
-(async function init(){updateQuickLoginUI();await loadAccount();await loadEvents();renderCalendar();if(pendingInviteToken)await showPendingInvite()})();
+(async function init(){if(!(await requirePinUnlock()))return;await loadAccount();await loadEvents();renderCalendar();if(pendingInviteToken)await showPendingInvite()})();
