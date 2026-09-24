@@ -231,19 +231,38 @@
 
     var remove=o.querySelector('.profileV2RemoveCover');if(remove)remove.onclick=async function(){if(!confirm('Вернуть стандартный фон ЛЯ?'))return;remove.disabled=true;try{await avatarRequest('remove_cover');if(typeof account!=='undefined'&&account&&account.profile)account.profile.cover_url=null;detail.profile.cover_url=null;close();renderSelf()}catch(e){alert(e.message);remove.disabled=false}};
 
-    var form=o.querySelector('form');form.onsubmit=async function(e){
-      e.preventDefault();var st=form.querySelector('.profileV2EditStatus');st.hidden=false;st.classList.remove('error');st.textContent='Сохраняю…';
-      var want=form.elements.want.value.trim(),ttl=form.elements.want_ttl.value,expires=null;if(want&&ttl!=='none'){var d=new Date();d.setTime(d.getTime()+(ttl==='day'?86400000:604800000));expires=d.toISOString()}
-      var selectedInterests=Array.from(form.querySelectorAll('.profileV2InterestEditor input:checked')).map(function(x){return x.value});
-      var selectedPlaces=Array.from(form.querySelectorAll('[data-place-pick]:checked')).map(function(x){return x.value});
-      var selectedMoments=Array.from(form.querySelectorAll('[data-moment-pick]:checked')).map(function(x){return x.value});
-      var visibility={};form.querySelectorAll('[data-visibility]').forEach(function(x){visibility[x.dataset.visibility]=x.checked});
-      var pin=form.elements.pin.value||'',parts=pin?pin.split(':'):[],pinType=parts.shift()||null,pinId=parts.join(':')||null;
+    var form=o.querySelector('form'),saveBtn=form.querySelector('.profileV2Save');
+    async function saveProfileSettings(e){
+      if(e)e.preventDefault();
+      var st=form.querySelector('.profileV2EditStatus');
+      st.hidden=false;st.classList.remove('error');st.textContent='Сохраняю…';
+      if(saveBtn){saveBtn.disabled=true;saveBtn.textContent='Сохраняю…'}
       try{
-        var data=await window.api('update_profile',{
-          display_name:form.elements.name.value.trim(),
-          city:form.elements.city.value.trim()||null,
-          bio:form.elements.bio.value.trim()||null,
+        var nameInput=form.querySelector('[name="name"]');
+        var cityInput=form.querySelector('[name="city"]');
+        var bioInput=form.querySelector('[name="bio"]');
+        var wantInput=form.querySelector('[name="want"]');
+        var ttlInput=form.querySelector('[name="want_ttl"]');
+        var pinInput=form.querySelector('[name="pin"]');
+        if(!nameInput||!cityInput||!bioInput||!wantInput||!ttlInput||!pinInput)throw new Error('Не удалось прочитать поля профиля');
+
+        var displayName=String(nameInput.value||'').trim();
+        if(!displayName)throw new Error('Имя не может быть пустым');
+        var want=String(wantInput.value||'').trim(),ttl=String(ttlInput.value||'none'),expires=null;
+        if(want&&ttl!=='none'){var d=new Date();d.setTime(d.getTime()+(ttl==='day'?86400000:604800000));expires=d.toISOString()}
+
+        var selectedInterests=Array.from(form.querySelectorAll('.profileV2InterestEditor input:checked')).map(function(x){return x.value});
+        var selectedPlaces=Array.from(form.querySelectorAll('[data-place-pick]:checked')).map(function(x){return x.value});
+        var selectedMoments=Array.from(form.querySelectorAll('[data-moment-pick]:checked')).map(function(x){return x.value});
+        var visibility={};form.querySelectorAll('[data-visibility]').forEach(function(x){visibility[x.dataset.visibility]=x.checked===true});
+        var pin=String(pinInput.value||''),parts=pin?pin.split(':'):[],pinType=parts.shift()||null,pinId=parts.join(':')||null;
+
+        var apiFn=window.api||(typeof api==='function'?api:null);
+        if(typeof apiFn!=='function')throw new Error('Сервис профиля не загрузился. Обновите страницу.');
+        var data=await apiFn('update_profile',{
+          display_name:displayName,
+          city:String(cityInput.value||'').trim()||null,
+          bio:String(bioInput.value||'').trim()||null,
           want_text:want||null,
           want_expires_at:expires,
           interests:selectedInterests,
@@ -253,9 +272,19 @@
           pinned_type:pinType,
           pinned_id:pinId
         });
-        if(typeof account!=='undefined'&&account)account.profile=data.profile;close();renderSelf()
-      }catch(err){st.textContent=err.message;st.classList.add('error')}
-    };
+        if(typeof account!=='undefined'&&account)account.profile=data.profile;
+        st.textContent='Сохранено';
+        var fresh=await getDetail(myId());
+        close();
+        var root=document.getElementById('profile-root');
+        if(root){root.innerHTML=profileMarkup(fresh,true);bindProfile(root,fresh,true,null)}
+      }catch(err){
+        st.hidden=false;st.textContent=(err&&err.message)||'Не удалось сохранить изменения';st.classList.add('error');
+        if(saveBtn){saveBtn.disabled=false;saveBtn.textContent='Сохранить'}
+      }
+    }
+    form.addEventListener('submit',saveProfileSettings);
+    if(saveBtn)saveBtn.addEventListener('click',function(e){e.preventDefault();saveProfileSettings(e)});
     if(focusWant)setTimeout(function(){form.elements.want.focus()},120)
   }
 
