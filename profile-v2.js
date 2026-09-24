@@ -239,7 +239,7 @@
           '<label>Срок статуса<select name="want_ttl"><option value="none">Пока не удалю</option><option value="day">24 часа</option><option value="week" selected>7 дней</option></select></label>'+
         '</section>'+
         '<section class="profileV2EditorGroup"><h3>Интересы · до 7</h3>'+interestEditor(p.interests||[])+'</section>'+
-        '<section class="profileV2EditorGroup" data-notification-settings><h3>Уведомления</h3>'+notificationEditor(p.notification_settings||{})+'</section>'+
+        '<section class="profileV2EditorGroup" data-notification-settings><div class="profileV2EditorTitleRow"><h3>Уведомления</h3><button type="button" class="profileV2SoundTest" data-test-notification-sound>Проверить звук</button></div>'+notificationEditor(p.notification_settings||{})+'</section>'+
         '<section class="profileV2EditorGroup"><h3>Что показывать другим</h3>'+visibilityEditor(p.profile_visibility||{})+'</section>'+
         '<section class="profileV2EditorGroup"><h3>Мои места · до 5</h3>'+placesEditor(detail)+'</section>'+
         '<section class="profileV2EditorGroup"><h3>Моменты · до 6</h3>'+momentsEditor(detail)+'</section>'+
@@ -253,6 +253,7 @@
       o.querySelectorAll(selector).forEach(function(input){input.onchange=function(){var checked=o.querySelectorAll(selector+':checked');if(checked.length>max){input.checked=false;alert('Можно выбрать не больше '+max)}}})
     }
     limitChecked('.profileV2InterestEditor input',7);limitChecked('[data-place-pick]',5);limitChecked('[data-moment-pick]',6);
+    var soundTest=o.querySelector('[data-test-notification-sound]');if(soundTest)soundTest.onclick=function(){if(typeof window.playLyaNotificationSound==='function')window.playLyaNotificationSound(true);else alert('Звук уведомлений ещё загружается. Закройте настройки и откройте снова.')};
 
     var remove=o.querySelector('.profileV2RemoveCover');if(remove)remove.onclick=async function(){if(!confirm('Вернуть стандартный фон ЛЯ?'))return;remove.disabled=true;try{await avatarRequest('remove_cover');if(typeof account!=='undefined'&&account&&account.profile)account.profile.cover_url=null;detail.profile.cover_url=null;close();renderSelf()}catch(e){alert(e.message);remove.disabled=false}};
 
