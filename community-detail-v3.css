@@ -52,3 +52,11 @@ body.communityChatOpen{overflow:hidden}.communityChatSheet{position:fixed;inset:
 .communityChatThemes [data-chat-theme="sage"] i{background:#DCE7DE}
 .communityChatThemes [data-chat-theme="graphite"] i{background:#303330}
 .communityChatThemes [data-chat-theme="sky"] i{background:#DCE5ED}
+
+/* Chat bubbles: same visual, direction distinguishes sender */
+.communityChatMessage.mine .communityChatBubble{
+  background:#fff!important;
+  border-color:rgba(35,35,32,.10)!important;
+  color:#111!important;
+}
+.communityChatMessage.mine .communityChatBubble span{color:#111!important}
