@@ -85,7 +85,7 @@ $$('.repeat').forEach(b=>b.addEventListener('click',()=>alert('«Повтори�
 function updateAvatars(){const letter=(account?.profile?.display_name||account?.user?.email||'В').trim().slice(0,1).toUpperCase()||'В';$$('.avatar').forEach(a=>a.textContent=letter)}
 async function loadAccount(){
   if(!session?.access_token){account=null;updateAvatars();renderProfile();return false}
-  try{account=await api('me');updateAvatars();renderProfile();return true}catch(e){clearSession();renderProfile();return false}
+  try{account=await api('me');updateAvatars();renderProfile();updateQuickLoginUI();return true}catch(e){clearSession();renderProfile();return false}
 }
 function renderProfile(){
   const root=$('#profile-root');if(!root)return;
@@ -99,6 +99,59 @@ async function saveProfile(e){
   try{const data=await api('update_profile',{display_name:$('#profile-name').value.trim(),birth_date:$('#profile-birth').value||null});account.profile=data.profile;updateAvatars();status.textContent='Сохранено'}catch(err){status.className='status error';status.textContent=err.message}
 }
 async function signOut(){try{if(session?.access_token)await api('logout')}catch{}clearSession();openView('home')}
+
+
+const PASSKEY_SUPPORTED=!!(window.PublicKeyCredential&&navigator.credentials);
+function updateQuickLoginUI(){
+  const login=$('#passkey-login'),hint=$('#passkey-hint'),enroll=$('#passkey-enroll');
+  if(login){login.hidden=!PASSKEY_SUPPORTED;login.onclick=signInWithDevicePasskey}
+  if(hint)hint.hidden=!PASSKEY_SUPPORTED;
+  if(enroll)enroll.hidden=!(PASSKEY_SUPPORTED&&account);
+  const eb=$('#passkey-enroll-button');if(eb)eb.onclick=registerDevicePasskey;
+}
+function bytesFromB64url(s){const p=String(s).replace(/-/g,'+').replace(/_/g,'/');const raw=atob(p+'='.repeat((4-p.length%4)%4));return Uint8Array.from(raw,c=>c.charCodeAt(0))}
+function b64url(v){const a=new Uint8Array(v);let s='';a.forEach(x=>s+=String.fromCharCode(x));return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')}
+function credentialJSON(cred){
+  const r=cred.response,o={id:cred.id,rawId:b64url(cred.rawId),type:cred.type,response:{clientDataJSON:b64url(r.clientDataJSON)}};
+  if(r.attestationObject)o.response.attestationObject=b64url(r.attestationObject);
+  if(r.authenticatorData)o.response.authenticatorData=b64url(r.authenticatorData);
+  if(r.signature)o.response.signature=b64url(r.signature);
+  if(r.userHandle)o.response.userHandle=b64url(r.userHandle);
+  if(cred.authenticatorAttachment)o.authenticatorAttachment=cred.authenticatorAttachment;
+  if(cred.getClientExtensionResults)o.clientExtensionResults=cred.getClientExtensionResults();
+  return o;
+}
+async function passkeyApi(path,body,token=''){
+  const headers={'Content-Type':'application/json','apikey':SUPABASE_PUBLISHABLE_KEY};if(token)headers.Authorization='Bearer '+token;
+  const r=await fetch('https://nmeoakrpafxhpdrplsuo.supabase.co/auth/v1/'+path,{method:'POST',headers,body:JSON.stringify(body||{})});
+  const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.msg||d.message||d.error_description||d.error||'Не удалось выполнить быстрый вход');return d;
+}
+function webauthnOptions(src){
+  const o=structuredClone(src);o.challenge=bytesFromB64url(o.challenge);
+  if(o.user?.id)o.user.id=bytesFromB64url(o.user.id);
+  if(o.excludeCredentials)o.excludeCredentials=o.excludeCredentials.map(x=>({...x,id:bytesFromB64url(x.id)}));
+  if(o.allowCredentials)o.allowCredentials=o.allowCredentials.map(x=>({...x,id:bytesFromB64url(x.id)}));
+  return o;
+}
+async function registerDevicePasskey(){
+  const btn=$('#passkey-enroll-button');if(!PASSKEY_SUPPORTED||!session?.access_token)return;
+  try{btn.disabled=true;btn.textContent='Открываю защиту устройства…';
+    const start=await passkeyApi('passkeys/registration/options',{},session.access_token);
+    const cred=await navigator.credentials.create({publicKey:webauthnOptions(start.options)});
+    await passkeyApi('passkeys/registration/verify',{challenge_id:start.challenge_id,credential:credentialJSON(cred)},session.access_token);
+    btn.textContent='Быстрый вход настроен ✓';
+  }catch(e){btn.disabled=false;btn.textContent='Настроить быстрый вход';alert(e.message)}
+}
+async function signInWithDevicePasskey(){
+  const btn=$('#passkey-login');if(!PASSKEY_SUPPORTED)return;
+  try{btn.disabled=true;btn.textContent='Проверяю…';
+    const start=await passkeyApi('passkeys/authentication/options',{});
+    const cred=await navigator.credentials.get({publicKey:webauthnOptions(start.options)});
+    const data=await passkeyApi('passkeys/authentication/verify',{challenge_id:start.challenge_id,credential:credentialJSON(cred)});
+    if(!data.session)throw new Error('Сессия не получена');
+    saveSession(data.session);await loadAccount();openView('home');
+  }catch(e){btn.disabled=false;btn.textContent='Войти по отпечатку / Face ID';if(e.name!=='NotAllowedError')alert(e.message)}
+}
 
 function setAuthMode(mode){authMode=mode;$('#signup-tab').classList.toggle('active',mode==='signup');$('#login-tab').classList.toggle('active',mode==='login');$('#name-field').style.display=mode==='signup'?'grid':'none';$('#auth-name').required=mode==='signup';$('#auth-submit').textContent=mode==='signup'?'Создать аккаунт':'Войти';$('#auth-status').hidden=true}
 $('#signup-tab').onclick=()=>setAuthMode('signup');$('#login-tab').onclick=()=>setAuthMode('login');
@@ -203,4 +256,4 @@ async function showPendingInvite(){
   }
 }
 
-(async function init(){await loadAccount();await loadEvents();renderCalendar();if(pendingInviteToken)await showPendingInvite()})();
+(async function init(){updateQuickLoginUI();await loadAccount();await loadEvents();renderCalendar();if(pendingInviteToken)await showPendingInvite()})();
