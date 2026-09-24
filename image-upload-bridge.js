@@ -15,7 +15,7 @@
 
   async function ensureCropper(){
     if(window.openImageCropper)return true;
-    try{await import('/image-cropper.js?v=20260918-2')}catch(e){}
+    try{await import('/image-cropper.js?v=20260925-2')}catch(e){}
     return !!window.openImageCropper
   }
 
