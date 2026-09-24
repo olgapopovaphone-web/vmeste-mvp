@@ -369,7 +369,11 @@
     root.querySelectorAll('[data-profile-edit]').forEach(function(b){b.onclick=function(){openEditor(detail,false)}});
     root.querySelectorAll('[data-profile-notification-category]').forEach(function(b){b.onclick=function(e){if(typeof window.openLyaNotifications==='function')window.openLyaNotifications(b.dataset.profileNotificationCategory||'all')}}); 
     hydrateNotificationCenter(root);
-    var refreshProfileNotifications=function(){hydrateNotificationCenter(root)};document.addEventListener('lya-notifications-changed',refreshProfileNotifications,{once:true});
+    if(isSelf&&!root._lyaNotificationRefresh){
+      root._lyaNotificationRefresh=function(){hydrateNotificationCenter(root)};
+      document.addEventListener('lya-notifications-changed',root._lyaNotificationRefresh);
+      document.addEventListener('lya-notification-count',root._lyaNotificationRefresh)
+    }
     var editNotifications=root.querySelector('[data-profile-edit-notifications]');if(editNotifications)editNotifications.onclick=function(){openEditor(detail,false);setTimeout(function(){document.querySelector('[data-notification-settings]')?.scrollIntoView({behavior:'smooth',block:'start'})},140)};
     var openNotifications=root.querySelector('[data-profile-open-notifications]');if(openNotifications)openNotifications.onclick=function(e){if(typeof window.openLyaNotifications==='function')window.openLyaNotifications(e)};
     var ew=root.querySelector('[data-profile-edit-want]');if(ew)ew.onclick=function(){openEditor(detail,true)};
