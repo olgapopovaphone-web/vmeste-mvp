@@ -5,6 +5,13 @@
   var INVITE_API='https://nmeoakrpafxhpdrplsuo.supabase.co/functions/v1/vmeste-invite-api';
   var GROUPS_KEY='vmeste_groups_proto_v1';
   var interestsList=['Кино','Музыка','Театр','Юмор','Выставки','С детьми','Прогулки','Еда','Спорт','Искусство','Книги','Путешествия'];
+  var notificationMeta=[
+    ['event_invites','События','Приглашения на события'],
+    ['circle_requests','Круг','Заявки в круг'],
+    ['community_invites','Сообщества','Приглашения в сообщества'],
+    ['event_reminders','Напоминания','Напоминания перед событиями'],
+    ['sound','Звук','Короткий сигнал при новом уведомлении']
+  ];
   var visibilityMeta=[
     ['city','Город','Показывать город'],
     ['bio','О себе','Показывать текст «О себе»'],
@@ -47,6 +54,22 @@
   function coverStyle(p){return p.cover_url?' style="background-image:url(\''+esc(String(p.cover_url).replace(/'/g,'%27'))+'\')"':''}
   function vis(detail,key){return !!(detail&&detail.profile&&detail.profile.profile_visibility&&detail.profile.profile_visibility[key]===true)}
   function privacyBadge(detail,key,isSelf){return isSelf&&!vis(detail,key)?'<span class="profileV2PrivacyBadge">Скрыто</span>':''}
+  function notificationSettings(detail){
+    var d={event_invites:true,circle_requests:true,community_invites:true,event_reminders:true,sound:true};
+    var p=detail&&detail.profile||{},src=p.notification_settings||((typeof account!=='undefined'&&account&&account.profile&&account.profile.notification_settings)||{});
+    return Object.assign(d,src||{})
+  }
+  function notificationBlock(detail,isSelf){
+    if(!isSelf)return'';
+    var n=notificationSettings(detail),enabled=notificationMeta.filter(function(x){return n[x[0]]!==false}).length;
+    return '<section class="profileV2Section profileV2Notifications"><div class="profileV2SectionHead"><div><span class="ey">УВЕДОМЛЕНИЯ</span><h2>Что сообщать мне</h2></div><button type="button" class="profileV2SectionAction" data-profile-edit-notifications>Настроить</button></div>'+
+      '<button type="button" class="profileV2NotificationSummary" data-profile-open-notifications><span><b>'+enabled+' из '+notificationMeta.length+' включено</b><small>'+(n.sound!==false?'Звук включён':'Без звука')+'</small></span><strong>Открыть все ›</strong></button></section>'
+  }
+  function notificationEditor(current){
+    current=Object.assign({event_invites:true,circle_requests:true,community_invites:true,event_reminders:true,sound:true},current||{});
+    return '<div class="profileV2VisibilityEditor profileV2NotificationEditor">'+notificationMeta.map(function(x){return '<label class="profileV2Toggle"><span><b>'+esc(x[1])+'</b><small>'+esc(x[2])+'</small></span><input type="checkbox" data-notification="'+x[0]+'" '+(current[x[0]]!==false?'checked':'')+'><i></i></label>'}).join('')+'</div>'
+  }
+
   function mergeCommunities(detail,isSelf){
     var map=new Map();(detail.communities||[]).forEach(function(c){map.set(String(c.id),c)});
     if(isSelf)localGroups().forEach(function(c){if(c&&c.id&&!map.has(String(c.id)))map.set(String(c.id),c)});
@@ -147,6 +170,7 @@
           '<div><h1>'+esc(p.display_name||'Участник')+'</h1><p>'+esc(p.city||'Город не указан')+'</p></div>'+
         '</div>'+
         actions(detail)+
+        notificationBlock(detail,isSelf)+
         about+
         pinnedBlock(detail,isSelf)+
         wantBlock(detail,isSelf)+
@@ -215,6 +239,7 @@
           '<label>Срок статуса<select name="want_ttl"><option value="none">Пока не удалю</option><option value="day">24 часа</option><option value="week" selected>7 дней</option></select></label>'+
         '</section>'+
         '<section class="profileV2EditorGroup"><h3>Интересы · до 7</h3>'+interestEditor(p.interests||[])+'</section>'+
+        '<section class="profileV2EditorGroup" data-notification-settings><h3>Уведомления</h3>'+notificationEditor(p.notification_settings||{})+'</section>'+
         '<section class="profileV2EditorGroup"><h3>Что показывать другим</h3>'+visibilityEditor(p.profile_visibility||{})+'</section>'+
         '<section class="profileV2EditorGroup"><h3>Мои места · до 5</h3>'+placesEditor(detail)+'</section>'+
         '<section class="profileV2EditorGroup"><h3>Моменты · до 6</h3>'+momentsEditor(detail)+'</section>'+
@@ -255,6 +280,7 @@
         var selectedPlaces=Array.from(form.querySelectorAll('[data-place-pick]:checked')).map(function(x){return x.value});
         var selectedMoments=Array.from(form.querySelectorAll('[data-moment-pick]:checked')).map(function(x){return x.value});
         var visibility={};form.querySelectorAll('[data-visibility]').forEach(function(x){visibility[x.dataset.visibility]=x.checked===true});
+        var notifications={};form.querySelectorAll('[data-notification]').forEach(function(x){notifications[x.dataset.notification]=x.checked===true});
         var pin=String(pinInput.value||''),parts=pin?pin.split(':'):[],pinType=parts.shift()||null,pinId=parts.join(':')||null;
 
         var apiFn=window.api||(typeof api==='function'?api:null);
@@ -267,6 +293,7 @@
           want_expires_at:expires,
           interests:selectedInterests,
           profile_visibility:visibility,
+          notification_settings:notifications,
           profile_place_ids:selectedPlaces,
           profile_moment_ids:selectedMoments,
           pinned_type:pinType,
@@ -304,6 +331,8 @@
     var p=detail.profile||{};
     var back=root.querySelector('[data-profile-back]');if(back)back.onclick=function(){if(closePublic)closePublic();else if(typeof openView==='function')openView('home')};
     root.querySelectorAll('[data-profile-edit]').forEach(function(b){b.onclick=function(){openEditor(detail,false)}});
+    var editNotifications=root.querySelector('[data-profile-edit-notifications]');if(editNotifications)editNotifications.onclick=function(){openEditor(detail,false);setTimeout(function(){document.querySelector('[data-notification-settings]')?.scrollIntoView({behavior:'smooth',block:'start'})},140)};
+    var openNotifications=root.querySelector('[data-profile-open-notifications]');if(openNotifications)openNotifications.onclick=function(e){if(typeof window.openLyaNotifications==='function')window.openLyaNotifications(e)};
     var ew=root.querySelector('[data-profile-edit-want]');if(ew)ew.onclick=function(){openEditor(detail,true)};
     root.querySelectorAll('[data-profile-event]').forEach(function(b){b.onclick=function(){if(closePublic)closePublic();if(typeof openEventView==='function')openEventView(b.dataset.profileEvent,'profile')}});
     root.querySelectorAll('[data-profile-community]').forEach(function(b){b.onclick=function(){var c=mergeCommunities(detail,isSelf).find(function(x){return String(x.id)===String(b.dataset.profileCommunity)});if(closePublic)closePublic();if(c&&typeof window.openCommunityDetail==='function')window.openCommunityDetail(c.id,c)}});
