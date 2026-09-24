@@ -49,14 +49,110 @@
   function due(data,minutes){if(minutes===null)return[];const now=Date.now(),limit=Number(minutes)*60000;return calendarEvents(data).filter(e=>{const t=new Date(e.starts_at).getTime();return t>now&&t-now<=limit})}
   async function reminderData(){if(!account)return{pending:[],reminders:[],circle:[],community:[]};const cfg=notificationSettings(),mins=await getSetting();const [data,circle,community]=await Promise.all([api('list_events'),circleApi('list_circle',{}).catch(()=>({incoming:[]})),circleApi('list_community_invitations',{}).catch(()=>({invitations:[]}))]);return{pending:cfg.event_invites===false?[]:(data.invited_events||[]).filter(e=>e.invitation_status==='pending'),reminders:cfg.event_reminders===false?[]:due(data,mins),circle:cfg.circle_requests===false?[]:(circle.incoming||[]),community:cfg.community_invites===false?[]:(community.invitations||[])}}
 
+  window.getLyaNotificationData=reminderData;
+
   async function refreshBadge(){try{const d=await reminderData(),badge=document.querySelector('.homeNotifications .homeToolBadge');const n=d.pending.length+d.reminders.length+d.circle.length+d.community.length;if(badge){badge.hidden=n<=0;badge.textContent=n>99?'99+':String(n)}if(lastNotificationCount===null){lastNotificationCount=n}else{if(n>lastNotificationCount&&soundUnlocked)playSound(false);lastNotificationCount=n}window.dispatchEvent(new CustomEvent('lya-notification-count',{detail:{count:n}}))}catch{}}
-  async function openCombined(e){
-    if(e){e.preventDefault?.();e.stopImmediatePropagation?.()}if(!account){openView('login');return}
-    document.querySelector('.homeToolsOverlay')?.remove();const o=document.createElement('div');o.className='homeToolsOverlay';o.innerHTML='<div class="homeToolsSheet"><div class="homeToolsHead"><h2>Оповещения</h2><button class="homeToolsClose">×</button></div><div class="homeToolsBody"><div class="homeToolsEmpty">Загружаю…</div></div></div>';document.body.appendChild(o);o.querySelector('.homeToolsClose').onclick=()=>o.remove();o.onclick=x=>{if(x.target===o)o.remove()};
-    try{const d=await reminderData(),body=o.querySelector('.homeToolsBody'),items=[];d.community.forEach(x=>{const c=x.community||{},inv=x.inviter||{};items.push(`<article class="homeNotification"><small>ПРИГЛАШЕНИЕ В СООБЩЕСТВО</small><h3>${esc(c.name||'Сообщество')}</h3><p>${esc(inv.display_name||'Участник ЛЯ')} приглашает вас</p><div class="homeNotificationActions"><button class="smallPrimary communityNotifAnswer" data-id="${esc(x.invitation_id)}" data-response="accepted">Вступить</button><button class="repeat communityNotifAnswer" data-id="${esc(x.invitation_id)}" data-response="declined">Отклонить</button></div></article>`)});d.circle.forEach(x=>{const u=x.user||{};items.push(`<article class="homeNotification"><small>ЗАЯВКА В КРУГ</small><h3>${esc(u.display_name||'Участник ЛЯ')}</h3><p>Хочет добавить вас в круг</p><div class="homeNotificationActions"><button class="smallPrimary circleNotifAnswer" data-id="${esc(x.connection_id)}" data-response="accepted">Принять</button><button class="repeat circleNotifAnswer" data-id="${esc(x.connection_id)}" data-response="declined">Отклонить</button></div></article>`)});d.pending.forEach(x=>items.push(`<article class="homeNotification"><small>ПРИГЛАШЕНИЕ</small><h3>${esc(x.title)}</h3><p>${esc(fmt(x.starts_at))}${x.location_name?' · '+esc(x.location_name):''}</p><div class="homeNotificationActions"><button class="smallPrimary notifAnswer" data-id="${esc(x.invitation_id)}" data-response="accepted">Принять приглашение</button><button class="repeat notifAnswer" data-id="${esc(x.invitation_id)}" data-response="declined">Отклонить</button></div></article>`));d.reminders.forEach(x=>items.push(`<article class="homeNotification calendarReminderCard"><small>НАПОМИНАНИЕ</small><h3>${esc(x.title)}</h3><p>${esc(fmt(x.starts_at))}${x.location_name?' · '+esc(x.location_name):''}</p><div class="homeNotificationActions"><button class="smallPrimary reminderOpen" data-event="${esc(x.id)}">Открыть событие</button></div></article>`));body.innerHTML=items.length?items.join(''):'<div class="homeToolsEmpty">Новых уведомлений пока нет.</div>';body.querySelectorAll('.communityNotifAnswer').forEach(b=>b.onclick=async()=>{b.disabled=true;try{const r=await circleApi('respond_community_invite',{invitation_id:b.dataset.id,response:b.dataset.response});if(b.dataset.response==='accepted')saveCommunityLocal(r.community);b.closest('.homeNotification')?.remove();document.dispatchEvent(new CustomEvent('vmeste-community-invites-changed'));if(!body.querySelector('.homeNotification'))body.innerHTML='<div class="homeToolsEmpty">Новых уведомлений пока нет.</div>';refreshBadge()}catch(err){alert(err.message);b.disabled=false}});body.querySelectorAll('.circleNotifAnswer').forEach(b=>b.onclick=async()=>{b.disabled=true;try{await circleApi('respond_request',{connection_id:b.dataset.id,response:b.dataset.response});b.closest('.homeNotification')?.remove();document.dispatchEvent(new CustomEvent('vmeste-circle-changed'));if(!body.querySelector('.homeNotification'))body.innerHTML='<div class="homeToolsEmpty">Новых уведомлений пока нет.</div>';refreshBadge()}catch(err){alert(err.message);b.disabled=false}});body.querySelectorAll('.notifAnswer').forEach(b=>b.onclick=async()=>{b.disabled=true;try{await respondInvitation(b.dataset.id,b.dataset.response);b.closest('.homeNotification')?.remove();if(!body.querySelector('.homeNotification'))body.innerHTML='<div class="homeToolsEmpty">Новых уведомлений пока нет.</div>';refreshBadge()}catch(err){alert(err.message);b.disabled=false}});body.querySelectorAll('.reminderOpen').forEach(b=>b.onclick=()=>{o.remove();if(typeof openEventView==='function')openEventView(b.dataset.event,'calendar');else openView('calendar')});refreshBadge()}catch{const body=o.querySelector('.homeToolsBody');body.innerHTML='<div class="homeToolsEmpty">Не удалось загрузить оповещения.</div>'}
+  async function openCombined(categoryOrEvent){
+    let category='all',e=null;
+    if(typeof categoryOrEvent==='string')category=categoryOrEvent;
+    else if(categoryOrEvent&&typeof categoryOrEvent==='object')e=categoryOrEvent;
+    if(e){e.preventDefault?.();e.stopImmediatePropagation?.()}
+    if(!account){openView('login');return}
+
+    const valid=['all','events','circle','community','reminders'];
+    if(!valid.includes(category))category='all';
+
+    document.querySelector('.homeToolsOverlay')?.remove();
+    const o=document.createElement('div');o.className='homeToolsOverlay';
+    o.innerHTML='<div class="homeToolsSheet homeNotificationsSheet"><div class="homeToolsHead"><div><span class="ey">ЛЯ</span><h2>Оповещения</h2></div><button class="homeToolsClose">×</button></div><div class="homeNotificationTabs" role="tablist"></div><div class="homeToolsBody"><div class="homeToolsEmpty">Загружаю…</div></div></div>';
+    document.body.appendChild(o);
+    o.querySelector('.homeToolsClose').onclick=()=>o.remove();
+    o.onclick=x=>{if(x.target===o)o.remove()};
+
+    try{
+      const d=await reminderData(),body=o.querySelector('.homeToolsBody'),tabs=o.querySelector('.homeNotificationTabs');
+      const counts={
+        all:d.pending.length+d.circle.length+d.community.length+d.reminders.length,
+        events:d.pending.length,
+        circle:d.circle.length,
+        community:d.community.length,
+        reminders:d.reminders.length
+      };
+      const defs=[
+        ['all','Все'],
+        ['events','Приглашения'],
+        ['circle','Круг'],
+        ['community','Сообщества'],
+        ['reminders','Напоминания']
+      ];
+      tabs.innerHTML=defs.map(x=>'<button type="button" role="tab" data-notification-category="'+x[0]+'" class="'+(x[0]===category?'active':'')+'"><span>'+x[1]+'</span><b>'+counts[x[0]]+'</b></button>').join('');
+
+      function bindActions(){
+        body.querySelectorAll('.communityNotifAnswer').forEach(b=>b.onclick=async()=>{
+          b.disabled=true;
+          try{
+            const r=await circleApi('respond_community_invite',{invitation_id:b.dataset.id,response:b.dataset.response});
+            if(b.dataset.response==='accepted')saveCommunityLocal(r.community);
+            document.dispatchEvent(new CustomEvent('vmeste-community-invites-changed'));
+            document.dispatchEvent(new CustomEvent('lya-notifications-changed'));
+            await refreshBadge();
+            openCombined(category)
+          }catch(err){alert(err.message);b.disabled=false}
+        });
+        body.querySelectorAll('.circleNotifAnswer').forEach(b=>b.onclick=async()=>{
+          b.disabled=true;
+          try{
+            await circleApi('respond_request',{connection_id:b.dataset.id,response:b.dataset.response});
+            document.dispatchEvent(new CustomEvent('vmeste-circle-changed'));
+            document.dispatchEvent(new CustomEvent('lya-notifications-changed'));
+            await refreshBadge();
+            openCombined(category)
+          }catch(err){alert(err.message);b.disabled=false}
+        });
+        body.querySelectorAll('.notifAnswer').forEach(b=>b.onclick=async()=>{
+          b.disabled=true;
+          try{
+            await respondInvitation(b.dataset.id,b.dataset.response);
+            document.dispatchEvent(new CustomEvent('lya-notifications-changed'));
+            await refreshBadge();
+            openCombined(category)
+          }catch(err){alert(err.message);b.disabled=false}
+        });
+        body.querySelectorAll('.reminderOpen').forEach(b=>b.onclick=()=>{
+          o.remove();
+          if(typeof openEventView==='function')openEventView(b.dataset.event,'calendar');
+          else openView('calendar')
+        })
+      }
+
+      function render(kind){
+        category=kind;
+        tabs.querySelectorAll('[data-notification-category]').forEach(b=>b.classList.toggle('active',b.dataset.notificationCategory===kind));
+        const items=[];
+        if(kind==='all'||kind==='community')d.community.forEach(x=>{
+          const group=x.community||{},inv=x.inviter||{};
+          items.push('<article class="homeNotification" data-notification-kind="community"><small>СООБЩЕСТВО</small><h3>'+esc(group.name||'Сообщество')+'</h3><p>'+esc(inv.display_name||'Участник ЛЯ')+' приглашает вас</p><div class="homeNotificationActions"><button class="smallPrimary communityNotifAnswer" data-id="'+esc(x.invitation_id)+'" data-response="accepted">Вступить</button><button class="repeat communityNotifAnswer" data-id="'+esc(x.invitation_id)+'" data-response="declined">Отклонить</button></div></article>')
+        });
+        if(kind==='all'||kind==='circle')d.circle.forEach(x=>{
+          const u=x.user||{};
+          items.push('<article class="homeNotification" data-notification-kind="circle"><small>КРУГ</small><h3>'+esc(u.display_name||'Участник ЛЯ')+'</h3><p>Хочет добавить вас в круг</p><div class="homeNotificationActions"><button class="smallPrimary circleNotifAnswer" data-id="'+esc(x.connection_id)+'" data-response="accepted">Принять</button><button class="repeat circleNotifAnswer" data-id="'+esc(x.connection_id)+'" data-response="declined">Отклонить</button></div></article>')
+        });
+        if(kind==='all'||kind==='events')d.pending.forEach(x=>items.push('<article class="homeNotification" data-notification-kind="events"><small>ПРИГЛАШЕНИЕ НА СОБЫТИЕ</small><h3>'+esc(x.title)+'</h3><p>'+esc(fmt(x.starts_at))+(x.location_name?' · '+esc(x.location_name):'')+'</p><div class="homeNotificationActions"><button class="smallPrimary notifAnswer" data-id="'+esc(x.invitation_id)+'" data-response="accepted">Пойду</button><button class="repeat notifAnswer" data-id="'+esc(x.invitation_id)+'" data-response="declined">Не пойду</button></div></article>'));
+        if(kind==='all'||kind==='reminders')d.reminders.forEach(x=>items.push('<article class="homeNotification calendarReminderCard" data-notification-kind="reminders"><small>НАПОМИНАНИЕ</small><h3>'+esc(x.title)+'</h3><p>'+esc(fmt(x.starts_at))+(x.location_name?' · '+esc(x.location_name):'')+'</p><div class="homeNotificationActions"><button class="smallPrimary reminderOpen" data-event="'+esc(x.id)+'">Открыть событие</button></div></article>'));
+        body.innerHTML=items.length?items.join(''):'<div class="homeToolsEmpty">В этой категории пока нет новых оповещений.</div>';
+        bindActions()
+      }
+
+      tabs.querySelectorAll('[data-notification-category]').forEach(b=>b.onclick=()=>render(b.dataset.notificationCategory));
+      render(category);
+      refreshBadge()
+    }catch{
+      const body=o.querySelector('.homeToolsBody');
+      body.innerHTML='<div class="homeToolsEmpty">Не удалось загрузить оповещения.</div>'
+    }
   }
-  function bindBell(){const b=document.querySelector('.homeNotifications');if(!b||b.dataset.calendarReminderBound==='1')return;b.addEventListener('click',openCombined,true);b.dataset.calendarReminderBound='1'}
   window.openLyaNotifications=openCombined;
+  function bindBell(){const b=document.querySelector('.homeNotifications');if(!b||b.dataset.calendarReminderBound==='1')return;b.addEventListener('click',openCombined,true);b.dataset.calendarReminderBound='1'}
 
   mount();bindBell();
   document.addEventListener('pointerdown',unlockSound,{once:true,capture:true});
