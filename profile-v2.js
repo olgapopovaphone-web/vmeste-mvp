@@ -301,6 +301,7 @@
           pinned_id:pinId
         });
         if(typeof account!=='undefined'&&account)account.profile=data.profile;
+        document.dispatchEvent(new CustomEvent('lya-notification-settings-changed'));
         st.textContent='Сохранено';
         var fresh=await getDetail(myId());
         close();
