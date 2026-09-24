@@ -56,6 +56,14 @@
   eventForm.classList.add('createFormCard','createEventForm');
   var eventSubmit=eventForm.querySelector('button.primary');
   if(eventSubmit){eventSubmit.textContent='Создать событие';eventSubmit.classList.add('createSubmit')}
+  if(!eventForm.querySelector('[data-event-visibility]')){
+    var visibility=document.createElement('fieldset');
+    visibility.className='createChoiceField';
+    visibility.dataset.eventVisibility='1';
+    visibility.innerHTML='<legend>Кто увидит событие</legend><div class="createSegmented"><label><input type="radio" name="event-visibility" value="open" checked><span><strong>Открытое</strong><small>Видно участникам ЛЯ во «Вокруг»</small></span></label><label><input type="radio" name="event-visibility" value="invite_only"><span><strong>По приглашению</strong><small>Только тем, кого вы позовёте</small></span></label></div>';
+    var eventStatus=eventForm.querySelector('#event-status');
+    if(eventStatus)eventForm.insertBefore(visibility,eventStatus);else eventForm.appendChild(visibility);
+  }
 
   var communityForm=document.createElement('form');
   communityForm.className='createFormCard createCommunityForm';
@@ -155,12 +163,14 @@
     try{
       var starts=new Date(date+'T'+time+':00+03:00');
       var ends=new Date(starts.getTime()+2*60*60*1000);
-      var d=await api('create_event',{title:title,starts_at:starts.toISOString(),ends_at:ends.toISOString(),location_name:place||null,price_minor:Math.round((Number.isFinite(price)?price:0)*100)});
+      var visibility=((eventForm.querySelector('input[name="event-visibility"]:checked')||{}).value||'open');
+      var d=await api('create_event',{title:title,starts_at:starts.toISOString(),ends_at:ends.toISOString(),location_name:place||null,price_minor:Math.round((Number.isFinite(price)?price:0)*100),visibility:visibility});
       var ev=d&&d.event;
       eventForm.dataset.createDirty='';
-      if(status)status.textContent='Событие создано';
+      if(status)status.textContent=visibility==='open'?'Событие опубликовано во «Вокруг»':'Событие создано по приглашению';
       currentFlow=null;section.classList.remove('createFlowEvent');eventForm.hidden=true;shell.hidden=false;
       if(typeof window.loadEvents==='function'){try{await window.loadEvents()}catch(ignore){}}
+      if(visibility==='open'&&typeof window.loadAfisha==='function'){try{await window.loadAfisha()}catch(ignore){}}
       if(ev&&ev.id&&typeof window.openEventView==='function')window.openEventView(ev.id,'create');
       else if(typeof window.openView==='function')window.openView('calendar');
       resetEvent();
