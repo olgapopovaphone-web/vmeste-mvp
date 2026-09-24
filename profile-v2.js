@@ -386,7 +386,7 @@
       var av=root.querySelector('[data-profile-avatar]'),avInput=root.querySelector('[data-profile-avatar-input]');
       if(av&&avInput){
         av.onclick=function(){if(typeof avInput.showPicker==='function'){try{avInput.showPicker();return}catch(e){}}avInput.click()};
-        avInput.addEventListener('change',async function(){var file=avInput.files&&avInput.files[0];if(!file)return;try{var blob=await prepareImage(file,700,700,.9),d=await avatarRequest('upload',blob);if(typeof account!=='undefined'&&account&&account.profile)account.profile.avatar_url=d.avatar_url;if(typeof updateAvatars==='function')updateAvatars();renderSelf()}catch(e){alert(e.message)}finally{avInput.value=''}})
+        avInput.addEventListener('change',async function(){var file=avInput.files&&avInput.files[0];if(!file)return;try{var blob=null;if(typeof window.openImageCropperV2==='function'){blob=await window.openImageCropperV2(file,{aspect:1,outputWidth:960,outputHeight:960,circle:true,maxZoom:5,quality:.9,title:'Фото профиля'});if(!blob)return}else{blob=await prepareImage(file,700,700,.9)}var d=await avatarRequest('upload',blob);if(typeof account!=='undefined'&&account&&account.profile)account.profile.avatar_url=d.avatar_url;if(typeof updateAvatars==='function')updateAvatars();renderSelf()}catch(e){alert(e.message)}finally{avInput.value=''}})
       }
     }
   }
