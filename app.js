@@ -50,7 +50,12 @@ captureAuthHash();
 async function raw(action,payload={},token=''){
   const headers={'Content-Type':'application/json'};
   if(token)headers.Authorization='Bearer '+token;
-  const response=await fetch(API,{method:'POST',headers,body:JSON.stringify({action,...payload})});
+  let response;
+  try{
+    response=await fetch(API,{method:'POST',headers,body:JSON.stringify({action,...payload})});
+  }catch(e){
+    return {ok:false,status:0,data:{error:'Не удалось связаться с сервером. Обновите страницу и попробуйте ещё раз.'}};
+  }
   let data={};
   try{data=await response.json()}catch{data={error:'Некорректный ответ сервера'}}
   return {ok:response.ok,status:response.status,data};
@@ -110,7 +115,17 @@ $('#auth-form').onsubmit=async e=>{
       if(data.session){saveSession(data.session);await loadAccount();if(pendingInviteToken)await showPendingInvite();else openView('profile')}
       else{setAuthMode('login');status.hidden=false;status.className='status';status.textContent='Аккаунт создан. Подтвердите email по ссылке из письма — приглашение сохранится.'}
     }else{
-      const data=await api('login',{email,password},false);saveSession(data.session);await loadAccount();if(pendingInviteToken)await showPendingInvite();else openView('profile')
+      if(!email||password.length<6)throw new Error('Введите почту и пароль');
+      const data=await api('login',{email,password},false);
+      if(!data.session)throw new Error('Сессия входа не получена');
+      saveSession(data.session);
+      const ok=await loadAccount();
+      if(!ok)throw new Error('Не удалось загрузить профиль после входа');
+      if(pendingInviteToken)await showPendingInvite();
+      else{
+        openView('home');
+        document.dispatchEvent(new CustomEvent('vmeste-auth-changed',{detail:{signedIn:true}}));
+      }
     }
   }catch(err){status.hidden=false;status.className='status error';status.textContent=err.message}
 };
@@ -203,4 +218,4 @@ async function showPendingInvite(){
   }
 }
 
-(async function init(){await loadAccount();await loadEvents();renderCalendar();if(pendingInviteToken)await showPendingInvite()})();
+(async function init(){const ok=await loadAccount();if(ok&&document.querySelector('[data-view="login"].active'))openView('home');await loadEvents();renderCalendar();if(pendingInviteToken)await showPendingInvite()})();
