@@ -65,6 +65,37 @@
     return '<section class="profileV2Section profileV2Notifications"><div class="profileV2SectionHead"><div><span class="ey">УВЕДОМЛЕНИЯ</span><h2>Что сообщать мне</h2></div><button type="button" class="profileV2SectionAction" data-profile-edit-notifications>Настроить</button></div>'+
       '<button type="button" class="profileV2NotificationSummary" data-profile-open-notifications><span><b>'+enabled+' из '+notificationMeta.length+' включено</b><small>'+(n.sound!==false?'Звук включён':'Без звука')+'</small></span><strong>Открыть все ›</strong></button></section>'
   }
+  function notificationCenterBlock(isSelf){
+    if(!isSelf)return '';
+    return '<section class="profileV2Section profileV2NotificationCenter" data-profile-notification-center>'+
+      '<div class="profileV2Title"><div><span class="profileV2Eyebrow">ЛЯ</span><h2>Оповещения</h2></div><button type="button" class="profileV2NotificationAll" data-profile-notification-category="all"><span data-profile-notification-total>0</span> все ›</button></div>'+
+      '<div class="profileV2NotificationCategories">'+
+        '<button type="button" data-profile-notification-category="events"><span><b>Приглашения</b><small>На события</small></span><strong data-profile-notification-count="events">0</strong></button>'+
+        '<button type="button" data-profile-notification-category="circle"><span><b>Круг</b><small>Заявки в круг</small></span><strong data-profile-notification-count="circle">0</strong></button>'+
+        '<button type="button" data-profile-notification-category="community"><span><b>Сообщества</b><small>Приглашения</small></span><strong data-profile-notification-count="community">0</strong></button>'+
+        '<button type="button" data-profile-notification-category="reminders"><span><b>Напоминания</b><small>Перед событиями</small></span><strong data-profile-notification-count="reminders">0</strong></button>'+
+      '</div>'+
+    '</section>'
+  }
+
+  async function hydrateNotificationCenter(root){
+    var box=root&&root.querySelector('[data-profile-notification-center]');if(!box)return;
+    try{
+      if(typeof window.getLyaNotificationData!=='function')return;
+      var d=await window.getLyaNotificationData();
+      var counts={
+        events:(d.pending||[]).length,
+        circle:(d.circle||[]).length,
+        community:(d.community||[]).length,
+        reminders:(d.reminders||[]).length
+      };
+      var total=counts.events+counts.circle+counts.community+counts.reminders;
+      var t=box.querySelector('[data-profile-notification-total]');if(t)t.textContent=String(total);
+      Object.keys(counts).forEach(function(k){var el=box.querySelector('[data-profile-notification-count="'+k+'"]');if(el)el.textContent=String(counts[k])});
+      box.classList.toggle('has-notifications',total>0)
+    }catch(e){}
+  }
+
   function notificationEditor(current){
     current=Object.assign({event_invites:true,circle_requests:true,community_invites:true,event_reminders:true,sound:true},current||{});
     return '<div class="profileV2VisibilityEditor profileV2NotificationEditor">'+notificationMeta.map(function(x){return '<label class="profileV2Toggle"><span><b>'+esc(x[1])+'</b><small>'+esc(x[2])+'</small></span><input type="checkbox" data-notification="'+x[0]+'" '+(current[x[0]]!==false?'checked':'')+'><i></i></label>'}).join('')+'</div>'
@@ -173,6 +204,7 @@
         about+
       '</div>'+
       actions(detail)+
+      notificationCenterBlock(isSelf)+
       wantBlock(detail,isSelf)+
       circleBlock(detail,isSelf)+
       interestBlock(detail,isSelf)+
@@ -335,6 +367,9 @@
     var p=detail.profile||{};
     var back=root.querySelector('[data-profile-back]');if(back)back.onclick=function(){if(closePublic)closePublic();else if(typeof openView==='function')openView('home')};
     root.querySelectorAll('[data-profile-edit]').forEach(function(b){b.onclick=function(){openEditor(detail,false)}});
+    root.querySelectorAll('[data-profile-notification-category]').forEach(function(b){b.onclick=function(e){if(typeof window.openLyaNotifications==='function')window.openLyaNotifications(b.dataset.profileNotificationCategory||'all')}}); 
+    hydrateNotificationCenter(root);
+    var refreshProfileNotifications=function(){hydrateNotificationCenter(root)};document.addEventListener('lya-notifications-changed',refreshProfileNotifications,{once:true});
     var editNotifications=root.querySelector('[data-profile-edit-notifications]');if(editNotifications)editNotifications.onclick=function(){openEditor(detail,false);setTimeout(function(){document.querySelector('[data-notification-settings]')?.scrollIntoView({behavior:'smooth',block:'start'})},140)};
     var openNotifications=root.querySelector('[data-profile-open-notifications]');if(openNotifications)openNotifications.onclick=function(e){if(typeof window.openLyaNotifications==='function')window.openLyaNotifications(e)};
     var ew=root.querySelector('[data-profile-edit-want]');if(ew)ew.onclick=function(){openEditor(detail,true)};
