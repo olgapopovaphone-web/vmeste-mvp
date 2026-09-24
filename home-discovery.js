@@ -3,7 +3,7 @@
   function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
   function city(){try{return afishaCity||'Ростов-на-Дону'}catch(e){return'Ростов-на-Дону'}}
   function when(v){try{return new Intl.DateTimeFormat('ru-RU',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit',timeZone:'Europe/Moscow'}).format(new Date(v)).replace('.','')}catch(e){return''}}
-  function placeKind(p){return({restaurant:'РЕСТОРАН',bar:'БАР',cinema:'КИНОТЕАТР',venue:'МЕСТО'})[p.kind]||'МЕСТО'}
+  function placeKind(p){return({restaurant:'РЕСТОРАН',bar:'БАР',cinema:'КИНОТЕАТР',museum:'МУЗЕЙ',gallery:'ГАЛЕРЕЯ',venue:'МЕСТО'})[p.kind]||'МЕСТО'}
   function placeCover(p){return p.cover_url?'<div class="placeCover" style="background-image:url(\''+esc(p.cover_url)+'\')"></div>':''}
   function plural(n){var a=n%10,b=n%100;if(a===1&&b!==11)return n+' событие';if(a>=2&&a<=4&&(b<12||b>14))return n+' события';return n+' событий'}
   async function load(force){if(loaded&&!force)return places;try{var d=await afRaw('places_feed',{city:city()});places=d.places||[];loaded=true;window.vmestePlaces=places}catch(e){places=[]}return places}
