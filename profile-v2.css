@@ -127,3 +127,449 @@
 .profileV2NotificationSummary{width:100%;display:flex;align-items:center;justify-content:space-between;gap:14px;border:1px solid rgba(0,0,0,.08);border-radius:18px;background:#FFFDF9;padding:15px;text-align:left;color:#111}
 .profileV2NotificationSummary span b,.profileV2NotificationSummary span small{display:block}.profileV2NotificationSummary span b{font:750 11px/1.2 Manrope,Inter,Arial,sans-serif}.profileV2NotificationSummary span small{margin-top:4px;color:#77746D;font:500 9px/1.2 Manrope,Inter,Arial,sans-serif}.profileV2NotificationSummary>strong{color:#0D4B38;font:750 9px/1 Manrope,Inter,Arial,sans-serif;white-space:nowrap}
 .profileV2EditorTitleRow{display:flex;align-items:center;justify-content:space-between;gap:12px}.profileV2EditorTitleRow h3{margin:0}.profileV2SoundTest{border:1px solid #D9D3CB;background:#fff;color:#111;border-radius:999px;padding:8px 11px;font:750 8px/1 Manrope,Inter,Arial,sans-serif}
+
+
+/* =========================================================
+   LYA PROFILE — EDITORIAL VISUAL LAYER · 2026-09-25
+   Visual-only overrides. No behavior hooks are changed.
+   ========================================================= */
+.profileV2{
+  --pv-bg:#F5F1E9;
+  --pv-surface:#FCFAF6;
+  --pv-ink:#171816;
+  --pv-muted:#7C7B75;
+  --pv-accent:#0D4B38;
+  --pv-tomato:#E94832;
+  --pv-line:#DCD7CE;
+  --pv-soft:#E7ECE7;
+  background:var(--pv-bg);
+}
+.profileV2Main{
+  max-width:720px;
+  padding:0 18px 54px;
+}
+.profileV2Hero{
+  height:248px;
+  border-radius:0 0 30px 30px;
+  overflow:hidden;
+}
+.profileV2Hero.has-cover{height:270px}
+.profileV2Hero.standard-cover{
+  background:
+    linear-gradient(135deg,rgba(233,72,50,.13),transparent 32%),
+    radial-gradient(circle at 84% 25%,rgba(13,75,56,.12),transparent 24%),
+    #DED9D0;
+}
+.profileV2HeroShade{
+  background:linear-gradient(180deg,rgba(0,0,0,.02),rgba(0,0,0,.25));
+}
+.profileV2Back,.profileV2Edit,.profileV2CoverButton{
+  background:rgba(250,248,243,.94);
+  box-shadow:none;
+  border:1px solid rgba(17,17,17,.08);
+  backdrop-filter:blur(14px);
+}
+.profileV2Back{
+  left:16px;
+  width:40px;
+  height:40px;
+  font-size:28px;
+}
+.profileV2Edit{
+  right:16px;
+  height:36px;
+  padding:0 13px;
+  font-size:9px;
+  letter-spacing:.15px;
+}
+.profileV2CoverButton{
+  right:16px;
+  bottom:14px;
+  height:34px;
+  padding:0 12px;
+  font-size:8.5px;
+}
+.profileV2Identity{
+  grid-template-columns:92px minmax(0,1fr);
+  gap:14px;
+  align-items:end;
+  margin-top:-42px;
+}
+.profileV2AvatarButton{
+  width:92px;
+  height:92px;
+  border:4px solid var(--pv-bg);
+  box-shadow:0 0 0 1px rgba(0,0,0,.05);
+}
+.profileV2Identity h1{
+  margin:0 0 4px;
+  font:500 34px/.96 Georgia,'Times New Roman',serif;
+  letter-spacing:-.75px;
+}
+.profileV2Identity p{
+  margin:0 0 6px;
+  font-size:10px;
+  letter-spacing:.08px;
+}
+.profileV2Actions{
+  gap:6px;
+  margin-top:16px;
+}
+.profileV2Action{
+  min-height:40px;
+  border-radius:999px;
+  background:transparent;
+  font-size:9px;
+  border-color:#CBC6BD;
+}
+.profileV2Action.primary{
+  background:#171816;
+  border-color:#171816;
+}
+.profileV2Action:disabled{
+  background:#E8E4DD;
+  border-color:#E8E4DD;
+  color:#77756F;
+  opacity:1;
+}
+
+.profileV2Section{
+  margin-top:24px;
+  padding-top:0;
+}
+.profileV2Section+.profileV2Section{
+  border-top:1px solid var(--pv-line);
+  padding-top:22px;
+}
+.profileV2SectionHead{
+  margin-bottom:10px;
+}
+.profileV2Section .ey,.profileV2Want .ey,.profileV2EditHead .ey{
+  color:#6B706B;
+  font-size:8px;
+  letter-spacing:1.8px;
+}
+.profileV2Section .ey:before,.profileV2Want .ey:before{
+  content:"";
+  display:inline-block;
+  width:6px;
+  height:6px;
+  margin-right:7px;
+  border-radius:50%;
+  background:var(--pv-tomato);
+  vertical-align:1px;
+}
+.profileV2SectionHead h2{
+  margin:4px 0 0;
+  font:500 24px/1 Georgia,'Times New Roman',serif;
+  letter-spacing:-.35px;
+}
+.profileV2PrivacyBadge{
+  height:22px;
+  background:transparent;
+  border:1px solid #CFCAC2;
+  padding:0 8px;
+  font-size:7.5px;
+}
+.profileV2Bio{
+  margin-top:6px;
+  max-width:620px;
+  font-size:12px;
+  line-height:1.55;
+  color:#32332F;
+}
+.profileV2AddSection{
+  margin-top:18px;
+  border-radius:12px;
+  padding:13px;
+}
+.profileV2Empty{
+  padding:13px 0;
+  border-radius:0;
+  background:transparent;
+  border-top:1px solid var(--pv-line);
+  color:var(--pv-muted);
+  font-size:9px;
+}
+
+/* Pinned: one editorial object, not a fat card */
+.profileV2Pinned{
+  min-height:132px;
+  border-radius:12px;
+  padding:18px;
+  box-shadow:none;
+}
+.profileV2Pinned:after{
+  background:linear-gradient(180deg,rgba(255,255,255,.02),rgba(0,0,0,.32));
+}
+.profileV2Pinned span{
+  font-size:7px;
+  letter-spacing:1.7px;
+}
+.profileV2Pinned strong{
+  margin-top:8px;
+  max-width:88%;
+  font:500 24px/1.02 Georgia,'Times New Roman',serif;
+}
+
+/* “Сейчас хочу…” — intentionally quieter than before */
+.profileV2Want{
+  margin-top:22px;
+  padding:14px 0 16px;
+  border-radius:0;
+  background:transparent;
+  box-shadow:none;
+  border-top:1px solid var(--pv-line);
+  border-bottom:1px solid var(--pv-line);
+}
+.profileV2Want p{
+  margin:7px 0 0;
+  max-width:88%;
+  font:500 23px/1.06 Georgia,'Times New Roman',serif;
+  letter-spacing:-.25px;
+}
+.profileV2WantActions{
+  margin-top:10px;
+}
+.profileV2WantActions button{
+  background:transparent;
+  color:#171816;
+  border:1px solid #BEB9B1;
+  padding:8px 11px;
+  font-size:8px;
+}
+.profileV2WantEmpty{
+  padding:14px 0;
+  border:0;
+  border-top:1px dashed #CBC6BD;
+  border-bottom:1px dashed #CBC6BD;
+}
+.profileV2WantEmpty p{font-size:20px}
+
+/* Notification center — compact and editorial */
+.profileV2Notifications{
+  margin-top:22px;
+}
+.profileV2SectionAction{
+  color:#171816;
+  font-size:8px;
+  text-decoration:underline;
+  text-underline-offset:3px;
+}
+.profileV2NotificationSummary{
+  min-height:58px;
+  border-radius:12px;
+  border:1px solid var(--pv-line);
+  background:transparent;
+  padding:12px 14px;
+}
+.profileV2NotificationSummary span b{
+  font-size:10px;
+}
+.profileV2NotificationSummary span small{
+  font-size:8px;
+}
+.profileV2NotificationSummary>strong{
+  color:#171816;
+  font-size:8px;
+}
+
+/* Circle */
+.profileV2Circle{gap:14px}
+.profileV2Circle button{min-width:58px}
+.profileV2Avatar.small{
+  width:44px;
+  height:44px;
+  border:1px solid rgba(0,0,0,.05);
+}
+.profileV2Circle button span:last-child{
+  max-width:62px;
+  font-size:8px;
+}
+
+/* Interests become light editorial tags */
+.profileV2Interests{gap:6px}
+.profileV2Interests span{
+  padding:7px 10px;
+  border-radius:999px;
+  background:transparent;
+  border:1px solid #CFCAC2;
+  font-size:8px;
+}
+
+/* Common */
+.profileV2CommonGrid{
+  gap:0;
+  border-top:1px solid var(--pv-line);
+  border-bottom:1px solid var(--pv-line);
+}
+.profileV2CommonGrid>div{
+  border-radius:0;
+  background:transparent;
+  padding:14px 0;
+}
+.profileV2CommonGrid>div+div{
+  border-left:1px solid var(--pv-line);
+  padding-left:14px;
+}
+.profileV2CommonGrid strong{
+  font-size:27px;
+}
+.profileV2CommonGrid span{
+  font-size:8px;
+}
+.profileV2CommonEvents{gap:0}
+.profileV2CommonEvents button{
+  border-radius:0;
+  background:transparent;
+  border-bottom:1px solid var(--pv-line);
+  padding:10px 0;
+}
+
+/* Events / Communities / Places: flatter cards, less “app UI” */
+.profileV2EventList,.profileV2CommunityList,.profileV2Places{
+  gap:7px;
+}
+.profileV2Event{
+  min-height:122px;
+  border-radius:12px;
+  padding:13px;
+  background:#FBF9F4;
+  border:1px solid var(--pv-line);
+  box-shadow:none;
+}
+.profileV2Event span{font-size:7px}
+.profileV2Event strong{
+  margin-top:7px;
+  font-size:13px;
+}
+.profileV2Event small{
+  padding-top:9px;
+  font-size:8px;
+}
+.profileV2Community,.profileV2Places button{
+  min-height:114px;
+  border-radius:12px;
+  padding:13px;
+}
+.profileV2Community strong,.profileV2Places strong{
+  font-size:13px;
+}
+.profileV2Community span,.profileV2Places span{
+  font-size:7px;
+}
+.profileV2Places small{font-size:7.5px}
+
+/* Moments: more photo, less interface */
+.profileV2Moments{gap:4px}
+.profileV2Moments button{
+  border-radius:8px;
+}
+
+/* Settings sheet — same visual language, behavior untouched */
+.profileV2EditOverlay,.profileV2InviteOverlay{
+  background:rgba(22,22,20,.34);
+  padding:0;
+}
+.profileV2EditSheet,.profileV2InviteSheet{
+  max-height:92vh;
+  border-radius:26px 26px 0 0;
+  padding:18px 16px calc(18px + env(safe-area-inset-bottom));
+  background:#F7F4EE;
+  box-shadow:0 -18px 50px rgba(0,0,0,.15);
+}
+.profileV2EditHead h2{
+  font-size:27px;
+}
+.profileV2EditorGroup{
+  gap:10px;
+  padding:14px;
+  border-radius:14px;
+  border-color:#DED8CF;
+  background:#FCFAF6;
+}
+.profileV2EditorGroup h3{
+  font-size:9px;
+  letter-spacing:.6px;
+}
+.profileV2EditForm{
+  gap:10px;
+  margin-top:14px;
+}
+.profileV2EditForm input[type="text"],.profileV2EditForm input:not([type]),.profileV2EditForm textarea,.profileV2EditForm select{
+  border-radius:10px;
+  border-color:#D8D1C8;
+  background:#FFF;
+  padding:11px 12px;
+  font-size:11px;
+}
+.profileV2Toggle{
+  border-radius:11px!important;
+  padding:10px!important;
+}
+.profileV2Toggle i{
+  width:40px;
+  height:23px;
+}
+.profileV2Toggle i:after{
+  width:17px;
+  height:17px;
+}
+.profileV2Toggle input:checked+i{
+  background:#171816;
+}
+.profileV2Toggle input:checked+i:after{
+  transform:translateX(17px);
+}
+.profileV2InterestEditor span{
+  padding:8px 10px;
+  font-size:8px;
+}
+.profileV2InterestEditor input:checked+span{
+  background:#171816;
+  border-color:#171816;
+}
+.profileV2Save{
+  background:#171816;
+  border-radius:999px;
+}
+.profileV2RemoveCover{
+  border-radius:999px;
+}
+.profileV2SoundTest{
+  padding:7px 10px;
+  font-size:7.5px;
+  border-radius:999px;
+}
+
+/* Tomato only as a micro accent */
+.profileV2 .primary:not(.profileV2Action),
+.profileV2 .smallPrimary{
+  background:#171816;
+  border-color:#171816;
+}
+.profileV2Signout{
+  border-radius:999px;
+  height:40px;
+  font-size:9px;
+}
+
+@media(max-width:520px){
+  .profileV2Hero{height:224px;border-radius:0 0 24px 24px}
+  .profileV2Hero.has-cover{height:244px}
+  .profileV2Main{padding-left:14px;padding-right:14px}
+  .profileV2Identity{grid-template-columns:86px minmax(0,1fr);margin-top:-39px}
+  .profileV2AvatarButton{width:86px;height:86px}
+  .profileV2Identity h1{font-size:31px}
+  .profileV2SectionHead h2{font-size:22px}
+  .profileV2Pinned strong{font-size:22px}
+  .profileV2Want p{font-size:21px}
+  .profileV2Actions{gap:5px}
+  .profileV2Action{min-height:38px;font-size:8.5px}
+  .profileV2EventList,.profileV2CommunityList,.profileV2Places{grid-template-columns:1fr 1fr}
+}
+@media(max-width:380px){
+  .profileV2Actions{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .profileV2Action{padding:0 5px;font-size:8px}
+  .profileV2EventList,.profileV2CommunityList,.profileV2Places{grid-template-columns:1fr}
+}
