@@ -60,3 +60,8 @@ body.communityChatOpen{overflow:hidden}.communityChatSheet{position:fixed;inset:
   color:#111!important;
 }
 .communityChatMessage.mine .communityChatBubble span{color:#111!important}
+
+.communityChatHead{grid-template-columns:minmax(0,1fr) auto!important}
+.communityChatCustomize{width:auto!important;min-width:112px;height:40px!important;border-radius:999px!important;padding:0 13px!important;display:flex!important;align-items:center;justify-content:center;gap:7px;background:#fff!important;color:#111!important;border:1px solid #D9D5CE!important}
+.communityChatCustomize span{font-size:15px;line-height:1}
+.communityChatCustomize b{font:750 10px/1 Manrope,Inter,Arial,sans-serif;color:#111}
