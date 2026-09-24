@@ -254,3 +254,29 @@
   padding-left:12px;
   padding-right:12px;
 }
+
+
+/* PROFILE TRUE FULL SCREEN · 2026-09-25
+   Override the global .view padding only for the profile tab. */
+.view[data-view="profile"]{
+  padding:0 0 82px!important;
+  margin:0!important;
+  width:100%!important;
+  max-width:none!important;
+  min-height:100vh!important;
+  background:#F7F4EF!important;
+}
+.view[data-view="profile"].standalone{padding-top:0!important}
+.view[data-view="profile"] #profile-root{
+  width:100%!important;
+  max-width:none!important;
+  min-height:100vh!important;
+  margin:0!important;
+  padding:0!important;
+}
+.view[data-view="profile"] .profileV2{
+  width:100%!important;
+  max-width:none!important;
+  margin:0!important;
+  border-radius:0!important;
+}
