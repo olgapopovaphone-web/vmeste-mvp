@@ -139,7 +139,7 @@
       '<header class="profileV2Hero '+(p.cover_url?'has-cover':'standard-cover')+'"'+coverStyle(p)+'>'+
         '<div class="profileV2HeroShade"></div>'+
         '<button type="button" class="profileV2Back" data-profile-back>‹</button>'+
-        (isSelf?'<button type="button" class="profileV2Edit" data-profile-edit>Настроить</button><button type="button" class="profileV2CoverButton" data-profile-cover>'+(p.cover_url?'Сменить фон':'Загрузить фон')+'</button>':'')+
+        (isSelf?'<button type="button" class="profileV2Edit" data-profile-edit>Настроить</button><label class="profileV2CoverButton" for="profile-cover-input-v3" data-profile-cover>'+(p.cover_url?'Сменить фон':'Загрузить фон')+'</label>':'')+
       '</header>'+
       '<div class="profileV2Main">'+
         '<div class="profileV2Identity">'+
@@ -159,8 +159,8 @@
         momentsBlock(detail,isSelf)+
         (isSelf?'<button type="button" class="profileV2Signout" data-profile-signout>Выйти из аккаунта</button>':'')+
       '</div>'+
-      '<input type="file" data-profile-cover-input accept="image/jpeg,image/png,image/webp" hidden>'+
-      '<input type="file" data-profile-avatar-input accept="image/jpeg,image/png,image/webp" hidden>'+
+      '<input id="profile-cover-input-v3" class="profileV2FileInput" type="file" data-profile-cover-input accept="image/jpeg,image/png,image/webp">'+
+      '<input id="profile-avatar-input-v3" class="profileV2FileInput" type="file" data-profile-avatar-input accept="image/jpeg,image/png,image/webp">'+
     '</article>'
   }
 
@@ -320,8 +320,28 @@
     var signout=root.querySelector('[data-profile-signout]');if(signout)signout.onclick=function(){if(typeof signOut==='function')signOut()};
 
     if(isSelf){
-      var cover=root.querySelector('[data-profile-cover]'),coverInput=root.querySelector('[data-profile-cover-input]');if(cover&&coverInput){cover.onclick=function(){coverInput.click()};coverInput.onchange=async function(){var file=coverInput.files&&coverInput.files[0];if(!file)return;cover.textContent='Загружаю…';cover.disabled=true;try{var blob=await prepareImage(file,1400,650,.87),d=await avatarRequest('upload_cover',blob);if(typeof account!=='undefined'&&account&&account.profile)account.profile.cover_url=d.cover_url;renderSelf()}catch(e){alert(e.message);cover.disabled=false;cover.textContent='Загрузить фон'}finally{coverInput.value=''}}}
-      var av=root.querySelector('[data-profile-avatar]'),avInput=root.querySelector('[data-profile-avatar-input]');if(av&&avInput){av.onclick=function(){avInput.click()};avInput.onchange=async function(){var file=avInput.files&&avInput.files[0];if(!file)return;try{var blob=await prepareImage(file,700,700,.9),d=await avatarRequest('upload',blob);if(typeof account!=='undefined'&&account&&account.profile)account.profile.avatar_url=d.avatar_url;if(typeof updateAvatars==='function')updateAvatars();renderSelf()}catch(e){alert(e.message)}finally{avInput.value=''}}}
+      var cover=root.querySelector('[data-profile-cover]'),coverInput=root.querySelector('[data-profile-cover-input]');
+      if(cover&&coverInput){
+        coverInput.addEventListener('change',async function(){
+          var file=coverInput.files&&coverInput.files[0];if(!file)return;
+          var originalText=cover.textContent;cover.textContent='Загружаю…';cover.classList.add('is-loading');
+          try{
+            var blob=await prepareImage(file,1400,650,.87);
+            var d=await avatarRequest('upload_cover',blob);
+            if(!d||!d.cover_url)throw new Error('Сервер не вернул адрес обложки');
+            if(typeof account!=='undefined'&&account&&account.profile)account.profile.cover_url=d.cover_url;
+            cover.textContent='Фон загружен';
+            setTimeout(function(){renderSelf()},250);
+          }catch(e){
+            cover.textContent=originalText||'Загрузить фон';cover.classList.remove('is-loading');alert((e&&e.message)||'Не удалось загрузить фон');
+          }finally{coverInput.value=''}
+        })
+      }
+      var av=root.querySelector('[data-profile-avatar]'),avInput=root.querySelector('[data-profile-avatar-input]');
+      if(av&&avInput){
+        av.onclick=function(){if(typeof avInput.showPicker==='function'){try{avInput.showPicker();return}catch(e){}}avInput.click()};
+        avInput.addEventListener('change',async function(){var file=avInput.files&&avInput.files[0];if(!file)return;try{var blob=await prepareImage(file,700,700,.9),d=await avatarRequest('upload',blob);if(typeof account!=='undefined'&&account&&account.profile)account.profile.avatar_url=d.avatar_url;if(typeof updateAvatars==='function')updateAvatars();renderSelf()}catch(e){alert(e.message)}finally{avInput.value=''}})
+      }
     }
   }
 
