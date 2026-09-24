@@ -217,3 +217,40 @@
   .profileV2Event{min-width:225px}
   .profileV2PickMoments{grid-template-columns:repeat(3,minmax(0,1fr))}
 }
+
+/* PROFILE SPACING PASS · 2026-09-25
+   tighter text gutters + full-bleed image content */
+.profileV2Head{padding-left:12px;padding-right:12px}
+.profileV2Actions{padding-left:12px;padding-right:12px}
+.profileV2Section{padding-left:12px;padding-right:12px}
+.profileV2Want{margin-left:12px;margin-right:12px}
+.profileV2CircleSection{padding-left:12px;padding-right:12px}
+.profileV2Signout{margin-left:12px;margin-right:12px;width:calc(100% - 24px)}
+.profileV2PinnedEmpty{margin-left:12px;margin-right:12px}
+
+/* images go edge-to-edge */
+.profileV2PlaceHero{
+  margin-left:-12px;
+  width:calc(100% + 24px);
+}
+.profileV2Moments{
+  margin-left:-12px;
+  width:calc(100% + 24px);
+  border-radius:0;
+}
+.profileV2Pinned{
+  margin-left:0;
+  margin-right:0;
+  border-radius:0;
+}
+.profileV2PinImage{height:180px}
+.profileV2PinBody{padding-left:12px;padding-right:12px}
+
+/* keep text headers aligned while scrollers/media can bleed */
+.profileV2Upcoming{padding-right:0}
+.profileV2Upcoming>.profileV2Title{padding-right:12px}
+.profileV2EventScroller{
+  margin-left:-12px;
+  padding-left:12px;
+  padding-right:12px;
+}
