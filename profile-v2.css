@@ -118,3 +118,7 @@
 @media(max-width:380px){
   .profileV2Actions{grid-template-columns:1fr}.profileV2EventList,.profileV2CommunityList,.profileV2Places{grid-template-columns:1fr}.profileV2Edit{right:12px}.profileV2CoverButton{right:12px}.profileV2Moments{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
+
+.profileV2CoverButton{display:flex;align-items:center;justify-content:center;cursor:pointer}
+.profileV2CoverButton.is-loading{opacity:.72;pointer-events:none}
+.profileV2FileInput{position:fixed!important;left:-9999px!important;top:auto!important;width:1px!important;height:1px!important;opacity:0!important;pointer-events:none!important}
