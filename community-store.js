@@ -16,12 +16,9 @@
   }
   async function call(action,payload,retry){
     var t=token();if(!t)throw new Error('LOGIN');
-    var r=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+t},body:JSON.stringify(Object.assign({action:action},payload||{}))});
+    var opts={method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.assign({action:action},payload||{}))};
+    var r=window.lyaAuthedFetch?await window.lyaAuthedFetch(API,opts,retry!==false):await fetch(API,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+t},body:opts.body});
     var d={};try{d=await r.json()}catch(e){d={error:'Некорректный ответ сервера'}}
-    if((r.status===401||r.status===403)&&retry!==false&&typeof window.refreshSession==='function'){
-      var ok=await window.refreshSession();
-      if(ok)return call(action,payload,false);
-    }
     if(!r.ok)throw new Error(d.error||'Ошибка запроса');
     return d;
   }
