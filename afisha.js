@@ -9,6 +9,7 @@ let afishaCompared=new Set();
 let afishaProfile=null;
 let afishaFilter='for-me';
 let afishaCity='Ростов-на-Дону';
+const afishaActionLocks=new Set();
 
 const AFISHA_CATEGORIES={cinema:'Кино',music:'Музыка',theatre:'Театр',humor:'Юмор',exhibition:'Выставки',kids:'С детьми',walks:'Прогулки',food:'Еда',sport:'Спорт'};
 const AFISHA_TIMES={weekdays:'Будни',weekends:'Выходные',day:'Днём',evening:'Вечером'};
@@ -112,9 +113,21 @@ async function saveAfishaPreferences(){
 function requireAfishaLogin(action,id){
   sessionStorage.setItem(PENDING_AFISHA_KEY,JSON.stringify({action,id}));openView('login');
 }
-async function toggleAfisha(kind,id){
+async function toggleAfisha(kind,id,forcedActive){
   if(!account){requireAfishaLogin(kind,id);return}
-  try{const action=kind==='like'?'toggle_like':'toggle_compare';const data=await afRaw(action,{afisha_event_id:id},true);const set=kind==='like'?afishaLiked:afishaCompared;if(data.active)set.add(id);else set.delete(id);renderAfisha();if(kind==='like')afToast(data.active?'Добавлено в понравившиеся':'Убрано из понравившихся')}catch(err){afToast(err.message)}
+  const key=kind+':'+id;
+  if(afishaActionLocks.has(key))return;
+  afishaActionLocks.add(key);
+  const set=kind==='like'?afishaLiked:afishaCompared;
+  const desired=typeof forcedActive==='boolean'?forcedActive:!set.has(id);
+  try{
+    const action=kind==='like'?'toggle_like':'toggle_compare';
+    const data=await afRaw(action,{afisha_event_id:id,active:desired},true);
+    if(data.active)set.add(id);else set.delete(id);
+    renderAfisha();
+    if(kind==='like')afToast(data.active?'Добавлено в понравившиеся':'Убрано из понравившихся');
+  }catch(err){afToast(err.message)}
+  finally{setTimeout(()=>afishaActionLocks.delete(key),700)}
 }
 async function collectCompany(id){
   if(!account){requireAfishaLogin('collect',id);return}
