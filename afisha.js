@@ -84,7 +84,10 @@ function decorateLyaAfishaCovers(root=document){
 function renderAfisha(){
   const root=document.querySelector('#afisha-root');if(!root)return;
   const items=filteredAfisha();
-  root.innerHTML=`${onboardingHtml()}<div class="afishaFeed">${items.length?items.map(afishaCard).join(''):'<div class="afishaEmpty">По этому фильтру пока ничего нет. Выберите другой — лента никуда не делась 🙂</div>'}</div>`;
+  const empty=!afishaEvents.length
+    ?'<div class="afishaEmpty afishaEmptyFeed"><strong>На ближайшие дни событий пока нет</strong><span>Пока можно посмотреть места и людей вокруг — новые события появятся здесь автоматически.</span></div>'
+    :'<div class="afishaEmpty"><strong>По этому фильтру пока ничего нет</strong><span>Выберите другой фильтр — общая лента событий никуда не делась.</span></div>';
+  root.innerHTML=`${onboardingHtml()}<div class="afishaFeed">${items.length?items.map(afishaCard).join(''):empty}</div>`;
   document.querySelector('#afisha-city-label')?.replaceChildren(document.createTextNode(afishaCity));
   bindAfishaActions();renderAfishaCompareBar();decorateLyaAfishaCovers(root);
 }
