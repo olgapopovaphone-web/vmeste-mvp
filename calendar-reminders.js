@@ -92,7 +92,7 @@
           b.disabled=true;
           try{
             const r=await circleApi('respond_community_invite',{invitation_id:b.dataset.id,response:b.dataset.response});
-            if(b.dataset.response==='accepted')saveCommunityLocal(r.community);
+            if(b.dataset.response==='accepted'){if(window.LyaCommunityStore)await window.LyaCommunityStore.refreshAll();else saveCommunityLocal(r.community);}
             document.dispatchEvent(new CustomEvent('vmeste-community-invites-changed'));
             document.dispatchEvent(new CustomEvent('lya-notifications-changed'));
             await refreshBadge();
