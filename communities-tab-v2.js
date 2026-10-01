@@ -8,69 +8,101 @@
   if(!root||!search)return;
 
   var GROUPS_KEY='vmeste_groups_proto_v1';
-  var INVITES_KEY='vmeste_community_invites_proto_v1';
-  var CIRCLE_API='https://nmeoakrpafxhpdrplsuo.supabase.co/functions/v1/vmeste-circle-api';
-  var rendering=false,searchTimer=null;
+  var API='https://nmeoakrpafxhpdrplsuo.supabase.co/functions/v1/vmeste-circle-api';
+  var mine=[],pending=[],discover=[],rendering=false,searchTimer=null,loaded=false;
 
   function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
-  function read(key,fallback){try{var v=JSON.parse(localStorage.getItem(key)||'');return v||fallback}catch(e){return fallback}}
-  function write(key,value){try{localStorage.setItem(key,JSON.stringify(value))}catch(e){}}
-  function groups(){var a=read(GROUPS_KEY,[]);return Array.isArray(a)?a:[]}
-  function invites(){var a=read(INVITES_KEY,[]);return Array.isArray(a)?a:[]}
   function session(){try{return JSON.parse(localStorage.getItem('vmeste_session_v1')||'null')}catch(e){return null}}
-  async function circleApi(action,payload){var ss=session();if(!ss||!ss.access_token)throw new Error('LOGIN');var r=await fetch(CIRCLE_API,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+ss.access_token},body:JSON.stringify(Object.assign({action:action},payload||{}))});var d=await r.json().catch(function(){return{error:'Некорректный ответ сервера'}});if(!r.ok)throw new Error(d.error||'Ошибка запроса');return d}
-  async function syncInvites(){var ss=session();if(!ss||!ss.access_token)return;try{var d=await circleApi('list_community_invitations',{}),server=(d.invitations||[]).map(function(x){return Object.assign({},x.community||{}, {_server_invitation_id:x.invitation_id,_inviter:x.inviter||null})}),local=invites().filter(function(x){return !x._server_invitation_id});write(INVITES_KEY,local.concat(server));if(active())render()}catch(e){}}
+  async function call(action,payload,retry){
+    var s=session();if(!s||!s.access_token)throw new Error('LOGIN');
+    var r=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+s.access_token},body:JSON.stringify(Object.assign({action:action},payload||{}))});
+    var d={};try{d=await r.json()}catch(e){d={error:'Некорректный ответ сервера'}}
+    if(r.status===401&&retry!==false&&typeof window.refreshSession==='function'&&await window.refreshSession())return call(action,payload,false);
+    if(!r.ok)throw new Error(d.error||'Ошибка запроса');
+    return d
+  }
+  function cache(){
+    try{localStorage.setItem(GROUPS_KEY,JSON.stringify(mine))}catch(e){}
+  }
   function active(){var tab=section.querySelector('[data-social-tab="communities"]');return !!(section.classList.contains('active')&&tab&&tab.classList.contains('active'))}
   function memberWord(n){var m=Math.abs(n)%100,d=m%10;if(m>10&&m<20)return'участников';if(d===1)return'участник';if(d>1&&d<5)return'участника';return'участников'}
   function countText(g){var n=Number(g.member_count||1);return n+' '+memberWord(n)}
   function image(g,cls){if(g.cover_url)return '<div class="'+cls+' has-photo" style="background-image:url(\''+esc(String(g.cover_url).replace(/'/g,'%27'))+'\')"></div>';return '<div class="'+cls+'">'+esc((g.name||'?').trim().slice(0,1).toUpperCase())+'</div>'}
+  function inviteCard(x){var g=x.community||x;return '<article class="communityV2Invite" data-community-invite-card="'+esc(g.id)+'" data-invitation-id="'+esc(x.invitation_id||g._server_invitation_id||'')+'">'+image(g,'communityV2InviteImage')+'<div class="communityV2InviteBody"><div class="communityV2InviteCount">'+esc(countText(g))+'</div><h3>'+esc(g.name||'Сообщество')+'</h3><p>'+esc(g.description||'Сообщество в ЛЯ')+'</p><div class="communityV2InviteActions"><button type="button" class="communityV2Join" data-community-v2-join="'+esc(g.id)+'">Вступить</button><button type="button" class="communityV2Decline" data-community-v2-decline="'+esc(g.id)+'">Отклонить</button></div></div></article>'}
+  function mineCard(g){return '<button type="button" class="communityV2MineCard" data-community-v2-open="'+esc(g.id)+'">'+image(g,'communityV2MineImage')+'<span class="communityV2MineShade"></span><span class="communityV2MineCopy"><strong>'+esc(g.name||'Сообщество')+'</strong><small>'+esc(g.description||countText(g))+'</small><em>'+esc(countText(g))+'</em></span></button>'}
+  function discoverCard(g){return '<article class="communityV2Invite" data-community-discover-card="'+esc(g.id)+'">'+image(g,'communityV2InviteImage')+'<div class="communityV2InviteBody"><div class="communityV2InviteCount">'+esc(countText(g))+'</div><h3>'+esc(g.name||'Сообщество')+'</h3><p>'+esc(g.description||'Открытое сообщество')+'</p><div class="communityV2InviteActions"><button type="button" class="communityV2Join" data-community-public-join="'+esc(g.id)+'">Вступить</button></div></div></article>'}
 
-  function inviteCard(g){
-    return '<article class="communityV2Invite" data-community-invite-card="'+esc(g.id)+'">'+image(g,'communityV2InviteImage')+'<div class="communityV2InviteBody"><div class="communityV2InviteCount">'+esc(countText(g))+'</div><h3>'+esc(g.name||'Сообщество')+'</h3><p>'+esc(g.description||'Сообщество в ЛЯ')+'</p><div class="communityV2InviteActions"><button type="button" class="communityV2Join" data-community-v2-join="'+esc(g.id)+'">Вступить</button><button type="button" class="communityV2Decline" data-community-v2-decline="'+esc(g.id)+'">Отклонить</button></div></div></article>';
-  }
-  function mineCard(g){
-    return '<button type="button" class="communityV2MineCard" data-community-v2-open="'+esc(g.id)+'">'+image(g,'communityV2MineImage')+'<span class="communityV2MineShade"></span><span class="communityV2MineCopy"><strong>'+esc(g.name||'Сообщество')+'</strong><small>'+esc(g.description||countText(g))+'</small><em>'+esc(countText(g))+'</em></span></button>';
+  async function sync(force){
+    var s=session();
+    if(!s||!s.access_token){mine=[];pending=[];discover=[];loaded=true;if(active())render();return}
+    if(active()&&!loaded)root.innerHTML='<div class="communityV2Empty">Загружаю сообщества…</div>';
+    try{
+      var q=(search.value||'').trim();
+      var all=await Promise.all([
+        call('list_my_communities',{},true),
+        call('list_community_invitations',{},true),
+        call('discover_communities',{query:q},true)
+      ]);
+      mine=all[0].communities||[];
+      pending=all[1].invitations||[];
+      discover=all[2].communities||[];
+      cache();loaded=true;
+      if(active())render()
+    }catch(e){
+      loaded=true;
+      if(active())root.innerHTML='<div class="communityV2Empty">'+esc(e.message==='LOGIN'?'Войдите, чтобы увидеть сообщества.':e.message)+'</div>'
+    }
   }
 
   function render(){
-    if(!active())return;rendering=true;search.placeholder='Найти в моих сообществах';
-    var q=(search.value||'').trim().toLowerCase(),mine=groups();
-    if(q){var found=mine.filter(function(g){return String(g.name||'').toLowerCase().includes(q)||String(g.description||'').toLowerCase().includes(q)});root.innerHTML='<div class="communityV2" data-community-v2-root><div class="communityV2SearchResults">'+(found.length?found.map(mineCard).join(''):'<div class="communityV2Empty">В ваших сообществах ничего не найдено.</div>')+'</div></div>';bind();rendering=false;return}
-    var pending=invites(),h='<div class="communityV2" data-community-v2-root>';
-    if(pending.length)h+='<section class="communityV2Section"><div class="communityV2Head"><h2>Вы приглашены</h2>'+(pending.length>3?'<button type="button" class="communityV2All" data-community-v2-all="invites">Смотреть все ›</button>':'')+'</div><div class="communityV2InviteRow">'+pending.slice(0,3).map(inviteCard).join('')+'</div></section>';
-    if(mine.length)h+='<section class="communityV2Section"><div class="communityV2Head"><h2>Мои сообщества</h2>'+(mine.length>6?'<button type="button" class="communityV2All" data-community-v2-all="mine">Смотреть все ›</button>':'')+'</div><div class="communityV2MineGrid">'+mine.slice(0,6).map(mineCard).join('')+'</div></section>';
-    else if(!pending.length)h+='<div class="communityV2Empty">У вас пока нет сообществ.</div>';
-    h+='</div>';root.innerHTML=h;bind();rendering=false;
+    if(!active())return;rendering=true;search.placeholder='Найти сообщество';
+    var q=(search.value||'').trim().toLowerCase();
+    var my=mine,disc=discover,inv=pending;
+    if(q){
+      var match=function(g){return String(g.name||'').toLowerCase().includes(q)||String(g.description||'').toLowerCase().includes(q)};
+      my=my.filter(match);disc=disc.filter(match);inv=inv.filter(function(x){return match(x.community||{})})
+    }
+    var h='<div class="communityV2" data-community-v2-root>';
+    if(inv.length)h+='<section class="communityV2Section"><div class="communityV2Head"><h2>Вы приглашены</h2></div><div class="communityV2InviteRow">'+inv.slice(0,6).map(inviteCard).join('')+'</div></section>';
+    if(my.length)h+='<section class="communityV2Section"><div class="communityV2Head"><h2>Мои сообщества</h2></div><div class="communityV2MineGrid">'+my.map(mineCard).join('')+'</div></section>';
+    if(disc.length)h+='<section class="communityV2Section"><div class="communityV2Head"><h2>Открытые сообщества</h2></div><div class="communityV2InviteRow">'+disc.slice(0,6).map(discoverCard).join('')+'</div></section>';
+    if(!inv.length&&!my.length&&!disc.length)h+='<div class="communityV2Empty">'+(q?'Ничего не нашли.':'У вас пока нет сообществ.')+'</div>';
+    h+='</div>';root.innerHTML=h;bind();rendering=false
   }
 
-  function openCommunity(id,snapshot){if(typeof window.openCommunityDetail==='function')window.openCommunityDetail(id,snapshot||null)}
-  async function join(id,openAfter){
-    var pending=invites(),g=pending.find(function(x){return x.id===id});if(!g)return;
-    try{if(g._server_invitation_id)await circleApi('respond_community_invite',{invitation_id:g._server_invitation_id,response:'accepted'});var mine=groups(),copy=Object.assign({},g,{member_count:Number(g.member_count||0)+1,role:'member',joined_via_invite:true});delete copy._server_invitation_id;delete copy._inviter;if(!mine.some(function(x){return x.id===id}))mine.unshift(copy);write(GROUPS_KEY,mine);write(INVITES_KEY,pending.filter(function(x){return x.id!==id}));render();document.dispatchEvent(new CustomEvent('vmeste-community-invites-changed'));if(openAfter)openCommunity(id,mine.find(function(x){return x.id===id})||copy)}catch(e){alert(e.message)}
+  function openCommunity(id){if(typeof window.openCommunityDetail==='function')window.openCommunityDetail(id)}
+  async function answerInvite(card,response,openAfter){
+    var invitationId=card&&card.dataset.invitationId;if(!invitationId)return;
+    try{
+      await call('respond_community_invite',{invitation_id:invitationId,response:response},true);
+      await sync(true);
+      document.dispatchEvent(new CustomEvent('vmeste-community-invites-changed'));
+      if(response==='accepted'&&openAfter){var g=mine.find(function(x){return String(x.id)===String(card.dataset.communityInviteCard)});if(g)openCommunity(g.id)}
+    }catch(e){alert(e.message)}
   }
-  async function decline(id){var pending=invites(),g=pending.find(function(x){return x.id===id});if(!g)return;try{if(g._server_invitation_id)await circleApi('respond_community_invite',{invitation_id:g._server_invitation_id,response:'declined'});write(INVITES_KEY,pending.filter(function(x){return x.id!==id}));render();document.dispatchEvent(new CustomEvent('vmeste-community-invites-changed'))}catch(e){alert(e.message)}}
-  function openAll(kind){
-    document.querySelector('.communityV2SheetOverlay')?.remove();var items=kind==='invites'?invites():groups();var o=document.createElement('div');o.className='communityV2SheetOverlay';
-    o.innerHTML='<div class="communityV2Sheet"><div class="communityV2SheetHead"><h2>'+(kind==='invites'?'Вы приглашены':'Мои сообщества')+'</h2><button type="button">×</button></div><div class="'+(kind==='invites'?'communityV2InviteRow communityV2InviteRowAll':'communityV2MineGrid communityV2MineGridAll')+'">'+items.map(kind==='invites'?inviteCard:mineCard).join('')+'</div></div>';
-    document.body.appendChild(o);o.querySelector('.communityV2SheetHead button').onclick=function(){o.remove()};o.onclick=function(e){if(e.target===o)o.remove()};
-    o.querySelectorAll('[data-community-v2-open]').forEach(function(b){b.onclick=function(){o.remove();openCommunity(b.dataset.communityV2Open)}});
-    o.querySelectorAll('[data-community-v2-join]').forEach(function(b){b.onclick=function(e){e.stopPropagation();join(b.dataset.communityV2Join,true);o.remove()}});
-    o.querySelectorAll('[data-community-v2-decline]').forEach(function(b){b.onclick=function(e){e.stopPropagation();decline(b.dataset.communityV2Decline);o.remove()}});
-    o.querySelectorAll('[data-community-invite-card]').forEach(function(c){c.onclick=function(e){if(e.target.closest('[data-community-v2-join],[data-community-v2-decline]'))return;var g=invites().find(function(x){return x.id===c.dataset.communityInviteCard});if(g){o.remove();openCommunity(g.id,g)}}});
+  async function joinOpen(id){
+    try{await call('join_community',{community_id:id},true);await sync(true);var g=mine.find(function(x){return String(x.id)===String(id)});if(g)openCommunity(g.id)}catch(e){alert(e.message)}
   }
-
   function bind(){
     root.querySelectorAll('[data-community-v2-open]').forEach(function(b){b.onclick=function(){openCommunity(b.dataset.communityV2Open)}});
-    root.querySelectorAll('[data-community-v2-join]').forEach(function(b){b.onclick=function(e){e.stopPropagation();join(b.dataset.communityV2Join,false)}});
-    root.querySelectorAll('[data-community-v2-decline]').forEach(function(b){b.onclick=function(e){e.stopPropagation();decline(b.dataset.communityV2Decline)}});
-    root.querySelectorAll('[data-community-invite-card]').forEach(function(c){c.onclick=function(e){if(e.target.closest('[data-community-v2-join],[data-community-v2-decline]'))return;var g=invites().find(function(x){return x.id===c.dataset.communityInviteCard});if(g)openCommunity(g.id,g)}});
-    root.querySelectorAll('[data-community-v2-all]').forEach(function(b){b.onclick=function(){openAll(b.dataset.communityV2All)}});
+    root.querySelectorAll('[data-community-invite-card]').forEach(function(card){
+      var j=card.querySelector('[data-community-v2-join]'),d=card.querySelector('[data-community-v2-decline]');
+      if(j)j.onclick=function(e){e.stopPropagation();answerInvite(card,'accepted',true)};
+      if(d)d.onclick=function(e){e.stopPropagation();answerInvite(card,'declined',false)};
+      card.onclick=function(e){if(e.target.closest('button'))return;openCommunity(card.dataset.communityInviteCard)}
+    });
+    root.querySelectorAll('[data-community-public-join]').forEach(function(b){b.onclick=function(){b.disabled=true;joinOpen(b.dataset.communityPublicJoin).finally(function(){b.disabled=false})}});
   }
 
-  document.addEventListener('click',function(e){var tab=e.target.closest&&e.target.closest('[data-social-tab="communities"]');if(tab)setTimeout(function(){syncInvites().then(render)},0);var nav=e.target.closest&&e.target.closest('.nav[data-go="communities"]');if(nav)setTimeout(function(){if(active())syncInvites().then(render)},30)},true);
-  search.addEventListener('input',function(){if(!active())return;clearTimeout(searchTimer);searchTimer=setTimeout(render,80)},true);
-  window.addEventListener('storage',function(e){if((e.key===GROUPS_KEY||e.key===INVITES_KEY)&&active())render()});
-  document.addEventListener('vmeste-community-invites-changed',function(){syncInvites()});
-  var observer=new MutationObserver(function(){if(rendering||!active())return;if(!root.querySelector('[data-community-v2-root]'))setTimeout(function(){if(active()&&!root.querySelector('[data-community-v2-root]'))render()},0)});observer.observe(root,{childList:true,subtree:false});
-  setTimeout(function(){syncInvites();if(active())render()},400);
+  document.addEventListener('click',function(e){
+    var tab=e.target.closest&&e.target.closest('[data-social-tab="communities"]');
+    if(tab)setTimeout(function(){sync(true)},0);
+    var nav=e.target.closest&&e.target.closest('.nav[data-go="communities"]');
+    if(nav)setTimeout(function(){if(active())sync(true)},30)
+  },true);
+  search.addEventListener('input',function(){if(!active())return;clearTimeout(searchTimer);searchTimer=setTimeout(function(){sync(true)},260)},true);
+  document.addEventListener('vmeste-community-changed',function(){loaded=false;sync(true)});
+  document.addEventListener('vmeste-community-invites-changed',function(){loaded=false;sync(true)});
+  var observer=new MutationObserver(function(){if(rendering||!active())return;if(!root.querySelector('[data-community-v2-root]'))setTimeout(function(){if(active())render()},0)});observer.observe(root,{childList:true,subtree:false});
+  setTimeout(function(){sync(true)},400);
 })();
