@@ -1,8 +1,8 @@
 .view[data-view="profile"]>.back{display:none!important}
 #profile-root{min-height:100vh}
 .profileV2{
-  --t:#EF5A3C;--g:#0E3D2E;--bg:#F7F4EF;--gr:#C8CDD3;--ink:#111;--mut:#6F736F;
-  --line:rgba(17,17,17,.11);--soft:#EEEAE4;
+  --t:#EF5A3C;--g:#0E3D2E;--bg:#FAFAF8;--gr:#C8CDD3;--ink:#111;--mut:#6F736F;
+  --line:rgba(17,17,17,.11);--soft:#F0F0ED;
   width:100%;min-height:100vh;background:var(--bg);color:var(--ink);
   padding-bottom:28px;overflow:hidden;font-family:Manrope,Inter,Arial,sans-serif
 }
@@ -17,7 +17,7 @@
 .profileV2Brand{border:0;background:transparent;padding:0;width:52px;height:35px;display:flex;align-items:center;justify-content:flex-start}
 .profileV2Logo{width:52px;height:auto;filter:drop-shadow(0 1px 5px rgba(255,255,255,.52))}
 .profileV2TopBtns{display:flex;gap:7px}
-.profileV2TopIcon{width:35px;height:35px;border:0;border-radius:50%;background:rgba(247,244,239,.92);color:#111;display:grid;place-items:center;padding:0;cursor:pointer;box-shadow:none;font-size:15px}
+.profileV2TopIcon{width:35px;height:35px;border:0;border-radius:50%;background:rgba(250,250,248,.94);color:#111;display:grid;place-items:center;padding:0;cursor:pointer;box-shadow:none;font-size:15px}
 .profileV2Back{font-size:26px;line-height:1}
 
 /* identity */
@@ -264,7 +264,7 @@
   width:100%!important;
   max-width:none!important;
   min-height:100vh!important;
-  background:#F7F4EF!important;
+  background:#FAFAF8!important;
 }
 .view[data-view="profile"].standalone{padding-top:0!important}
 .view[data-view="profile"] #profile-root{
@@ -286,7 +286,7 @@
 .profileV2EditOverlay,.profileV2InviteOverlay{
   --t:#EF5A3C;
   --g:#0E3D2E;
-  --bg:#F7F4EF;
+  --bg:#FAFAF8;
   --ink:#111;
   --mut:#6F736F;
   --line:rgba(17,17,17,.11);
@@ -295,7 +295,7 @@
   backdrop-filter:none!important;
 }
 .profileV2EditSheet,.profileV2InviteSheet{
-  background:#F7F4EF!important;
+  background:#FAFAF8!important;
   color:#111!important;
   opacity:1!important;
   backdrop-filter:none!important;
