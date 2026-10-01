@@ -742,3 +742,85 @@ html body > [class][class] *{
   background:var(--lya-g)!important;
   color:#fff!important;
 }
+
+
+/* =========================================================
+   ЛЯ · FINAL BUTTON GUARD · 2026-10-01
+   No generic black-filled controls.
+   ========================================================= */
+
+/* Main submit / confirmation controls */
+html body .primary,
+html body .smallPrimary{
+  background:var(--lya-g)!important;
+  border-color:var(--lya-g)!important;
+  color:#fff!important;
+}
+
+/* Create + discovery use tomato */
+html body [data-view="create"] .primary,
+html body [data-view="create"] .createSubmit,
+html body [data-view="home"] .collectCompany,
+html body [data-view="home"] .openLyaEvent,
+html body [data-view="home"] .afishaFilters button.active,
+html body [data-view="home"] .homeDiscoveryTabs button.active,
+html body .chronicleV2Filters button.active,
+html body .homeNotificationTabs button.active{
+  background:var(--lya-t)!important;
+  border-color:var(--lya-t)!important;
+  color:#fff!important;
+}
+
+/* Social confirmations use green */
+html body .peopleV2Chat,
+html body .peopleV2SearchAction,
+html body .socialCreateCommunity,
+html body .socialCommunityModes button.active,
+html body .myEventsAccept{
+  background:var(--lya-g)!important;
+  border-color:var(--lya-g)!important;
+  color:#fff!important;
+}
+
+/* Secondary controls stay light */
+html body .repeat,
+html body [data-view="home"] .afishaActions button:not(.collectCompany),
+html body .calendarNav button,
+html body .back{
+  background:#fff!important;
+  color:var(--lya-ink)!important;
+  border-color:var(--lya-line)!important;
+}
+
+/* Create nav: single guaranteed visible element */
+html body #bottom-nav .nav.plus{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  background:transparent!important;
+  border:0!important;
+  padding:0!important;
+  overflow:visible!important;
+}
+html body #bottom-nav .nav.plus::before,
+html body #bottom-nav .nav.plus::after{
+  content:none!important;
+  display:none!important;
+}
+html body #bottom-nav .nav.plus .createNavPlus{
+  display:grid!important;
+  place-items:center!important;
+  flex:0 0 48px!important;
+  width:48px!important;
+  height:48px!important;
+  border-radius:50%!important;
+  background:var(--lya-t)!important;
+  color:#fff!important;
+  font:400 31px/48px Manrope,system-ui,sans-serif!important;
+  text-align:center!important;
+  visibility:visible!important;
+  opacity:1!important;
+  transform:none!important;
+  margin:0!important;
+  padding:0!important;
+}
