@@ -59,3 +59,11 @@ body{background:#DED9D1;color:var(--lya-ink);font-family:Inter,Arial,sans-serif}
 .repeat{border-color:var(--lya-line);color:var(--lya-ink);background:var(--lya-surface)}input,textarea{accent-color:var(--lya-coral)}
 
 @media(max-width:380px){[data-view="home"]>.top>div:first-child:before,[data-view="calendar"]>.top>div:first-child:before,[data-view="create"]>.top>div:first-child:before,[data-view="communities"]>.top>div:first-child:before,[data-view="chronicle"]>.top>div:first-child:before{font-size:27px}.bottom{height:70px!important}.afishaVisual{height:155px!important}[data-view="create"]>.top h1{font-size:27px!important}}
+
+
+/* =========================================================
+   LEGACY BRAND LAYER · NON-AUTHORITATIVE AREAS · 2026-10-01
+   Canonical visuals for these areas live in lya-ui-v1.css.
+   ========================================================= */
+#bottom-nav .nav.plus::before{content:none!important;display:none!important}
+#bottom-nav .nav.plus>span{display:none!important}
