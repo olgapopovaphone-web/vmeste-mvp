@@ -71,14 +71,8 @@
 
   function repeatEvent(ev){
     if(typeof window.clearPendingEventCircleInviteIds==='function')window.clearPendingEventCircleInviteIds();
-    if(typeof openView==='function')openView('create');
-    setTimeout(function(){
-      var form=document.getElementById('event-form'),choice=document.getElementById('private-choice');if(form&&form.hidden&&choice)choice.click();
-      var title=document.getElementById('event-title'),place=document.getElementById('event-place'),source=document.getElementById('event-source'),description=document.getElementById('event-description'),date=document.getElementById('event-date'),time=document.getElementById('event-time');
-      if(title)title.value=ev.title||'';if(place)place.value=ev.location_name||'';if(source)source.value=ev.location_url||ev.source_url||'';if(description)description.value=ev.description||'';if(date)date.value='';if(time)time.value='';
-      document.querySelector('.chronicleRepeatContext')?.remove();
-      if(form){var box=document.createElement('div');box.className='chronicleRepeatContext';box.textContent='Повторяем событие — выберите новую дату и время и заново добавьте участников.';form.insertAdjacentElement('beforebegin',box);form.scrollIntoView({behavior:'smooth',block:'start'})}
-    },80)
+    if(typeof window.openLyaCreateEvent==='function'){window.openLyaCreateEvent({title:ev.title||'',place:ev.location_name||'',source_url:ev.location_url||ev.source_url||'',date:'',time:'',repeat:true});return}
+    if(typeof openView==='function')openView('create')
   }
 
   function openMenu(ev){
