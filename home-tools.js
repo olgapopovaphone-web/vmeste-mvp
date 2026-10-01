@@ -26,7 +26,7 @@
 
   import('/image-cropper.js?v=20260925-2').then(function(){return import('/image-upload-bridge.js?v=20260925-1')});
   import('/default-covers-v1.js?v=20260918-2');
-  import('/home-core.js?v=20260924-11');
+  import('/home-core.js?v=20261001-1');
   import('/calendar-reminders.js?v=20260925-1').then(function(){return import('/calendar-reminder-cleanup.js?v=20260917-1')});
   import('/my-events.js?v=20260915-1').then(function(){simplifyTabHeaders();return import('/calendar-month-only.js?v=20260916-1')}).then(function(){return import('/calendar-day-v2.js?v=20260916-1')});
   import('/social-hub.js?v=20260918-3').then(function(){return import('/circle-labels.js?v=20260916-2')}).then(function(){return import('/social-cleanup.js?v=20260916-2')}).then(function(){return import('/people-tab-v2.js?v=20260924-14')}).then(function(){return import('/people-invite-app.js?v=20260917-2')}).then(function(){return import('/communities-tab-v2.js?v=20260924-2')}).then(function(){return import('/profile-v2.js?v=20260925-7')});
