@@ -80,9 +80,20 @@ async function refreshSession(){
 }
 window.refreshSession=refreshSession;
 window.getLyaAccessToken=function(){return session&&session.access_token||''};
+window.lyaAuthedFetch=async function(url,options={},retry=true){
+  var opts=Object.assign({},options);
+  opts.headers=Object.assign({},options.headers||{});
+  var t=session&&session.access_token||'';
+  if(t)opts.headers.Authorization='Bearer '+t;
+  var response=await fetch(url,opts);
+  if((response.status===401||response.status===403)&&retry&&await refreshSession()){
+    return window.lyaAuthedFetch(url,options,false);
+  }
+  return response;
+};
 async function api(action,payload={},needsAuth=true,retry=true){
   const result=await raw(action,payload,needsAuth?session?.access_token||'':'');
-  if(result.status===401&&needsAuth&&retry&&await refreshSession())return api(action,payload,true,false);
+  if((result.status===401||result.status===403)&&needsAuth&&retry&&await refreshSession())return api(action,payload,true,false);
   if(!result.ok)throw new Error(result.data.error||'Ошибка запроса');
   return result.data;
 }
