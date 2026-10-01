@@ -57,50 +57,56 @@
   color:var(--lya-mut)!important;
 }
 
-/* Bottom navigation follows profile: light, thin, no floating card feeling */
+/* Bottom navigation · canonical */
 #bottom-nav{
-  background:rgba(247,244,239,.96)!important;
+  height:74px!important;
+  background:rgba(250,250,248,.96)!important;
   border-top:1px solid var(--lya-line)!important;
   box-shadow:none!important;
   backdrop-filter:blur(16px);
 }
 #bottom-nav .nav{
+  position:relative;
   color:#666A66!important;
-  font-family:Manrope,Inter,Arial,sans-serif!important;
+  background:transparent!important;
+  border:0!important;
+  font-family:Manrope,system-ui,sans-serif!important;
   font-size:8px!important;
+  gap:5px!important;
 }
-#bottom-nav .nav.active{color:var(--lya-ink)!important}
+#bottom-nav .nav>svg{
+  width:19px;height:19px;
+  fill:none;stroke:currentColor;stroke-width:1.8;
+  stroke-linecap:round;stroke-linejoin:round;
+}
+#bottom-nav .nav:not(.plus)>span{font-size:9px!important}
+#bottom-nav .nav.active{color:var(--lya-ink)!important;font-weight:700!important}
 #bottom-nav .nav.plus{
-  position:relative;
-  z-index:1;
-  color:inherit!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:0!important;
+  font-size:0!important;
+  overflow:visible!important;
+  padding:0!important;
 }
-#bottom-nav .nav.plus:before{
-  content:none!important;
-  display:none!important;
-}
-
-/* CREATE NAV PLUS · 2026-10-01 */
+#bottom-nav .nav.plus::before,
+#bottom-nav .nav.plus::after{content:none!important;display:none!important}
 #bottom-nav .nav.plus .createNavPlus{
-  position:relative;
-  z-index:2;
-  width:48px;
-  height:48px;
-  display:grid;
-  place-items:center;
-  margin-bottom:1px;
+  display:grid!important;
+  place-items:center!important;
+  flex:0 0 48px!important;
+  width:48px!important;height:48px!important;
+  margin:0!important;padding:0!important;
+  border-radius:50%!important;
+  background:var(--lya-t)!important;
   color:#fff!important;
-  font:400 31px/1 Manrope,system-ui,sans-serif!important;
+  font:400 31px/48px Manrope,system-ui,sans-serif!important;
+  text-align:center!important;
+  visibility:visible!important;
+  opacity:1!important;
+  box-shadow:none!important;
 }
-#bottom-nav .nav.plus>span{
-  position:relative;
-  z-index:2;
-  color:#666A66!important;
-  font-size:8px!important;
-  line-height:1!important;
-}
-#bottom-nav .nav.plus.active>span{color:var(--lya-ink)!important}
-
 
 /* Common top controls */
 .homeToolButton,
@@ -142,9 +148,9 @@
 }
 [data-view="home"] .afishaFilters button.active,
 [data-view="home"] .homeDiscoveryTabs button.active{
-  background:var(--lya-ink)!important;
+  background:var(--lya-t)!important;
   color:#fff!important;
-  border-color:var(--lya-ink)!important;
+  border-color:var(--lya-t)!important;
 }
 [data-view="home"] .afishaFeed{gap:24px!important}
 [data-view="home"] .afishaCard{
@@ -182,8 +188,8 @@
 }
 [data-view="home"] .afishaActions .collectCompany,
 [data-view="home"] .afishaLyaActions .openLyaEvent{
-  background:var(--lya-ink)!important;
-  border-color:var(--lya-ink)!important;
+  background:var(--lya-t)!important;
+  border-color:var(--lya-t)!important;
   color:#fff!important;
 }
 [data-view="home"] .onboardingCard{
@@ -277,7 +283,8 @@
 }
 .peopleV2Chat,.peopleV2SearchAction,.socialCreateCommunity{
   border-radius:999px!important;
-  background:var(--lya-ink)!important;
+  background:var(--lya-g)!important;
+  border-color:var(--lya-g)!important;
   color:#fff!important;
 }
 .peopleV2Empty,.socialEmpty{
@@ -291,9 +298,9 @@
   color:var(--lya-ink)!important;
 }
 .socialCommunityModes button.active{
-  background:var(--lya-ink)!important;
+  background:var(--lya-g)!important;
   color:#fff!important;
-  border-color:var(--lya-ink)!important;
+  border-color:var(--lya-g)!important;
 }
 
 /* =========================================================
@@ -372,7 +379,7 @@
   align-content:center!important;
 }
 .myEventsCalendarPane .monthDay.selected{
-  background:var(--lya-ink)!important;
+  background:var(--lya-g)!important;
   color:#fff!important;
 }
 .myEventsCalendarPane .calendarEvent{
@@ -406,9 +413,9 @@
   color:var(--lya-ink)!important;
 }
 .chronicleV2Filters button.active{
-  background:var(--lya-ink)!important;
+  background:var(--lya-t)!important;
   color:#fff!important;
-  border-color:var(--lya-ink)!important;
+  border-color:var(--lya-t)!important;
 }
 .chronicleV2Feed{gap:22px!important}
 .chronicleV2Card{
@@ -489,7 +496,7 @@
 }
 .createSubmit{
   border-radius:999px!important;
-  background:var(--lya-ink)!important;
+  background:var(--lya-t)!important;
 }
 .createEventForm .createSubmit{background:var(--lya-t)!important}
 
@@ -606,7 +613,7 @@ html body > [class][class] *{
   font-size:8px;color:var(--lya-mut)
 }
 .homeNotificationTabs button.active{
-  background:var(--lya-ink);color:#fff;border-color:var(--lya-ink)
+  background:var(--lya-t);color:#fff;border-color:var(--lya-t)
 }
 .homeNotificationTabs button.active b{
   background:rgba(255,255,255,.16);color:#fff
@@ -637,7 +644,7 @@ html body > [class][class] *{
   font:700 9px/1 Manrope,system-ui,sans-serif!important
 }
 .homeNotificationsSheet .homeNotificationActions .smallPrimary{
-  background:var(--lya-ink)!important;color:#fff!important;border:0!important
+  background:var(--lya-g)!important;color:#fff!important;border:0!important
 }
 .homeNotificationsSheet .homeNotificationActions .repeat{
   background:transparent!important;color:var(--lya-ink)!important;
@@ -667,160 +674,87 @@ html body > [class][class] *{
   font:500 10.5px/1.45 Manrope,system-ui,sans-serif!important;
 }
 
-
-/* CREATE NAV ICON ONLY · 2026-10-01 */
-#bottom-nav .nav.plus{
-  gap:0!important;
-  font-size:0!important;
-}
-#bottom-nav .nav.plus>span{display:none!important}
-#bottom-nav .nav.plus .createNavPlus{
-  margin:0!important;
-}
-
-
 /* =========================================================
-   ЛЯ · BUTTON COLOR HIERARCHY · 2026-10-01
+   ЛЯ · CANONICAL CONTROL PALETTE · 2026-10-01
+   One source of truth for global controls.
    ========================================================= */
-
-/* Center create action: one physical layer only */
-#bottom-nav .nav.plus:before{
-  content:none!important;
-  display:none!important;
-}
-#bottom-nav .nav.plus{
-  background:transparent!important;
-  color:inherit!important;
-}
-#bottom-nav .nav.plus .createNavPlus{
-  width:48px!important;
-  height:48px!important;
-  border-radius:50%!important;
-  display:grid!important;
-  place-items:center!important;
-  background:var(--lya-t)!important;
-  color:#fff!important;
-  margin:0!important;
-  box-shadow:none!important;
-}
-
-/* Tomato = selection / create / discovery actions */
-[data-view="home"] .afishaFilters button.active,
-[data-view="home"] .homeDiscoveryTabs button.active,
-.chronicleV2Filters button.active,
-.homeNotificationTabs button.active,
-.createSubmit,
-.createEventForm .createSubmit,
-[data-view="home"] .afishaActions .collectCompany,
-[data-view="home"] .afishaLyaActions .openLyaEvent{
-  background:var(--lya-t)!important;
-  border-color:var(--lya-t)!important;
-  color:#fff!important;
-}
-
-/* Green = social / confirmation actions */
-.peopleV2Chat,
-.peopleV2SearchAction,
-.socialCreateCommunity,
-.socialCommunityModes button.active,
-.homeNotificationsSheet .homeNotificationActions .smallPrimary{
-  background:var(--lya-g)!important;
-  border-color:var(--lya-g)!important;
-  color:#fff!important;
-}
-
-/* Keep ordinary secondary actions light */
-[data-view="home"] .afishaActions button:not(.collectCompany),
-.homeNotificationsSheet .homeNotificationActions .repeat{
-  background:#fff!important;
-  color:var(--lya-ink)!important;
-  border:1px solid var(--lya-line)!important;
-}
-
-/* Calendar selections use functional green instead of black fill */
-.myEventsCalendarPane .monthDay.selected{
-  background:var(--lya-g)!important;
-  color:#fff!important;
-}
-
-
-/* =========================================================
-   ЛЯ · FINAL BUTTON GUARD · 2026-10-01
-   No generic black-filled controls.
-   ========================================================= */
-
-/* Main submit / confirmation controls */
 html body .primary,
 html body .smallPrimary{
   background:var(--lya-g)!important;
   border-color:var(--lya-g)!important;
   color:#fff!important;
 }
-
-/* Create + discovery use tomato */
-html body [data-view="create"] .primary,
-html body [data-view="create"] .createSubmit,
-html body [data-view="home"] .collectCompany,
-html body [data-view="home"] .openLyaEvent,
-html body [data-view="home"] .afishaFilters button.active,
-html body [data-view="home"] .homeDiscoveryTabs button.active,
-html body .chronicleV2Filters button.active,
-html body .homeNotificationTabs button.active{
-  background:var(--lya-t)!important;
-  border-color:var(--lya-t)!important;
-  color:#fff!important;
-}
-
-/* Social confirmations use green */
-html body .peopleV2Chat,
-html body .peopleV2SearchAction,
-html body .socialCreateCommunity,
-html body .socialCommunityModes button.active,
-html body .myEventsAccept{
-  background:var(--lya-g)!important;
-  border-color:var(--lya-g)!important;
-  color:#fff!important;
-}
-
-/* Secondary controls stay light */
 html body .repeat,
-html body [data-view="home"] .afishaActions button:not(.collectCompany),
 html body .calendarNav button,
 html body .back{
   background:#fff!important;
   color:var(--lya-ink)!important;
   border-color:var(--lya-line)!important;
 }
-
-/* Create nav: single guaranteed visible element */
-html body #bottom-nav .nav.plus{
-  display:flex!important;
-  align-items:center!important;
-  justify-content:center!important;
-  background:transparent!important;
-  border:0!important;
-  padding:0!important;
-  overflow:visible!important;
-}
-html body #bottom-nav .nav.plus::before,
-html body #bottom-nav .nav.plus::after{
-  content:none!important;
-  display:none!important;
-}
-html body #bottom-nav .nav.plus .createNavPlus{
-  display:grid!important;
-  place-items:center!important;
-  flex:0 0 48px!important;
-  width:48px!important;
-  height:48px!important;
-  border-radius:50%!important;
+html body [data-view="create"] .primary,
+html body [data-view="create"] .createSubmit,
+html body [data-view="home"] .collectCompany,
+html body [data-view="home"] .openLyaEvent{
   background:var(--lya-t)!important;
+  border-color:var(--lya-t)!important;
   color:#fff!important;
-  font:400 31px/48px Manrope,system-ui,sans-serif!important;
-  text-align:center!important;
-  visibility:visible!important;
-  opacity:1!important;
-  transform:none!important;
-  margin:0!important;
-  padding:0!important;
 }
+html body [data-view="home"] .afishaActions button:not(.collectCompany){
+  background:#fff!important;
+  color:var(--lya-ink)!important;
+  border:1px solid var(--lya-line)!important;
+}
+html body [data-view="home"] .afishaActions button.active{
+  background:rgba(14,61,46,.08)!important;
+  border-color:rgba(14,61,46,.22)!important;
+  color:var(--lya-g)!important;
+}
+.afishaCompareBar,.afishaToast{
+  background:var(--lya-g)!important;
+  color:#fff!important;
+}
+
+/* Event/calendar functional states */
+.myEventsFilters button.active,
+.myEventsCalendarPane .calendarModes button.active,
+.myEventsAccept{
+  background:var(--lya-g)!important;
+  border-color:var(--lya-g)!important;
+  color:#fff!important;
+}
+.myEventsCalendarPane .monthDay.today:not(.selected){
+  box-shadow:inset 0 0 0 1px var(--lya-g)!important;
+}
+.myEventsCalendarPane .monthDayDots i{background:var(--lya-t)!important}
+.myEventsCalendarPane .monthDay.selected .monthDayDots i{background:#fff!important}
+.myEventStatus.organizing,.myEventStatus.going{
+  background:rgba(14,61,46,.08)!important;
+  color:var(--lya-g)!important;
+}
+
+/* Social/community functional states */
+.socialEmptyIcon,.socialCommunityMark,.communityMemberAvatar,.communityEventDate{
+  background:rgba(14,61,46,.08)!important;
+  color:var(--lya-g)!important;
+}
+.socialEmptyAction,.communityInviteMembers,.communityActionPrimary,
+.eventView .primary,.eventView .eventManagePrimary,.eventView .eventYes{
+  background:var(--lya-g)!important;
+  border-color:var(--lya-g)!important;
+  color:#fff!important;
+}
+.socialCreateSubmit,.communityCreateEvent{
+  background:var(--lya-t)!important;
+  border-color:var(--lya-t)!important;
+  color:#fff!important;
+}
+.communityDetailTabs button.active{
+  background:var(--lya-g)!important;
+  color:#fff!important;
+  box-shadow:none!important;
+}
+.communityCreateContext{
+  background:rgba(239,90,60,.07)!important;
+  border-color:rgba(239,90,60,.22)!important;
+}
+input,textarea{accent-color:var(--lya-g)!important}
