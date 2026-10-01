@@ -33,7 +33,8 @@
   function localGroups(){try{var x=JSON.parse(localStorage.getItem(GROUPS_KEY)||'[]');return Array.isArray(x)?x:[]}catch(e){return[]}}
   async function circle(action,payload){
     var t=token();if(!t)throw new Error('Нужно войти в аккаунт');
-    var r=await fetch(CIRCLE_API,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+t},body:JSON.stringify(Object.assign({action:action},payload||{}))});
+    var opts={method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.assign({action:action},payload||{}))};
+    var r=window.lyaAuthedFetch?await window.lyaAuthedFetch(CIRCLE_API,opts,true):await fetch(CIRCLE_API,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+t},body:opts.body});
     var d=await r.json().catch(function(){return{error:'Некорректный ответ сервера'}});
     if(!r.ok)throw new Error(d.error||'Ошибка запроса');return d
   }
@@ -42,11 +43,11 @@
     var opts={method:'POST',headers:{'Authorization':'Bearer '+t}};
     if(file){var fd=new FormData();fd.append('action',action);fd.append('file',file,action==='upload_cover'?'cover.jpg':'avatar.jpg');opts.body=fd}
     else{opts.headers['Content-Type']='application/json';opts.body=JSON.stringify({action:action})}
-    var r=await fetch(AVATAR_API,opts),d=await r.json().catch(function(){return{error:'Некорректный ответ сервера'}});
+    var r=window.lyaAuthedFetch?await window.lyaAuthedFetch(AVATAR_API,opts,true):await fetch(AVATAR_API,opts),d=await r.json().catch(function(){return{error:'Некорректный ответ сервера'}});
     if(!r.ok)throw new Error(d.error||'Ошибка загрузки');return d
   }
   async function inviteToEvent(eventId,userId){
-    var t=token();var r=await fetch(INVITE_API,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+t},body:JSON.stringify({action:'invite_from_circle',event_id:eventId,user_ids:[userId]})});
+    var t=token();var opts={method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'invite_from_circle',event_id:eventId,user_ids:[userId]})};var r=window.lyaAuthedFetch?await window.lyaAuthedFetch(INVITE_API,opts,true):await fetch(INVITE_API,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+t},body:opts.body});
     var d=await r.json().catch(function(){return{error:'Некорректный ответ сервера'}});if(!r.ok)throw new Error(d.error||'Не удалось отправить приглашение');return d
   }
   function fmtDate(value){try{return new Intl.DateTimeFormat('ru-RU',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit',timeZone:'Europe/Moscow'}).format(new Date(value))}catch(e){return''}}
