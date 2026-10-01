@@ -7,7 +7,7 @@
       chronicle:'<circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path>'
     };return '<svg viewBox="0 0 24 24" aria-hidden="true">'+p[name]+'</svg>';
   }
-  function nav(go,label,name){var b=document.querySelector('.nav[data-go="'+go+'"]');if(!b)return;if(go==='create'){b.innerHTML='<span>'+label+'</span>';return}b.innerHTML=icon(name)+'<span>'+label+'</span>'}
+  function nav(go,label,name){var b=document.querySelector('.nav[data-go="'+go+'"]');if(!b)return;if(go==='create'){b.setAttribute('aria-label','Создать');b.innerHTML='<b class="createNavPlus" aria-hidden="true">+</b>';return}b.innerHTML=icon(name)+'<span>'+label+'</span>'}
   function mountHeaderLogos(){
     ['home','calendar','create','communities','chronicle'].forEach(function(view){
       var header=document.querySelector('[data-view="'+view+'"]>.top');if(!header)return;
