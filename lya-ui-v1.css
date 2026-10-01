@@ -668,3 +668,14 @@ html body > [class][class] *{
   max-width:320px;
   font:500 10.5px/1.45 Manrope,system-ui,sans-serif!important;
 }
+
+
+/* CREATE NAV ICON ONLY · 2026-10-01 */
+#bottom-nav .nav.plus{
+  gap:0!important;
+  font-size:0!important;
+}
+#bottom-nav .nav.plus>span{display:none!important}
+#bottom-nav .nav.plus .createNavPlus{
+  margin:0!important;
+}
