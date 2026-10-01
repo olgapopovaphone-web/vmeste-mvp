@@ -82,6 +82,28 @@
 }
 #bottom-nav .nav.plus{position:relative;z-index:1}
 
+/* CREATE NAV PLUS · 2026-10-01 */
+#bottom-nav .nav.plus .createNavPlus{
+  position:relative;
+  z-index:2;
+  width:48px;
+  height:48px;
+  display:grid;
+  place-items:center;
+  margin-bottom:1px;
+  color:#fff!important;
+  font:400 31px/1 Manrope,system-ui,sans-serif!important;
+}
+#bottom-nav .nav.plus>span{
+  position:relative;
+  z-index:2;
+  color:#666A66!important;
+  font-size:8px!important;
+  line-height:1!important;
+}
+#bottom-nav .nav.plus.active>span{color:var(--lya-ink)!important}
+
+
 /* Common top controls */
 .homeToolButton,
 [data-view="home"] .avatar,
