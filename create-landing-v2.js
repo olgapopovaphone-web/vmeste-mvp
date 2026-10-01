@@ -18,11 +18,7 @@
     if(!s||!s.access_token)throw new Error('Требуется вход в аккаунт');
     var r=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+s.access_token},body:JSON.stringify(Object.assign({action:action},payload||{}))});
     var d={};try{d=await r.json()}catch(e){d={error:'Некорректный ответ сервера'}}
-    if(r.status===401&&retry!==false&&s.refresh_token){
-      var rr=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'refresh',refresh_token:s.refresh_token})});
-      var rd={};try{rd=await rr.json()}catch(e){}
-      if(rr.ok&&rd.session){localStorage.setItem(SESSION_KEY,JSON.stringify(rd.session));return api(action,payload,false)}
-    }
+    if(r.status===401&&retry!==false&&typeof window.refreshSession==='function'&&await window.refreshSession())return api(action,payload,false);
     if(!r.ok)throw new Error(d.error||'Ошибка запроса');
     return d
   }
@@ -104,7 +100,7 @@
     if(p){p.classList.remove('hasPhoto');p.style.backgroundImage='';p.innerHTML='<span class="createCoverPlus">＋</span><strong>Добавить обложку</strong><small>Фото можно заменить позже</small>'}
   }
   function resetCommunity(){communityForm.reset();communityForm.dataset.createDirty='';resetCover();var s=communityForm.querySelector('.createCommunityStatus');if(s){s.hidden=true;s.textContent='';s.className='status createCommunityStatus'}}
-  function resetEvent(){eventForm.reset();eventForm.dataset.createDirty='';var s=eventForm.querySelector('#event-status');if(s){s.hidden=true;s.textContent='';s.className='status'}if(typeof window.clearPendingEventCircleInviteIds==='function')window.clearPendingEventCircleInviteIds()}
+  function resetEvent(){eventForm.reset();eventForm.dataset.createDirty='';delete eventForm.dataset.communityId;document.querySelector('.communityCreateContext')?.remove();document.querySelector('.chronicleRepeatContext')?.remove();var s=eventForm.querySelector('#event-status');if(s){s.hidden=true;s.textContent='';s.className='status'}if(typeof window.clearPendingEventCircleInviteIds==='function')window.clearPendingEventCircleInviteIds()}
 
   function canClose(form){return form.dataset.createDirty!=='1'||confirm('Закрыть без сохранения?')}
   function showLanding(force){
@@ -132,6 +128,29 @@
     communityForm.dataset.createDirty='';
     setTimeout(function(){communityForm.scrollIntoView({behavior:'smooth',block:'start'})},20)
   }
+
+  window.openLyaCreateEvent=function(opts){
+    opts=opts||{};
+    if(!hasSession()){requireLogin();return}
+    if(typeof window.openView==='function')window.openView('create');
+    showEvent();
+    var title=eventForm.querySelector('#event-title'),place=eventForm.querySelector('#event-place'),source=eventForm.querySelector('#event-source'),date=eventForm.querySelector('#event-date'),time=eventForm.querySelector('#event-time');
+    if(title&&opts.title!==undefined)title.value=opts.title||'';
+    if(place&&opts.place!==undefined)place.value=opts.place||'';
+    if(source&&opts.source_url!==undefined)source.value=opts.source_url||'';
+    if(date&&opts.date!==undefined)date.value=opts.date||'';
+    if(time&&opts.time!==undefined)time.value=opts.time||'';
+    if(opts.community_id)eventForm.dataset.communityId=String(opts.community_id);else delete eventForm.dataset.communityId;
+    document.querySelector('.communityCreateContext')?.remove();
+    document.querySelector('.chronicleRepeatContext')?.remove();
+    if(opts.community_id){
+      var box=document.createElement('div');box.className='communityCreateContext';box.innerHTML='<span>СОБЫТИЕ ДЛЯ СООБЩЕСТВА</span><strong>'+esc(opts.community_name||'Сообщество')+'</strong><small>Сообщество уже выбрано. Событие будет связано с ним автоматически.</small>';eventForm.insertAdjacentElement('beforebegin',box)
+    }else if(opts.repeat){
+      var note=document.createElement('div');note.className='chronicleRepeatContext';note.textContent='Повторяем событие — выберите новую дату и время и заново добавьте участников.';eventForm.insertAdjacentElement('beforebegin',note)
+    }
+    eventForm.dataset.createDirty='';
+    setTimeout(function(){eventForm.scrollIntoView({behavior:'smooth',block:'start'})},20)
+  };
 
   shell.querySelector('[data-create-action="event"]').onclick=showEvent;
   shell.querySelector('[data-create-action="community"]').onclick=showCommunity;
@@ -164,8 +183,11 @@
       var starts=new Date(date+'T'+time+':00+03:00');
       var ends=new Date(starts.getTime()+2*60*60*1000);
       var visibility=((eventForm.querySelector('input[name="event-visibility"]:checked')||{}).value||'open');
-      var d=await api('create_event',{title:title,starts_at:starts.toISOString(),ends_at:ends.toISOString(),location_name:place||null,price_minor:Math.round((Number.isFinite(price)?price:0)*100),visibility:visibility});
+      var sourceUrl=((eventForm.querySelector('#event-source')||{}).value||'').trim();
+      var communityId=eventForm.dataset.communityId||null;
+      var d=await api('create_event',{title:title,starts_at:starts.toISOString(),ends_at:ends.toISOString(),location_name:place||null,price_minor:Math.round((Number.isFinite(price)?price:0)*100),visibility:visibility,community_id:communityId});
       var ev=d&&d.event;
+      if(ev&&ev.id&&sourceUrl&&typeof window.eventRaw==='function'){try{await window.eventRaw('set_location_url',{event_id:ev.id,location_url:sourceUrl})}catch(ignore){}}
       eventForm.dataset.createDirty='';
       if(status)status.textContent=visibility==='open'?'Событие опубликовано во «Вокруг»':'Событие создано по приглашению';
       currentFlow=null;section.classList.remove('createFlowEvent');eventForm.hidden=true;shell.hidden=false;
@@ -183,7 +205,7 @@
     if(!communityForm.reportValidity())return;
     var status=communityForm.querySelector('.createCommunityStatus');
     status.hidden=false;status.className='status createCommunityStatus';
-    status.textContent='Форма готова. Реальное создание подключим вместе с backend сообществ.';
+    status.textContent='Создаю сообщество…';
     section.dispatchEvent(new CustomEvent('lya:create-community-submit',{bubbles:true,detail:{
       name:(communityForm.querySelector('#community-name').value||'').trim(),
       description:(communityForm.querySelector('#community-description').value||'').trim(),
