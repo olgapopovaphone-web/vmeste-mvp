@@ -759,6 +759,37 @@ html body [data-view="home"] .afishaActions button.active{
 }
 input,textarea{accent-color:var(--lya-g)!important}
 
+/* Neutral material surfaces outside main tabs */
+.homeToolBadge{
+  background:var(--lya-t)!important;
+  color:#fff!important;
+  border-color:var(--lya-bg)!important;
+}
+.homeLikedActions .primaryMini{
+  background:var(--lya-t)!important;
+  border-color:var(--lya-t)!important;
+  color:#fff!important;
+}
+.communityChatSheet{
+  --chat-bg:var(--lya-bg)!important;
+  --chat-surface:var(--lya-surface)!important;
+  background:var(--lya-bg)!important;
+}
+.communityChatThemeSheet{
+  background:var(--lya-surface)!important;
+}
+.communityChatForm{
+  background:var(--lya-surface)!important;
+}
+.createCoverPreview,
+.socialCreateCover{
+  background-color:var(--lya-bg)!important;
+}
+.socialCreateSheet{
+  background:var(--lya-bg)!important;
+}
+
+
 
 /* =========================================================
    ЛЯ · CANONICAL UI OWNERSHIP · 2026-10-01
