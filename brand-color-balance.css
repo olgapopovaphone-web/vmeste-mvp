@@ -1,7 +1,7 @@
 :root{--lya-green:#0D4B38;--lya-green-soft:#EAF1ED;--lya-coral:#FF4B36;--lya-coral-soft:#FFF0EC}
 
 /* Brand rule: tomato = active selector at the top of a screen + key CTA / meaningful accent. Bottle green = inner navigation, filters, states and secondary actions. */
-.nav.active{color:var(--lya-green)!important}.nav.plus.active:before{background:var(--lya-green)!important}.nav.plus.active span{color:var(--lya-green)!important}
+.nav.active{color:var(--lya-green)!important}.nav.plus.active:before{content:none!important;display:none!important}
 
 /* Shared primary controls default to bottle green. Screen-specific hero CTAs opt back into tomato below. */
 .primary{background:var(--lya-green)!important;color:#fff!important}
