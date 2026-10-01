@@ -2,3 +2,14 @@
 .afishaVisual.lya{background:linear-gradient(135deg,#0D4B38,#8AA497);color:#fff}.afishaLyaMine{position:absolute;right:14px;top:14px;z-index:2;border:1px solid rgba(255,255,255,.65);border-radius:99px;padding:6px 8px;font:800 8px/1 Manrope,Inter,Arial,sans-serif;letter-spacing:1px}.afishaLyaActions{grid-template-columns:1fr}.afishaLyaActions .openLyaEvent{background:#0D4B38;color:#fff;border-color:#0D4B38;font-weight:800}.afishaLyaSource{background:#f7f3ec;border-color:#e7e0d6;text-align:left;font-weight:700}
 
 .afishaVisual.hasDefaultCover{background-size:500% 200%;background-repeat:no-repeat;color:#fff}.afishaVisual.hasDefaultCover:before{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.10),rgba(0,0,0,.48));z-index:0}.afishaVisual.hasDefaultCover:after{display:none}.afishaVisual.hasDefaultCover .afishaCategory,.afishaVisual.hasDefaultCover .afishaDateArt,.afishaVisual.hasDefaultCover .afishaLyaMine{position:relative;z-index:1;text-shadow:0 1px 12px #0008}
+
+
+/* AFISHA DESCRIPTION CLAMP · 2026-10-02 */
+.afishaFeed .afishaBody>p{
+  display:-webkit-box;
+  -webkit-box-orient:vertical;
+  -webkit-line-clamp:3;
+  overflow:hidden;
+  line-height:1.45;
+  max-height:4.35em;
+}
