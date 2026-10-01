@@ -872,3 +872,10 @@ html body .back{
   color:var(--lya-ink)!important;
   border-color:var(--lya-line)!important;
 }
+
+
+/* LYA DESKTOP FRAME · preserve the current centered mobile-canvas presentation */
+@media(min-width:700px){
+  html body{background:#DED9D1!important}
+  html body .app{background:var(--lya-bg)!important}
+}
