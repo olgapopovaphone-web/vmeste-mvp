@@ -7,12 +7,12 @@
 :root{
   --lya-t:#EF5A3C;
   --lya-g:#0E3D2E;
-  --lya-bg:#F7F4EF;
-  --lya-surface:#FCFAF6;
+  --lya-bg:#FAFAF8;
+  --lya-surface:#FFFFFF;
   --lya-ink:#111;
   --lya-mut:#6F736F;
   --lya-line:rgba(17,17,17,.11);
-  --lya-soft:#EEEAE4;
+  --lya-soft:#F0F0ED;
 }
 
 /* Main screens = one page, not cards inside a page */
