@@ -27,7 +27,7 @@ body{background:#DED9D1;color:var(--lya-ink);font-family:Inter,Arial,sans-serif}
 .nav>svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .nav.active{color:var(--lya-coral)!important;font-weight:700!important}
 .nav:not(.plus) span{font-size:9px!important}
-.nav.plus{color:var(--lya-ink)!important;font-size:0!important;gap:4px!important}.nav.plus:before{content:'+';width:37px;height:37px;border-radius:50%;display:grid;place-items:center;background:var(--lya-ink);color:#fff;font:300 27px/1 Inter,Arial,sans-serif}.nav.plus span{font-size:9px!important;color:#76756F}.nav.plus.active:before{background:var(--lya-coral)}.nav.plus.active span{color:var(--lya-coral)}
+.nav.plus{color:inherit!important;font-size:0!important;gap:0!important}.nav.plus:before{content:none!important;display:none!important}.nav.plus span{display:none!important}
 
 /* Afisha */
 .afishaIntro{margin:0 0 13px!important;align-items:center!important}.afishaIntro>.ey:last-child{display:none}.afishaCity{background:transparent!important;border:0!important;padding:0!important;font-size:10px!important;color:#55544F}.afishaCity:before{color:var(--lya-coral)!important}
