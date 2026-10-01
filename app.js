@@ -60,12 +60,26 @@ async function raw(action,payload={},token=''){
   try{data=await response.json()}catch{data={error:'Некорректный ответ сервера'}}
   return {ok:response.ok,status:response.status,data};
 }
+let refreshSessionPromise=null;
 async function refreshSession(){
+  if(refreshSessionPromise)return refreshSessionPromise;
   if(!session?.refresh_token)return false;
-  const result=await raw('refresh',{refresh_token:session.refresh_token});
-  if(!result.ok||!result.data.session){clearSession();return false}
-  saveSession(result.data.session);return true;
+  refreshSessionPromise=(async()=>{
+    const refreshToken=session&&session.refresh_token;
+    const result=await raw('refresh',{refresh_token:refreshToken});
+    if(!result.ok||!result.data.session){
+      if(session&&session.refresh_token===refreshToken)clearSession();
+      return false;
+    }
+    saveSession(result.data.session);
+    document.dispatchEvent(new CustomEvent('vmeste-session-refreshed',{detail:{session:result.data.session}}));
+    return true;
+  })();
+  try{return await refreshSessionPromise}
+  finally{refreshSessionPromise=null}
 }
+window.refreshSession=refreshSession;
+window.getLyaAccessToken=function(){return session&&session.access_token||''};
 async function api(action,payload={},needsAuth=true,retry=true){
   const result=await raw(action,payload,needsAuth?session?.access_token||'':'');
   if(result.status===401&&needsAuth&&retry&&await refreshSession())return api(action,payload,true,false);
@@ -85,7 +99,6 @@ function openView(name){
 $$('.nav').forEach(b=>b.addEventListener('click',()=>openView(b.dataset.go)));
 $$('.js-profile').forEach(b=>b.addEventListener('click',()=>openView('profile')));
 $$('.js-home').forEach(b=>b.addEventListener('click',()=>openView('home')));
-$$('.repeat').forEach(b=>b.addEventListener('click',()=>alert('«Повторить» подключим после основного календаря')));
 
 function updateAvatars(){const letter=(account?.profile?.display_name||account?.user?.email||'В').trim().slice(0,1).toUpperCase()||'В';$$('.avatar').forEach(a=>a.textContent=letter)}
 async function loadAccount(){
