@@ -71,16 +71,14 @@
 }
 #bottom-nav .nav.active{color:var(--lya-ink)!important}
 #bottom-nav .nav.plus{
-  color:var(--lya-bg)!important;
+  position:relative;
+  z-index:1;
+  color:inherit!important;
 }
 #bottom-nav .nav.plus:before{
-  content:"";
-  position:absolute;
-  width:48px;height:48px;border-radius:50%;
-  background:var(--lya-ink);
-  z-index:-1;
+  content:none!important;
+  display:none!important;
 }
-#bottom-nav .nav.plus{position:relative;z-index:1}
 
 /* CREATE NAV PLUS · 2026-10-01 */
 #bottom-nav .nav.plus .createNavPlus{
@@ -678,4 +676,69 @@ html body > [class][class] *{
 #bottom-nav .nav.plus>span{display:none!important}
 #bottom-nav .nav.plus .createNavPlus{
   margin:0!important;
+}
+
+
+/* =========================================================
+   ЛЯ · BUTTON COLOR HIERARCHY · 2026-10-01
+   ========================================================= */
+
+/* Center create action: one physical layer only */
+#bottom-nav .nav.plus:before{
+  content:none!important;
+  display:none!important;
+}
+#bottom-nav .nav.plus{
+  background:transparent!important;
+  color:inherit!important;
+}
+#bottom-nav .nav.plus .createNavPlus{
+  width:48px!important;
+  height:48px!important;
+  border-radius:50%!important;
+  display:grid!important;
+  place-items:center!important;
+  background:var(--lya-t)!important;
+  color:#fff!important;
+  margin:0!important;
+  box-shadow:none!important;
+}
+
+/* Tomato = selection / create / discovery actions */
+[data-view="home"] .afishaFilters button.active,
+[data-view="home"] .homeDiscoveryTabs button.active,
+.chronicleV2Filters button.active,
+.homeNotificationTabs button.active,
+.createSubmit,
+.createEventForm .createSubmit,
+[data-view="home"] .afishaActions .collectCompany,
+[data-view="home"] .afishaLyaActions .openLyaEvent{
+  background:var(--lya-t)!important;
+  border-color:var(--lya-t)!important;
+  color:#fff!important;
+}
+
+/* Green = social / confirmation actions */
+.peopleV2Chat,
+.peopleV2SearchAction,
+.socialCreateCommunity,
+.socialCommunityModes button.active,
+.homeNotificationsSheet .homeNotificationActions .smallPrimary{
+  background:var(--lya-g)!important;
+  border-color:var(--lya-g)!important;
+  color:#fff!important;
+}
+
+/* Keep ordinary secondary actions light */
+[data-view="home"] .afishaActions button:not(.collectCompany),
+.homeNotificationsSheet .homeNotificationActions .repeat{
+  background:#fff!important;
+  color:var(--lya-ink)!important;
+  border:1px solid var(--lya-line)!important;
+}
+
+/* Calendar selections use functional green instead of black fill */
+.myEventsCalendarPane .monthDay.selected{
+  background:var(--lya-g)!important;
+  color:#fff!important;
 }
