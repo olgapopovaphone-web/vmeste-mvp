@@ -879,3 +879,10 @@ html body .back{
   html body{background:#DED9D1!important}
   html body .app{background:var(--lya-bg)!important}
 }
+
+
+/* AFISHA DESCRIPTION CLAMP · 2026-10-02 */
+[data-view="home"] .afishaBody>p{
+  max-height:4.35em!important;
+  overflow:hidden!important;
+}
