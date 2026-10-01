@@ -15,9 +15,9 @@
   function session(){try{return JSON.parse(localStorage.getItem('vmeste_session_v1')||'null')}catch(e){return null}}
   async function call(action,payload,retry){
     var s=session();if(!s||!s.access_token)throw new Error('LOGIN');
-    var r=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+s.access_token},body:JSON.stringify(Object.assign({action:action},payload||{}))});
+    var opts={method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.assign({action:action},payload||{}))};
+    var r=window.lyaAuthedFetch?await window.lyaAuthedFetch(API,opts,retry!==false):await fetch(API,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+s.access_token},body:opts.body});
     var d={};try{d=await r.json()}catch(e){d={error:'Некорректный ответ сервера'}}
-    if(r.status===401&&retry!==false&&typeof window.refreshSession==='function'&&await window.refreshSession())return call(action,payload,false);
     if(!r.ok)throw new Error(d.error||'Ошибка запроса');
     return d
   }
