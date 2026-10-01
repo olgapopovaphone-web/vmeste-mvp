@@ -61,3 +61,10 @@ input,textarea{accent-color:var(--lya-green)!important}
 
 /* Event detail already uses bottle green as its functional primary; keep generic primary controls green there. */
 .eventView .primary,.eventView .eventManagePrimary,.eventView .eventYes{background:var(--lya-green)!important;color:#fff!important}
+
+
+/* =========================================================
+   LEGACY COLOR BALANCE · NON-AUTHORITATIVE AREAS · 2026-10-01
+   Do not recolor canonical navigation/buttons after lya-ui-v1.css.
+   ========================================================= */
+#bottom-nav .nav.plus::before{content:none!important;display:none!important}
