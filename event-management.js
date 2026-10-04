@@ -57,7 +57,7 @@
         try{await navigator.clipboard.writeText(url);status.hidden=false;status.textContent='Ссылка скопирована'}catch{const input=box.querySelector('.eventQuickInviteUrl');input.select();document.execCommand('copy');status.hidden=false;status.textContent='Ссылка скопирована'}
       };
       box.querySelector('.eventQuickShare').onclick=async()=>{
-        if(navigator.share){try{await navigator.share({title:data.event.title,text:`Приглашаю тебя на «${data.event.title}» во «Вместе»`,url})}catch{}}
+        if(navigator.share){try{await navigator.share({title:data.event.title,text:`Приглашаю тебя на «${data.event.title}» в ЛЯ`,url})}catch{}}
         else{try{await navigator.clipboard.writeText(url);status.hidden=false;status.textContent='Ссылка скопирована'}catch{}}
       };
       box.querySelector('.eventQuickClose').onclick=()=>{box.innerHTML=''};

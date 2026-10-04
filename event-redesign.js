@@ -51,7 +51,7 @@
     const canInvite=data.can_invite&&!['finished','cancelled'].includes(data.event.status);
     return `<div class="eventPeopleStrip">
       <div class="eventInviteGroup">
-        ${canInvite?'<div class="eventInviteUnit"><button class="eventInviteCircle" id="event-invite-plus" aria-label="Пригласить">＋</button><small>Пригласить</small></div>':''}
+        ${canInvite?'<div class="eventInviteUnit"><button class="eventInviteCircle" id="event-invite-plus" aria-label="Позвать своих">＋</button><small>Позвать своих</small></div>':''}
         <div class="eventAvatarStack">${preview.map(compactAvatar).join('')}${extra?`<button class="eventMorePeople" id="event-more-people">+${extra}</button>`:''}</div>
       </div>
       <button class="eventGoingCount" id="event-going-count"><span>${people.length} ${people.length===1?'идёт':'идут'}</span><b>›</b></button>
