@@ -2,7 +2,7 @@
   var returnEventId=null;
   function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
   function when(v){try{return new Intl.DateTimeFormat('ru-RU',{day:'numeric',month:'long',hour:'2-digit',minute:'2-digit',timeZone:'Europe/Moscow'}).format(new Date(v))}catch(e){return''}}
-  function placeKind(p){return({restaurant:'РЕСТОРАН',bar:'БАР',cafe:'КАФЕ',cinema:'КИНОТЕАТР',museum:'МУЗЕЙ',gallery:'ГАЛЕРЕЯ',theatre:'ТЕАТР',club:'КЛУБ',park:'ПАРК',venue:'МЕСТО'})[p.kind]||'МЕСТО'}
+  function placeKind(p){return({restaurant:'РЕСТОРАН',bar:'БАР',cafe:'КАФЕ',cinema:'КИНОТЕАТР',museum:'МУЗЕЙ',gallery:'ГАЛЕРЕЯ',exhibition_space:'ВЫСТАВОЧНОЕ ПРОСТРАНСТВО',public_space:'ОБЩЕСТВЕННОЕ ПРОСТРАНСТВО',theatre:'ТЕАТР',club:'КЛУБ',park:'ПАРК',venue:'МЕСТО'})[p.kind]||'МЕСТО'}
   function hero(p){var kind=esc(p.kind||'venue'),cover=p.cover_url?esc(p.cover_url):'';return '<div class="placeHero '+(cover?'hasCover':'placeHeroFallback kind-'+kind)+'"'+(cover?' style="background-image:linear-gradient(180deg,rgba(16,24,43,.08),rgba(16,24,43,.68)),url(&quot;'+cover+'&quot;)"':'')+'><div><span class="ey">'+placeKind(p)+' · '+esc(p.city)+'</span><h1>'+esc(p.name)+'</h1><p class="placeHeroCount"></p></div></div>'}
   function mapUrl(p){return p.map_url||('https://yandex.ru/maps/?text='+encodeURIComponent((p.name||'')+' '+(p.city||'Ростов-на-Дону')))}
   function ensure(){if(document.querySelector('[data-view="place"]'))return;var s=document.createElement('section');s.className='view standalone placeView';s.dataset.view='place';s.innerHTML='<div id="place-detail-root"></div>';var app=document.querySelector('.app');app.insertBefore(s,document.getElementById('bottom-nav'))}
