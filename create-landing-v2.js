@@ -30,7 +30,7 @@
     <div class="createActionGrid">\
       <button type="button" class="createActionCard" data-create-action="event">\
         <span class="createActionIcon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5.5" width="17" height="15" rx="3"></rect><path d="M7.5 3.5v4M16.5 3.5v4M3.5 10h17"></path></svg></span>\
-        <span class="createActionCopy"><strong>Событие</strong><span>Встреча, поездка, праздник или что-то своё</span></span>\
+        <span class="createActionCopy"><strong>Событие</strong><span>Создайте повод и позовите своих</span></span>\
         <span class="createActionArrow">→</span>\
       </button>\
       <button type="button" class="createActionCard" data-create-action="community">\
@@ -149,7 +149,7 @@
       var note=document.createElement('div');note.className='chronicleRepeatContext';note.textContent='Повторяем событие — выберите новую дату и время и заново добавьте участников.';eventForm.insertAdjacentElement('beforebegin',note)
     }
     eventForm.dataset.createDirty='';
-    setTimeout(function(){eventForm.scrollIntoView({behavior:'smooth',block:'start'})},20)
+    setTimeout(function(){eventForm.scrollIntoView({behavior:'smooth',block:'start'});if(opts.inviteOwn&&typeof window.openCreateCircleInvitePicker==='function')window.openCreateCircleInvitePicker()},80)
   };
 
   shell.querySelector('[data-create-action="event"]').onclick=showEvent;
@@ -185,11 +185,14 @@
       var visibility=((eventForm.querySelector('input[name="event-visibility"]:checked')||{}).value||'open');
       var sourceUrl=((eventForm.querySelector('#event-source')||{}).value||'').trim();
       var communityId=eventForm.dataset.communityId||null;
+      var inviteIds=typeof window.getPendingEventCircleInviteIds==='function'?window.getPendingEventCircleInviteIds():[];
       var d=await api('create_event',{title:title,starts_at:starts.toISOString(),ends_at:ends.toISOString(),location_name:place||null,price_minor:Math.round((Number.isFinite(price)?price:0)*100),visibility:visibility,community_id:communityId});
       var ev=d&&d.event;
       if(ev&&ev.id&&sourceUrl&&typeof window.eventRaw==='function'){try{await window.eventRaw('set_location_url',{event_id:ev.id,location_url:sourceUrl})}catch(ignore){}}
+      var invitedCount=0;
+      if(ev&&ev.id&&inviteIds.length&&typeof window.inviteCircleToEvent==='function'){try{var inviteResult=await window.inviteCircleToEvent(ev.id,inviteIds);invitedCount=(inviteResult.invited_ids||inviteIds).length}catch(inviteErr){if(status){status.hidden=false;status.className='status';status.textContent='Событие создано. Часть приглашений не отправилась — можно повторить из карточки события.'}}}
       eventForm.dataset.createDirty='';
-      if(status)status.textContent=visibility==='open'?'Событие опубликовано во «Вокруг»':'Событие создано по приглашению';
+      if(status)status.textContent=(visibility==='open'?'Событие опубликовано во «Вокруг»':'Событие создано по приглашению')+(invitedCount?' · позвали: '+invitedCount:'');
       currentFlow=null;section.classList.remove('createFlowEvent');eventForm.hidden=true;shell.hidden=false;
       if(typeof window.loadEvents==='function'){try{await window.loadEvents()}catch(ignore){}}
       if(visibility==='open'&&typeof window.loadAfisha==='function'){try{await window.loadAfisha()}catch(ignore){}}

@@ -71,7 +71,7 @@
 
   function repeatEvent(ev){
     if(typeof window.clearPendingEventCircleInviteIds==='function')window.clearPendingEventCircleInviteIds();
-    if(typeof window.openLyaCreateEvent==='function'){window.openLyaCreateEvent({title:ev.title||'',place:ev.location_name||'',source_url:ev.location_url||ev.source_url||'',date:'',time:'',repeat:true});return}
+    if(typeof window.openLyaCreateEvent==='function'){window.openLyaCreateEvent({title:ev.title||'',place:ev.location_name||'',source_url:ev.location_url||ev.source_url||'',date:'',time:'',repeat:true,inviteOwn:true});return}
     if(typeof openView==='function')openView('create')
   }
 
