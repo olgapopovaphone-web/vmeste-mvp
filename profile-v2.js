@@ -119,7 +119,7 @@
     return '<div class="profileV2Actions">'+
       '<button type="button" class="profileV2Action '+circleClass+'" '+circleAttr+'>'+circleLabel+'</button>'+
       '<button type="button" class="profileV2Action" data-profile-chat '+(accepted?'':'disabled')+'>Написать</button>'+
-      '<button type="button" class="profileV2Action invite" data-profile-invite '+(accepted?'':'disabled')+'>Пригласить на событие</button>'+
+      '<button type="button" class="profileV2Action invite" data-profile-invite '+(accepted?'':'disabled')+'>Позвать на событие</button>'+
     '</div>'
   }
   function dayPart(value){try{var d=new Date(value);return {day:new Intl.DateTimeFormat('ru-RU',{day:'2-digit',timeZone:'Europe/Moscow'}).format(d),month:new Intl.DateTimeFormat('ru-RU',{month:'short',timeZone:'Europe/Moscow'}).format(d).replace('.','').toUpperCase(),time:new Intl.DateTimeFormat('ru-RU',{hour:'2-digit',minute:'2-digit',timeZone:'Europe/Moscow'}).format(d)}}catch(e){return{day:'',month:'',time:''}}}
