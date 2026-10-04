@@ -100,7 +100,7 @@
     if(p){p.classList.remove('hasPhoto');p.style.backgroundImage='';p.innerHTML='<span class="createCoverPlus">＋</span><strong>Добавить обложку</strong><small>Фото можно заменить позже</small>'}
   }
   function resetCommunity(){communityForm.reset();communityForm.dataset.createDirty='';resetCover();var s=communityForm.querySelector('.createCommunityStatus');if(s){s.hidden=true;s.textContent='';s.className='status createCommunityStatus'}}
-  function resetEvent(){eventForm.reset();eventForm.dataset.createDirty='';delete eventForm.dataset.communityId;document.querySelector('.communityCreateContext')?.remove();document.querySelector('.chronicleRepeatContext')?.remove();var s=eventForm.querySelector('#event-status');if(s){s.hidden=true;s.textContent='';s.className='status'}if(typeof window.clearPendingEventCircleInviteIds==='function')window.clearPendingEventCircleInviteIds()}
+  function resetEvent(){eventForm.reset();eventForm.dataset.createDirty='';delete eventForm.dataset.communityId;delete eventForm.dataset.placeId;document.querySelector('.communityCreateContext')?.remove();document.querySelector('.chronicleRepeatContext')?.remove();var s=eventForm.querySelector('#event-status');if(s){s.hidden=true;s.textContent='';s.className='status'}if(typeof window.clearPendingEventCircleInviteIds==='function')window.clearPendingEventCircleInviteIds()}
 
   function canClose(form){return form.dataset.createDirty!=='1'||confirm('Закрыть без сохранения?')}
   function showLanding(force){
@@ -139,8 +139,8 @@
     if(place&&opts.place!==undefined)place.value=opts.place||'';
     if(source&&opts.source_url!==undefined)source.value=opts.source_url||'';
     if(date&&opts.date!==undefined)date.value=opts.date||'';
-    if(time&&opts.time!==undefined)time.value=opts.time||'';
-    if(opts.community_id)eventForm.dataset.communityId=String(opts.community_id);else delete eventForm.dataset.communityId;
+    if(time&&opts.time!==undefined)time.value=opts.time||'';if(opts.visibility){var visibilityInput=eventForm.querySelector('input[name="event-visibility"][value="'+opts.visibility+'"]');if(visibilityInput)visibilityInput.checked=true}
+    if(opts.community_id)eventForm.dataset.communityId=String(opts.community_id);else delete eventForm.dataset.communityId;if(opts.place_id)eventForm.dataset.placeId=String(opts.place_id);else delete eventForm.dataset.placeId;
     document.querySelector('.communityCreateContext')?.remove();
     document.querySelector('.chronicleRepeatContext')?.remove();
     if(opts.community_id){
@@ -185,8 +185,9 @@
       var visibility=((eventForm.querySelector('input[name="event-visibility"]:checked')||{}).value||'open');
       var sourceUrl=((eventForm.querySelector('#event-source')||{}).value||'').trim();
       var communityId=eventForm.dataset.communityId||null;
+      var placeId=eventForm.dataset.placeId||null;
       var inviteIds=typeof window.getPendingEventCircleInviteIds==='function'?window.getPendingEventCircleInviteIds():[];
-      var d=await api('create_event',{title:title,starts_at:starts.toISOString(),ends_at:ends.toISOString(),location_name:place||null,price_minor:Math.round((Number.isFinite(price)?price:0)*100),visibility:visibility,community_id:communityId});
+      var d=await api('create_event',{title:title,starts_at:starts.toISOString(),ends_at:ends.toISOString(),location_name:place||null,price_minor:Math.round((Number.isFinite(price)?price:0)*100),visibility:visibility,community_id:communityId,place_id:placeId});
       var ev=d&&d.event;
       if(ev&&ev.id&&sourceUrl&&typeof window.eventRaw==='function'){try{await window.eventRaw('set_location_url',{event_id:ev.id,location_url:sourceUrl})}catch(ignore){}}
       var invitedCount=0;
