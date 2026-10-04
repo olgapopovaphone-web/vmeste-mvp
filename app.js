@@ -177,7 +177,7 @@ function eventsForDate(key){return calendarEvents.filter(ev=>dateKey(ev.starts_a
 function eventBadge(ev){if(ev.calendar_kind==='created')return ev.status==='draft'?'Черновик':'Моё';return ev.invitation_status==='pending'?'Приглашение':'Иду'}
 function dayEventHtml(ev){
   const own=ev.calendar_kind==='created';const pending=ev.calendar_kind==='invited'&&ev.invitation_status==='pending';
-  return `<article class="calendarEvent"><div class="eventKind">${own?'МОЁ СОБЫТИЕ':pending?'МЕНЯ ПРИГЛАСИЛИ':'Я УЧАСТВУЮ'}</div><div class="calendarEventTop"><div><h3>${escapeHtml(ev.title)}</h3><p class="muted">${eventTime(ev.starts_at)}${ev.location_name?' · '+escapeHtml(ev.location_name):''} · ${eventPrice(ev)}</p></div><span class="tag">${eventBadge(ev)}</span></div><div class="calendarEventActions">${own?`<button class="repeat invite-link-button" data-event-id="${escapeHtml(ev.id)}" data-event-title="${escapeHtml(ev.title)}">Ссылка-приглашение</button>`:''}${pending?`<button class="smallPrimary invite-response" data-invitation-id="${escapeHtml(ev.invitation_id)}" data-response="accepted">Принять</button><button class="repeat invite-response" data-invitation-id="${escapeHtml(ev.invitation_id)}" data-response="declined">Отклонить</button>`:''}</div><div class="invite-area" id="invite-${escapeHtml(ev.id)}"></div></article>`;
+  return `<article class="calendarEvent"><div class="eventKind">${own?'МОЁ СОБЫТИЕ':pending?'МЕНЯ ПРИГЛАСИЛИ':'Я УЧАСТВУЮ'}</div><div class="calendarEventTop"><div><h3>${escapeHtml(ev.title)}</h3><p class="muted">${eventTime(ev.starts_at)}${ev.location_name?' · '+escapeHtml(ev.location_name):''} · ${eventPrice(ev)}</p></div><span class="tag">${eventBadge(ev)}</span></div><div class="calendarEventActions">${own?`<button class="smallPrimary invite-circle-button" data-event-id="${escapeHtml(ev.id)}">Позвать своих</button><button class="repeat invite-link-button" data-event-id="${escapeHtml(ev.id)}" data-event-title="${escapeHtml(ev.title)}">По ссылке</button>`:''}${pending?`<button class="smallPrimary invite-response" data-invitation-id="${escapeHtml(ev.invitation_id)}" data-response="accepted">Принять</button><button class="repeat invite-response" data-invitation-id="${escapeHtml(ev.invitation_id)}" data-response="declined">Отклонить</button>`:''}</div><div class="invite-area" id="invite-${escapeHtml(ev.id)}"></div></article>`;
 }
 function renderDayEvents(){
   const root=$('#day-events');if(!root)return;$('#selected-date-title').textContent=fullDateLabel(selectedDateKey);const events=eventsForDate(selectedDateKey);root.innerHTML=events.length?events.map(dayEventHtml).join(''):'<div class="emptyDay">На этот день событий пока нет.</div>';bindCalendarActions();
@@ -212,8 +212,9 @@ function shiftCalendar(delta){if(calendarMode==='month')shiftMonth(delta);else s
 $$('[data-cal-mode]').forEach(b=>b.onclick=()=>{calendarMode=b.dataset.calMode;renderCalendar()});$('#calendar-prev').onclick=()=>shiftCalendar(-1);$('#calendar-next').onclick=()=>shiftCalendar(1);$('#calendar-today').onclick=()=>{selectedDateKey=todayKey();const [y,m]=selectedDateKey.split('-').map(Number);calendarYear=y;calendarMonth=m-1;renderCalendar()};
 
 function bindCalendarActions(){
-  $$('.invite-link-button').forEach(button=>button.onclick=()=>showInviteLink(button.dataset.eventId,button.dataset.eventTitle));
-  $$('.invite-response').forEach(button=>button.onclick=()=>respondInvitation(button.dataset.invitationId,button.dataset.response));
+  $('.invite-circle-button').forEach(button=>button.onclick=()=>{if(typeof window.openEventCircleInvitePicker==='function')window.openEventCircleInvitePicker(button.dataset.eventId);else openEventView(button.dataset.eventId,'calendar')});
+  $('.invite-link-button').forEach(button=>button.onclick=()=>showInviteLink(button.dataset.eventId,button.dataset.eventTitle));
+  $('.invite-response').forEach(button=>button.onclick=()=>respondInvitation(button.dataset.invitationId,button.dataset.response));
 }
 async function showInviteLink(eventId,eventTitle){
   const area=document.getElementById('invite-'+eventId);if(!area)return;area.innerHTML='<div class="inviteBox">Создаю ссылку…</div>';
