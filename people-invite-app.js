@@ -13,7 +13,7 @@
   }
 
   async function shareInvite(button,status){
-    var shareData={title:'ЛЯ',text:'Присоединяйся ко мне в «ЛЯ» — здесь встречаются события и люди.',url:APP_URL};
+    var shareData={title:'ЛЯ',text:'Присоединяйся ко мне в «ЛЯ» — находи повод и зови своих.',url:APP_URL};
     if(status){status.hidden=true;status.textContent=''}
     if(navigator.share){
       try{await navigator.share(shareData);return}catch(e){if(e&&e.name==='AbortError')return}
