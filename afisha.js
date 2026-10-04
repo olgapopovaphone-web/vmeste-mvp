@@ -131,8 +131,22 @@ async function toggleAfisha(kind,id,forcedActive){
 }
 async function collectCompany(id){
   if(!account){requireAfishaLogin('collect',id);return}
-  const button=document.querySelector(`.collectCompany[data-id="${CSS.escape(id)}"]`);if(button){button.disabled=true;button.textContent='Готовлю приглашение…'}
-  try{const data=await afRaw('collect_company',{afisha_event_id:id},true);await loadEvents();afToast(data.reused?'Событие уже в ваших планах':'Повод готов — позовите своих');openEventView(data.event.id,'home');setTimeout(()=>{if(typeof window.openEventCircleInvitePicker==='function')window.openEventCircleInvitePicker(data.event.id)},250)}catch(err){afToast(err.message);if(button){button.disabled=false;button.textContent='Позвать своих'}}
+  const button=document.querySelector(`.collectCompany[data-id="${CSS.escape(id)}"]`);
+  if(button){button.disabled=true;button.textContent='Выберите своих…'}
+  try{
+    let ids=[];
+    if(typeof window.pickCirclePeople==='function'){
+      ids=await window.pickCirclePeople();
+      if(!ids.length){if(button){button.disabled=false;button.textContent='Позвать своих'}return}
+    }
+    if(button)button.textContent='Создаю планы…';
+    const data=await afRaw('collect_company',{afisha_event_id:id},true);
+    if(ids.length&&typeof window.inviteCircleToEvent==='function')await window.inviteCircleToEvent(data.event.id,ids);
+    await loadEvents();
+    afToast(ids.length?'Приглашения отправлены · '+ids.length:(data.reused?'Событие уже в ваших планах':'Повод готов — позовите своих'));
+    openEventView(data.event.id,'home');
+    if(!ids.length)setTimeout(()=>{if(typeof window.openEventCircleInvitePicker==='function')window.openEventCircleInvitePicker(data.event.id)},250)
+  }catch(err){afToast(err.message);if(button){button.disabled=false;button.textContent='Позвать своих'}}
 }
 
 function renderAfishaCompareBar(){
