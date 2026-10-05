@@ -148,7 +148,12 @@ function openView(name){
   if(name==='calendar')loadEvents();
   window.scrollTo(0,0);
 }
-$$('.nav').forEach(b=>b.addEventListener('click',()=>openView(b.dataset.go)));
+$('.nav').forEach(b=>b.addEventListener('click',()=>{
+  const go=b.dataset.go;
+  const businessMode=typeof window.getLyaProfileMode==='function'&&window.getLyaProfileMode()==='business';
+  if(businessMode&&go!=='create'&&typeof window.openLyaBusinessSection==='function'){window.openLyaBusinessSection(go);return}
+  openView(go)
+}));
 $('.js-profile').forEach(b=>b.addEventListener('click',()=>{const businessMode=typeof window.getLyaProfileMode==='function'&&window.getLyaProfileMode()==='business';if(businessMode&&typeof window.openLyaBusinessHub==='function')window.openLyaBusinessHub();else openView('profile')}));
 $$('.js-home').forEach(b=>b.addEventListener('click',()=>openView('home')));
 
