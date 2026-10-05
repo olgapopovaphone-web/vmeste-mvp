@@ -81,7 +81,20 @@
   async function loadEvents(){if(!signedIn()||typeof api!=='function')return;try{lastEvents=await api('list_events');if(activeTab==='events')render()}catch(e){lastEvents={events:[],invited_events:[]};if(activeTab==='events')render()}}
   async function loadAlbum(){if(!signedIn()){lastChronicle={events:[]};render();return}try{if(typeof eventRaw==='function')lastChronicle=await eventRaw('list_chronicle',{});else lastChronicle={events:[]};if(activeTab==='album')render()}catch(e){lastChronicle={events:[]};if(activeTab==='album')render()}}
 
-  function openCreateEvent(g){if(typeof window.openLyaCreateEvent==='function'){window.openLyaCreateEvent({community_id:g.id,community_name:g.name});return}if(typeof openView==='function')openView('create')}
+  function openCreateEvent(g){
+    if(typeof window.openLyaCreateEvent==='function'){
+      var opts={community_id:g.id,community_name:g.name};
+      try{
+        var b=window.LyaBusinessState||null,mode=typeof window.getLyaProfileMode==='function'?window.getLyaProfileMode():'personal';
+        if(mode==='business'&&b&&g.business_id&&String(b.id)===String(g.business_id)){
+          opts.business_id=b.id;opts.business_name=b.name;opts.account_kind=b.account_kind;
+          opts.visibility=(b.verification_status==='verified'||(b.account_kind==='organization'&&b.legal_status==='informal'))?'public':'open'
+        }
+      }catch(e){}
+      window.openLyaCreateEvent(opts);return
+    }
+    if(typeof openView==='function')openView('create')
+  }
   function openInvite(g){var url=location.origin+location.pathname+'#community-'+encodeURIComponent(g.id);var data={title:'ЛЯ',text:'Присоединяйся к сообществу «'+g.name+'» в ЛЯ.',url:url};if(navigator.share){navigator.share(data).catch(function(e){if(e&&e.name!=='AbortError')copyInvite(url)})}else copyInvite(url)}
   function copyInvite(url){if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(url).then(function(){alert('Ссылка-приглашение скопирована')}).catch(function(){prompt('Скопируйте ссылку',url)});else prompt('Скопируйте ссылку',url)}
   function openMemberMenu(g,id){document.querySelector('.communityActionOverlay')?.remove();var o=document.createElement('div');o.className='communityActionOverlay';o.innerHTML='<div class="communityActionSheet"><div class="communityActionHead"><h2>Участник</h2><button type="button">×</button></div><button type="button" class="communityManageDanger" data-remove-member>Удалить из сообщества</button></div>';document.body.appendChild(o);o.querySelector('.communityActionHead button').onclick=function(){o.remove()};o.querySelector('[data-remove-member]').onclick=async function(){if(!confirm('Удалить участника из сообщества?'))return;this.disabled=true;try{await circle('remove_community_member',{community_id:g.id,user_id:id},true);o.remove();await syncActiveGroup()}catch(e){alert(e.message);this.disabled=false}}}
