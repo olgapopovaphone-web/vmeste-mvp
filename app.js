@@ -37,7 +37,7 @@ function savePinDeviceSession(value){
 function saveSession(value){session=value;if(value){localStorage.setItem(STORAGE_KEY,JSON.stringify(value));savePinDeviceSession(value)}else localStorage.removeItem(STORAGE_KEY)}
 function clearSession(){saveSession(null);account=null;updateAvatars()}
 function clearPinFailures(){localStorage.removeItem(PIN_FAIL_KEY)}
-function clearPinConfig(){localStorage.removeItem(PIN_KEY);localStorage.removeItem(PIN_DEVICE_SESSION_KEY);sessionStorage.removeItem(PIN_UNLOCK_KEY);clearPinFailures()}
+function clearPinConfig(){localStorage.removeItem(PIN_KEY);localStorage.removeItem(PIN_DEVICE_SESSION_KEY);sessionStorage.removeItem(PIN_UNLOCK_KEY);clearPinFailures();const btn=$('#login-with-pin');if(btn)btn.hidden=true}
 function markPinUnlocked(){sessionStorage.setItem(PIN_UNLOCK_KEY,'1')}
 function pinIsUnlocked(){return sessionStorage.getItem(PIN_UNLOCK_KEY)==='1'}
 function currentAuthUserId(){return account?.user?.id||session?.user?.id||''}
@@ -65,6 +65,7 @@ async function saveLocalPin(pin){
   const salt=randomSalt(),hash=await hashPin(pin,salt,userId);
   localStorage.setItem(PIN_KEY,JSON.stringify({version:1,user_id:userId,email:currentAuthEmail(),salt,hash,created_at:new Date().toISOString()}));
   if(session?.refresh_token)savePinDeviceSession(session);
+  const btn=$('#login-with-pin');if(btn)btn.hidden=false;
   clearPinFailures();markPinUnlocked()
 }
 function pinFailureState(){try{return JSON.parse(localStorage.getItem(PIN_FAIL_KEY)||'null')||{count:0,lock_until:0}}catch{return{count:0,lock_until:0}}}
@@ -119,7 +120,7 @@ let refreshSessionPromise=null;
 async function refreshSession(){
   if(refreshSessionPromise)return refreshSessionPromise;
   const device=loadPinDeviceSession();
-  const availableRefresh=session?.refresh_token||((pinIsUnlocked()||!session?.access_token)&&device?.refresh_token)||'';
+  const availableRefresh=session?.refresh_token||(pinIsUnlocked()&&device?.refresh_token)||'';
   if(!availableRefresh)return false;
   if(!session?.refresh_token&&device?.refresh_token){
     session={refresh_token:device.refresh_token,user:{id:device.user_id||'',email:device.email||''}};
@@ -264,11 +265,13 @@ function showPinUnlockGate(){
         if(!session?.access_token){
           const device=loadPinDeviceSession();
           if(!device?.refresh_token){
+            sessionStorage.removeItem(PIN_UNLOCK_KEY);
             status.hidden=false;status.className='status error';status.textContent='На этом устройстве не сохранилась сессия. Один раз войдите по паролю — после этого PIN будет работать без него.';return
           }
           status.hidden=false;status.className='status';status.textContent='Восстанавливаю вход…';
           const restored=await refreshSession();
           if(!restored){
+            sessionStorage.removeItem(PIN_UNLOCK_KEY);
             status.hidden=false;status.className='status error';status.textContent='Сессия устройства истекла. Один раз войдите по паролю и задайте PIN заново.';return
           }
         }
