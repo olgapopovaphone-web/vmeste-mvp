@@ -33,3 +33,7 @@
 .pinInput:focus{outline:none;border-color:#171815}
 .pinForgot{display:block;margin:12px auto 0;text-align:center}
 .pinGate .status{margin:0}
+
+.authPinLogin{width:100%;margin:0 0 14px;padding:12px 14px;border-color:#171815;background:#fff;color:#171815;font:800 11px/1 Manrope,Arial,sans-serif}
+.authPinLogin[hidden]{display:none}
+.authPinLogin:disabled{opacity:.55}
