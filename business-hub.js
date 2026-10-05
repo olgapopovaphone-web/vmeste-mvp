@@ -2,6 +2,7 @@
   if(window.__lyaBusinessHub)return;window.__lyaBusinessHub=true;
   var API='https://nmeoakrpafxhpdrplsuo.supabase.co/functions/v1/vmeste-business-api';
   var MODE_KEY='lya_profile_mode_v1';
+  var KIND_KEY='lya_professional_kind_v1';
   var state={data:null,loading:false,section:'home',calendarCursor:null,calendarSelected:null};
 
   function getProfileMode(){try{return localStorage.getItem(MODE_KEY)==='business'?'business':'personal'}catch(e){return'personal'}}
@@ -12,8 +13,16 @@
     if(prev!==mode)document.dispatchEvent(new CustomEvent('lya-profile-mode-changed',{detail:{mode:mode}}));
     return mode
   }
+  function rememberedKind(){try{return localStorage.getItem(KIND_KEY)==='organization'?'organization':'business'}catch(e){return'business'}}
+  function rememberKind(b){var k=b&&b.account_kind==='organization'?'organization':'business';try{localStorage.setItem(KIND_KEY,k)}catch(e){}return k}
+  function isOrganization(b){return !!(b&&b.account_kind==='organization')}
+  function professionalLabel(b){return isOrganization(b)||(!b&&rememberedKind()==='organization')?'Организация':'Бизнес'}
+  function professionalTitle(b){return isOrganization(b)||(!b&&rememberedKind()==='organization')?'Организация Free':'ЛЯ Business'}
+  function canPublishPublic(b){return !!(b&&(b.verification_status==='verified'||(b.account_kind==='organization'&&b.legal_status==='informal')))}
+  function publicVisibilityFor(b){return canPublishPublic(b)?'public':'open'}
   function modeSwitch(active){
-    return '<div class="lyaProfileModeSwitch" role="group" aria-label="Режим профиля"><button type="button" data-profile-mode="personal" class="'+(active==='personal'?'active':'')+'">Личный</button><button type="button" data-profile-mode="business" class="'+(active==='business'?'active':'')+'">Бизнес</button></div>'
+    var b=state.data&&state.data.business||window.LyaBusinessState||null,label=professionalLabel(b);
+    return '<div class="lyaProfileModeSwitch" role="group" aria-label="Режим профиля"><button type="button" data-profile-mode="personal" class="'+(active==='personal'?'active':'')+'">Личный</button><button type="button" data-profile-mode="business" class="'+(active==='business'?'active':'')+'">'+esc(label)+'</button></div>'
   }
   function openPersonalProfile(){
     setProfileMode('personal');
@@ -42,29 +51,42 @@
   function kindLabel(k){return({restaurant:'Ресторан',bar:'Бар',cafe:'Кафе',museum:'Музей',gallery:'Галерея',spa:'SPA',bathhouse:'Бани / сауна',sports_space:'Спорт',karaoke:'Караоке',theatre:'Театр',club:'Клуб',park:'Парк',shop:'Магазин',salon:'Салон',studio:'Студия',venue:'Место'})[k]||'Место'}
   function offeringKind(k){return k==='product'?'Товар':k==='service'?'Услуга':'Предложение'}
   function actionLabel(x){return x==='book'?'Забронировать':x==='signup'?'Записаться':'Купить'}
-  function verification(v){return v==='verified'?'Подтверждён':v==='pending'?'На проверке':v==='rejected'?'Нужно уточнение':'Не подтверждён'}
-  function subscription(b){return b.subscription_tier==='business'&&b.subscription_status==='active'?'ЛЯ Business':'Бесплатный'}
+  function verification(v){return v==='verified'?'Реквизиты подтверждены':v==='pending'?'Реквизиты на проверке':v==='rejected'?'Нужно уточнить реквизиты':'Реквизиты не подтверждены'}
+  function subscription(b){if(isOrganization(b))return 'Организация Free';return b.subscription_tier==='business'&&b.subscription_status==='active'?'ЛЯ Business':'ЛЯ Business · Free'}
   function closeOverlay(o){if(o)o.remove()}
   function sheet(title,body,cls){
     document.querySelector('.businessOverlay')?.remove();
     var o=document.createElement('div');o.className='businessOverlay '+(cls||'');
-    o.innerHTML='<div class="businessSheet"><div class="businessSheetHead"><div><span class="ey">ЛЯ BUSINESS</span><h2>'+esc(title)+'</h2></div><button type="button" data-business-close>×</button></div><div class="businessSheetBody">'+body+'</div></div>';
+    var b=state.data&&state.data.business||window.LyaBusinessState||null;o.innerHTML='<div class="businessSheet"><div class="businessSheetHead"><div><span class="ey">'+esc(professionalTitle(b))+'</span><h2>'+esc(title)+'</h2></div><button type="button" data-business-close>×</button></div><div class="businessSheetBody">'+body+'</div></div>';
     document.body.appendChild(o);o.querySelector('[data-business-close]').onclick=function(){closeOverlay(o)};o.onclick=function(e){if(e.target===o)closeOverlay(o)};return o
   }
 
   function onboarding(){
     var r=root();if(!r)return;
-    r.innerHTML='<div class="businessOnboarding"><div class="businessModeRow">'+modeSwitch('business')+'</div><span class="ey">ЛЯ BUSINESS</span><h1>Создать бизнес-профиль</h1><p>Бизнес сможет управлять местами, событиями, сообществами и предложениями из одной страницы.</p><form class="businessOnboardingForm"><label>Название<input name="name" maxlength="120" required placeholder="Название бренда или компании"></label><label>Категория<input name="category" maxlength="80" placeholder="Ресторан, магазин, студия…"></label><label>Город<input name="city" maxlength="80" value="Ростов-на-Дону"></label><label>Коротко о бизнесе<textarea name="description" maxlength="1200" rows="4"></textarea></label><label>Сайт<input name="website_url" type="url" placeholder="https://"></label><div class="businessStatus" hidden></div><button type="submit" class="businessPrimary">Создать бизнес-профиль</button></form></div>';
+    r.innerHTML='<div class="businessOnboarding"><div class="businessModeRow">'+modeSwitch('business')+'</div><span class="ey">ПРОФЕССИОНАЛЬНЫЙ ПРОФИЛЬ</span><h1 data-onboarding-title>Кто вы?</h1><p data-onboarding-copy>Выберите режим — интерфейс останется знакомым, изменятся только доступные функции.</p><form class="businessOnboardingForm">'+
+      '<fieldset class="businessKindChoice"><legend>Тип профиля</legend><label><input type="radio" name="account_kind" value="business" checked><span><b>Бизнес</b><small>Коммерческие события, товары, услуги и предложения</small></span></label><label><input type="radio" name="account_kind" value="organization"><span><b>Некоммерческая организация</b><small>События, сообщества, места и статистика — бесплатно</small></span></label></fieldset>'+
+      '<div class="businessLegalChoice" data-organization-legal hidden><span class="ey">СТАТУС ОРГАНИЗАЦИИ</span><label><input type="radio" name="legal_status" value="registered" checked><span><b>Есть ИНН</b><small>Фонд, АНО, НКО, общественная организация и другие зарегистрированные формы</small></span></label><label><input type="radio" name="legal_status" value="informal"><span><b>Без юридического лица</b><small>Волонтёрская группа, студенческое объединение или общественная инициатива</small></span></label></div>'+
+      '<label>Название<input name="name" maxlength="120" required placeholder="Название проекта"></label><label>Категория<input name="category" maxlength="80" placeholder="Например: кафе, фонд, волонтёрский проект"></label><label>Город<input name="city" maxlength="80" value="Ростов-на-Дону"></label><label>Короткое описание<textarea name="description" maxlength="1200" rows="4"></textarea></label><label>Сайт<input name="website_url" type="url" placeholder="https://"></label><div class="businessStatus" hidden></div><button type="submit" class="businessPrimary" data-onboarding-submit>Создать профиль</button></form></div>';
     r.querySelector('[data-profile-mode="personal"]').onclick=openPersonalProfile;
-    var form=r.querySelector('form');form.onsubmit=async function(e){
+    var form=r.querySelector('form'),legal=r.querySelector('[data-organization-legal]'),title=r.querySelector('[data-onboarding-title]'),copy=r.querySelector('[data-onboarding-copy]');
+    function syncType(){
+      var kind=(form.querySelector('input[name="account_kind"]:checked')||{}).value||'business',org=kind==='organization';
+      legal.hidden=!org;
+      title.textContent=org?'Создать профиль организации':'Создать бизнес-профиль';
+      copy.textContent=org?'Публичные события, сообщества, места, команда и статистика — без коммерческих функций.':'Управляйте местами, событиями, сообществами и коммерческими предложениями.';
+    }
+    form.querySelectorAll('input[name="account_kind"]').forEach(function(x){x.onchange=syncType});syncType();
+    form.onsubmit=async function(e){
       e.preventDefault();var st=form.querySelector('.businessStatus'),btn=form.querySelector('button[type="submit"]');st.hidden=false;st.className='businessStatus';st.textContent='Создаю…';btn.disabled=true;
       try{
-        var fd=new FormData(form);var d=await call('create_business',{
+        var fd=new FormData(form),kind=String(fd.get('account_kind')||'business'),legalStatus=kind==='organization'?String(fd.get('legal_status')||'registered'):'registered';
+        var d=await call('create_business',{
+          account_kind:kind,legal_status:legalStatus,
           name:String(fd.get('name')||'').trim(),category:String(fd.get('category')||'').trim(),city:String(fd.get('city')||'').trim(),
           description:String(fd.get('description')||'').trim(),website_url:String(fd.get('website_url')||'').trim()
         });
         if(typeof account!=='undefined'&&account&&account.profile)account.profile.account_type='business';
-        state.data=d;render()
+        state.data=d;if(d&&d.business)rememberKind(d.business);render()
       }catch(err){st.className='businessStatus error';st.textContent=err.message;btn.disabled=false}
     }
   }
@@ -113,12 +135,13 @@
   }
   function ownerAttention(d,b){
     var rows=[];
-    if(b.verification_status==='unverified')rows.push('<button type="button" data-business-verify><span><b>Подтвердить бизнес</b><small>После проверки можно будет публиковать публичные события от имени бизнеса.</small></span><i>→</i></button>');
+    if(b.legal_status!=='informal'&&b.verification_status==='unverified')rows.push('<button type="button" data-business-verify><span><b>Подтвердить реквизиты</b><small>Введите ИНН — он станет основой проверки организации или бизнеса.</small></span><i>→</i></button>');
     if(!b.description)rows.push('<button type="button" data-business-edit><span><b>Добавить описание</b><small>Коротко расскажите людям, чем занимается проект.</small></span><i>→</i></button>');
     var pending=(d.claims||[]).filter(function(x){return x.status==='pending'}).length;
     if(pending)rows.push('<div><span><b>Заявки на места</b><small>'+pending+' '+(pending===1?'заявка ждёт':'заявки ждут')+' подтверждения.</small></span><i>…</i></div>');
     return rows.length?'<section class="businessOwnerAttention"><span class="ey">ТРЕБУЕТ ВНИМАНИЯ</span>'+rows.join('')+'</section>':''
   }
+
   function ownerOfferingRows(items){
     var list=(items||[]).filter(function(x){return x.status!=='archived'}).slice(0,4);
     if(!list.length)return '<div class="businessOwnerEmpty"><b>Предложений пока нет</b><span>Добавьте товар, услугу или специальное предложение.</span></div>';
@@ -130,32 +153,33 @@
   function renderAround(){
     var r=root();if(!r)return;
     var d=state.data;if(!d||!d.business){onboarding();return}
-    var b=d.business,events=(d.events||[]),future=events.filter(function(e){return Date.parse(e.starts_at)>=Date.now()&&e.status!=='cancelled'}).length;
-    window.LyaBusinessState={id:b.id,name:b.name,verification_status:b.verification_status,subscription_tier:b.subscription_tier,subscription_status:b.subscription_status};
+    var b=d.business,org=isOrganization(b),events=(d.events||[]),future=events.filter(function(e){return Date.parse(e.starts_at)>=Date.now()&&e.status!=='cancelled'}).length;
+    rememberKind(b);
+    window.LyaBusinessState={id:b.id,name:b.name,account_kind:b.account_kind,legal_status:b.legal_status,inn:b.inn||null,verification_status:b.verification_status,subscription_tier:b.subscription_tier,subscription_status:b.subscription_status};
     r.innerHTML='<div class="businessHub businessOwnerHome">'+
-      '<header class="businessHero ownerHero"><div class="businessHeroTop">'+modeSwitch('business')+'<button type="button" class="businessPreviewButton" data-business-preview>Посмотреть как клиент</button></div><span class="ey">ВОКРУГ БИЗНЕСА</span><h1>'+esc(b.name)+'</h1><p>'+esc(b.category||'Бизнес')+(b.city?' · '+esc(b.city):'')+'</p><div class="businessBadges"><span>'+esc(verification(b.verification_status))+'</span></div></header>'+
+      '<header class="businessHero ownerHero"><div class="businessHeroTop">'+modeSwitch('business')+'<button type="button" class="businessPreviewButton" data-business-preview>Посмотреть как клиент</button></div><span class="ey">ВОКРУГ '+(org?'ОРГАНИЗАЦИИ':'БИЗНЕСА')+'</span><h1>'+esc(b.name)+'</h1><p>'+esc(b.category||(org?'Организация':'Бизнес'))+(b.city?' · '+esc(b.city):'')+'</p><div class="businessBadges"><span>'+esc(b.legal_status==='informal'?'Общественная инициатива':verification(b.verification_status))+'</span>'+(org?'<span>Организация Free</span>':'')+'</div></header>'+
       '<section class="businessOwnerProfile">'+
         '<div class="businessOwnerProfileIcon">'+esc((b.name||'Б').trim().slice(0,1).toUpperCase())+'</div>'+
-        '<div class="businessOwnerProfileCopy"><span class="ey">ПРОФИЛЬ БИЗНЕСА</span><h2>Что видят люди</h2><p>'+esc(b.description||'Описание пока не добавлено.')+'</p></div>'+
+        '<div class="businessOwnerProfileCopy"><span class="ey">ПРОФИЛЬ '+(org?'ОРГАНИЗАЦИИ':'БИЗНЕСА')+'</span><h2>Что видят люди</h2><p>'+esc(b.description||'Описание пока не добавлено.')+'</p></div>'+
         '<div class="businessOwnerProfileActions"><button type="button" data-business-preview>Посмотреть страницу</button><button type="button" data-business-edit>Изменить</button></div>'+
       '</section>'+
       ownerAttention(d,b)+
-      '<section class="businessOwnerManage"><div class="businessSectionHead"><div><span class="ey">УПРАВЛЕНИЕ</span><h2>Ваш бизнес в ЛЯ</h2></div></div>'+
+      '<section class="businessOwnerManage"><div class="businessSectionHead"><div><span class="ey">УПРАВЛЕНИЕ</span><h2>Ваш'+(org?'а организация':' бизнес')+' в ЛЯ</h2></div></div>'+
         '<div class="businessOwnerManageGrid">'+
-          '<button type="button" data-business-jump="places"><span>Места</span><b>'+Number((d.places||[]).length)+'</b><small>Точки бизнеса</small></button>'+
+          '<button type="button" data-business-jump="places"><span>Места</span><b>'+Number((d.places||[]).length)+'</b><small>Точки проекта</small></button>'+
           '<button type="button" data-business-jump="communities"><span>Сообщества</span><b>'+Number((d.communities||[]).length)+'</b><small>Люди вокруг проекта</small></button>'+
           '<button type="button" data-business-go="events"><span>События</span><b>'+future+'</b><small>Ближайшие</small></button>'+
-          '<button type="button" data-business-jump="offers"><span>Предложения</span><b>'+Number((d.offerings||[]).filter(function(x){return x.status!=='archived'}).length)+'</b><small>Товары и услуги</small></button>'+
+          (!org?'<button type="button" data-business-jump="offers"><span>Предложения</span><b>'+Number((d.offerings||[]).filter(function(x){return x.status!=='archived'}).length)+'</b><small>Товары и услуги</small></button>':'')+
         '</div>'+
-        '<button type="button" class="businessOwnerStatsLink" data-business-go="stats"><span><b>Статистика бизнеса</b><small>Просмотры, активность и результаты — во «В кругу»</small></span><i>→</i></button>'+
+        '<button type="button" class="businessOwnerStatsLink" data-business-go="stats"><span><b>Статистика '+(org?'организации':'бизнеса')+'</b><small>Просмотры, приглашения и активность — во «В кругу»</small></span><i>→</i></button>'+
       '</section>'+
       '<section class="businessSection businessOwnerSection" data-owner-section="places"><div class="businessSectionHead"><div><span class="ey">МЕСТА</span><h2>Ваши точки</h2></div><button type="button" data-business-create-place>＋ Добавить</button></div>'+
         '<div class="businessOwnerSecondary"><button type="button" data-business-claim-place>Это моё место</button></div>'+
         placeRows(d.places||[])+claimRows(d.claims||[])+
       '</section>'+
       '<section class="businessSection businessOwnerSection" data-owner-section="communities"><div class="businessSectionHead"><div><span class="ey">СООБЩЕСТВА</span><h2>Вокруг проекта</h2></div><button type="button" data-business-create-community-top>＋ Создать</button></div>'+communityRows(d.communities||[])+'</section>'+
-      '<section class="businessSection businessOwnerSection"><div class="businessSectionHead"><div><span class="ey">СОБЫТИЯ</span><h2>Ближайшие</h2></div><button type="button" data-business-create-event>＋ Создать</button></div>'+ownerEventRows(events)+'<button type="button" class="businessOwnerAllLink" data-business-go="events">Открыть календарь бизнеса →</button></section>'+
-      '<section class="businessSection businessOwnerSection" data-owner-section="offers"><div class="businessSectionHead"><div><span class="ey">ПРЕДЛОЖЕНИЯ</span><h2>Товары и услуги</h2></div><button type="button" data-business-create-offering>＋ Добавить</button></div>'+ownerOfferingRows(d.offerings||[])+'</section>'+
+      '<section class="businessSection businessOwnerSection"><div class="businessSectionHead"><div><span class="ey">СОБЫТИЯ</span><h2>Ближайшие</h2></div><button type="button" data-business-create-event>＋ Создать</button></div>'+ownerEventRows(events)+'<button type="button" class="businessOwnerAllLink" data-business-go="events">Открыть календарь →</button></section>'+
+      (!org?'<section class="businessSection businessOwnerSection" data-owner-section="offers"><div class="businessSectionHead"><div><span class="ey">ПРЕДЛОЖЕНИЯ</span><h2>Товары и услуги</h2></div><button type="button" data-business-create-offering>＋ Добавить</button></div>'+ownerOfferingRows(d.offerings||[])+'</section>':'')+
       '</div>';
     bindAround(r);syncBusinessNav('home')
   }
@@ -167,7 +191,7 @@
     var createPlace=r.querySelector('[data-business-create-place]');if(createPlace)createPlace.onclick=openCreatePlace;
     var claimPlace=r.querySelector('[data-business-claim-place]');if(claimPlace)claimPlace.onclick=openClaimPlace;
     var createOffering=r.querySelector('[data-business-create-offering]');if(createOffering)createOffering.onclick=function(){openOffering()};
-    var verify=r.querySelector('[data-business-verify]');if(verify)verify.onclick=async function(){verify.disabled=true;try{await call('request_verification',{business_id:state.data.business.id});await load()}catch(e){alert(e.message);verify.disabled=false}};
+    var verify=r.querySelector('[data-business-verify]');if(verify)verify.onclick=openVerification;
     r.querySelectorAll('[data-cancel-claim]').forEach(function(x){x.onclick=async function(){x.disabled=true;try{await call('cancel_claim',{business_id:state.data.business.id,claim_id:x.dataset.cancelClaim});await load()}catch(e){alert(e.message);x.disabled=false}}});
     r.querySelectorAll('[data-business-place]').forEach(function(x){x.onclick=function(){if(typeof window.openPlaceView==='function')window.openPlaceView(x.dataset.businessPlace)}});
     r.querySelectorAll('[data-business-community-row]').forEach(function(x){x.onclick=function(){var c=(state.data.communities||[]).find(function(y){return String(y.id)===String(x.dataset.businessCommunityRow)});if(c&&typeof window.openCommunityDetail==='function')window.openCommunityDetail(c.id,c)}});
@@ -175,7 +199,13 @@
     r.querySelectorAll('[data-business-jump]').forEach(function(x){x.onclick=function(){var target=r.querySelector('[data-owner-section="'+x.dataset.businessJump+'"]');if(target)target.scrollIntoView({behavior:'smooth',block:'start'})}});
     r.querySelectorAll('[data-business-go]').forEach(function(x){x.onclick=function(){state.section=x.dataset.businessGo;render()}});
     var createCommunity=r.querySelector('[data-business-create-community-top]');if(createCommunity)createCommunity.onclick=function(){var b=state.data.business;window.LyaBusinessCreateContext={business_id:b.id,business_name:b.name};openView('create');setTimeout(function(){document.querySelector('[data-view="create"] [data-create-action="community"]')?.click()},40)};
-    var createEvent=r.querySelector('[data-business-create-event]');if(createEvent)createEvent.onclick=function(){var b=state.data.business;window.LyaBusinessCreateContext={business_id:b.id,business_name:b.name};if(typeof window.openLyaCreateEvent==='function')window.openLyaCreateEvent({business_id:b.id,business_name:b.name,visibility:b.verification_status==='verified'?'public':'open'});else openView('create')}
+    var createEvent=r.querySelector('[data-business-create-event]');if(createEvent)createEvent.onclick=function(){var b=state.data.business;window.LyaBusinessCreateContext={business_id:b.id,business_name:b.name};if(typeof window.openLyaCreateEvent==='function')window.openLyaCreateEvent({business_id:b.id,business_name:b.name,visibility:publicVisibilityFor(b)});else openView('create')}
+  }
+
+  function openVerification(){
+    var b=state.data&&state.data.business;if(!b||b.legal_status==='informal')return;
+    var o=sheet('Подтвердить реквизиты','<form class="businessForm businessVerifyForm"><p class="businessSheetIntro">Введите ИНН. ЛЯ сохранит его для проверки по государственному реестру; ОГРН пользователь вводить не будет.</p><label>ИНН<input name="inn" inputmode="numeric" autocomplete="off" maxlength="12" required value="'+esc(b.inn||'')+'" placeholder="10 или 12 цифр"></label><p class="businessHint">Сейчас мы проверяем формат ИНН и отправляем реквизиты в статус «На проверке». Автоматическое получение ОГРН подключим через официальный интеграционный доступ ФНС.</p><div class="businessStatus" hidden></div><button class="businessPrimary" type="submit">Отправить ИНН на проверку</button></form>');
+    var f=o.querySelector('form');f.onsubmit=async function(e){e.preventDefault();var fd=new FormData(f),st=f.querySelector('.businessStatus'),btn=f.querySelector('button[type="submit"]');btn.disabled=true;st.hidden=false;st.className='businessStatus';st.textContent='Проверяю ИНН…';try{await call('request_verification',{business_id:b.id,inn:String(fd.get('inn')||'').trim()});closeOverlay(o);await load()}catch(err){st.className='businessStatus error';st.textContent=err.message;btn.disabled=false}}
   }
 
   function openEdit(){
@@ -196,7 +226,7 @@
   }
 
   function openOffering(presetKind){
-    var b=state.data&&state.data.business;if(!b)return;
+    var b=state.data&&state.data.business;if(!b)return;if(isOrganization(b)){alert('Организация Free работает без коммерческих предложений.');return;}
     var initial=['product','service','offer'].includes(String(presetKind||''))?String(presetKind):'offer';
     var title=initial==='product'?'Новый товар':initial==='service'?'Новая услуга':'Новое предложение';
     var o=sheet(title,'<form class="businessForm"><label>Тип<select name="kind"><option value="product">Товар</option><option value="service">Услуга</option><option value="offer">Предложение</option></select></label><label>Название<input name="title" maxlength="140" required></label><label>Описание<textarea name="description" rows="4" maxlength="1200"></textarea></label><label>Цена, ₽<input name="price" type="number" min="0" step="1" value="0"></label><label>Действие<select name="action_type"><option value="buy">Купить</option><option value="book">Забронировать</option><option value="signup">Записаться</option></select></label><label>Прямая ссылка на товар / сайт<input name="external_url" type="url" placeholder="https://"></label><p class="businessHint">Для товара ссылка обязательна и должна вести прямо на конкретный товар. Услуги позже сможем закрывать оплатой внутри ЛЯ.</p><div class="businessStatus" hidden></div><button class="businessPrimary" type="submit">Опубликовать</button></form>');
@@ -222,14 +252,14 @@
   }
   function businessSubHeader(label,title,copy){
     var b=state.data.business;
-    return '<header class="businessSubHero"><div class="businessHeroTop">'+modeSwitch('business')+'<button type="button" class="businessPreviewButton" data-business-home>Профиль бизнеса</button></div><span class="ey">'+esc(label)+'</span><h1>'+esc(title)+'</h1><p>'+esc(copy||b.name)+'</p></header>'
+    return '<header class="businessSubHero"><div class="businessHeroTop">'+modeSwitch('business')+'<button type="button" class="businessPreviewButton" data-business-home>Профиль '+(isOrganization(b)?'организации':'бизнеса')+'</button></div><span class="ey">'+esc(label)+'</span><h1>'+esc(title)+'</h1><p>'+esc(copy||b.name)+'</p></header>'
   }
   function bindSubCommon(r){
     var personal=r.querySelector('[data-profile-mode="personal"]');if(personal)personal.onclick=openPersonalProfile;
     var home=r.querySelector('[data-business-home]');if(home)home.onclick=function(){state.section='home';render()}
   }
   function renderStats(){
-    var r=root(),d=state.data,b=d.business,now=Date.now();
+    var r=root(),d=state.data,b=d.business,org=isOrganization(b),now=Date.now();
     var events=d.events||[],offers=d.offerings||[],places=d.places||[],comms=d.communities||[],claims=d.claims||[];
     var future=events.filter(function(e){return Date.parse(e.starts_at)>=now&&e.status!=='cancelled'}).length;
     var past=events.filter(function(e){return Date.parse(e.starts_at)<now||e.status==='finished'}).length;
@@ -237,29 +267,29 @@
     var drafts=offers.filter(function(x){return x.status==='draft'}).length;
     var pendingClaims=claims.filter(function(x){return x.status==='pending'}).length;
     r.innerHTML='<div class="businessHub businessSubPage">'+
-      businessSubHeader('В КРУГУ БИЗНЕСА','Статистика','Что уже происходит внутри '+b.name)+
+      businessSubHeader('В КРУГУ '+(org?'ОРГАНИЗАЦИИ':'БИЗНЕСА'),'Статистика','Что уже происходит внутри '+b.name)+
       '<section class="businessMetricGrid">'+
         '<div><b>'+places.length+'</b><span>мест</span></div>'+
         '<div><b>'+comms.length+'</b><span>сообществ</span></div>'+
         '<div><b>'+future+'</b><span>событий впереди</span></div>'+
         '<div><b>'+past+'</b><span>событий прошло</span></div>'+
-        '<div><b>'+published+'</b><span>активных предложений</span></div>'+
-        '<div><b>'+drafts+'</b><span>черновиков</span></div>'+
+        (!org?'<div><b>'+published+'</b><span>активных предложений</span></div><div><b>'+drafts+'</b><span>черновиков</span></div>':'')+
       '</section>'+
-      '<section class="businessSection"><div class="businessSectionHead"><div><span class="ey">СОСТОЯНИЕ</span><h2>Что требует внимания</h2></div></div>'+
+      '<section class="businessSection"><div class="businessSectionHead"><div><span class="ey">СОСТОЯНИЕ</span><h2>Профиль проекта</h2></div></div>'+
         '<div class="businessStatRows">'+
-          '<div><span>Подтверждение бизнеса</span><b>'+esc(verification(b.verification_status))+'</b></div>'+
+          '<div><span>Реквизиты</span><b>'+esc(b.legal_status==='informal'?'Без юридического лица':verification(b.verification_status))+'</b></div>'+
           '<div><span>Заявки на места</span><b>'+pendingClaims+'</b></div>'+
-          '<div><span>Тариф</span><b>'+esc(subscription(b))+'</b></div>'+
+          '<div><span>Режим</span><b>'+esc(subscription(b))+'</b></div>'+
         '</div>'+
       '</section>'+
-      '<section class="businessSection"><div class="businessSectionHead"><div><span class="ey">КОНВЕРСИЯ</span><h2>Что будем считать дальше</h2></div></div>'+
-        '<div class="businessAnalyticsPending"><div><b>—</b><span>просмотры</span></div><div><b>—</b><span>«Позвать своих»</span></div><div><b>—</b><span>переходы</span></div><div><b>—</b><span>брони / покупки</span></div></div>'+
+      '<section class="businessSection"><div class="businessSectionHead"><div><span class="ey">'+(org?'АКТИВНОСТЬ':'КОНВЕРСИЯ')+'</span><h2>Что будем считать дальше</h2></div></div>'+
+        '<div class="businessAnalyticsPending"><div><b>—</b><span>просмотры</span></div><div><b>—</b><span>«Позвать своих»</span></div><div><b>—</b><span>'+(org?'участники':'переходы')+'</span></div><div><b>—</b><span>'+(org?'вернулись снова':'брони / покупки')+'</span></div></div>'+
         '<p class="businessLead">Эти цифры пока не подменяем нулями: подключим их вместе с трекингом реальных действий пользователей.</p>'+
       '</section>'+
     '</div>';
     bindSubCommon(r);syncBusinessNav('stats')
   }
+
   function initCalendarCursor(){
     if(state.calendarCursor)return;
     var p=new Intl.DateTimeFormat('en-CA',{year:'numeric',month:'2-digit',day:'2-digit',timeZone:'Europe/Moscow'}).formatToParts(new Date());
@@ -290,20 +320,20 @@
     var selected=state.calendarSelected&&state.calendarSelected.slice(0,7)===monthPrefix?monthEvents.filter(function(e){return businessDateKey(e.starts_at)===state.calendarSelected}):monthEvents;
     var title=state.calendarSelected&&state.calendarSelected.slice(0,7)===monthPrefix?'События выбранного дня':'События месяца';
     r.innerHTML='<div class="businessHub businessSubPage">'+
-      businessSubHeader('СОБЫТИЯ БИЗНЕСА','Календарь',b.name)+
+      businessSubHeader('СОБЫТИЯ '+(isOrganization(b)?'ОРГАНИЗАЦИИ':'БИЗНЕСА'),'Календарь',b.name)+
       '<section class="businessSection businessCalendarSection"><div class="businessCalendarNav"><button type="button" data-business-month="-1">←</button><h2>'+esc(monthLabel(c.y,c.m))+'</h2><button type="button" data-business-month="1">→</button></div>'+
         '<div class="businessCalendarWeek"><span>ПН</span><span>ВТ</span><span>СР</span><span>ЧТ</span><span>ПТ</span><span>СБ</span><span>ВС</span></div>'+
         '<div class="businessCalendarGrid">'+calendarGrid(events,c.y,c.m)+'</div>'+
       '</section>'+
       '<section class="businessSection"><div class="businessSectionHead"><div><span class="ey">ПЛАН</span><h2>'+esc(title)+'</h2></div><button type="button" data-business-new-event>＋ Событие</button></div>'+
-        businessEventList(selected,'На эту дату у бизнеса событий нет.')+
+        businessEventList(selected,'На эту дату событий нет.')+
       '</section>'+
     '</div>';
     bindSubCommon(r);
     r.querySelectorAll('[data-business-month]').forEach(function(x){x.onclick=function(){var shift=Number(x.dataset.businessMonth||0),next=new Date(Date.UTC(c.y,c.m+shift,1));state.calendarCursor={y:next.getUTCFullYear(),m:next.getUTCMonth()};state.calendarSelected=null;render()}});
     r.querySelectorAll('[data-business-cal-day]').forEach(function(x){x.onclick=function(){state.calendarSelected=x.dataset.businessCalDay;render()}});
     r.querySelectorAll('[data-business-event]').forEach(function(x){x.onclick=function(){if(typeof window.openEventView==='function')window.openEventView(x.dataset.businessEvent,'business')}});
-    var create=r.querySelector('[data-business-new-event]');if(create)create.onclick=function(){window.LyaBusinessCreateContext={business_id:b.id,business_name:b.name};if(typeof window.openLyaCreateEvent==='function')window.openLyaCreateEvent({business_id:b.id,business_name:b.name,visibility:b.verification_status==='verified'?'public':'open',date:state.calendarSelected||''})};
+    var create=r.querySelector('[data-business-new-event]');if(create)create.onclick=function(){window.LyaBusinessCreateContext={business_id:b.id,business_name:b.name};if(typeof window.openLyaCreateEvent==='function')window.openLyaCreateEvent({business_id:b.id,business_name:b.name,visibility:publicVisibilityFor(b),date:state.calendarSelected||''})};
     syncBusinessNav('events')
   }
   function renderChronicle(){
@@ -311,21 +341,21 @@
     var past=(d.events||[]).filter(function(e){return Date.parse(e.starts_at)<now||e.status==='finished'}).sort(function(a,b){return Date.parse(b.starts_at)-Date.parse(a.starts_at)});
     var archived=(d.offerings||[]).filter(function(x){return x.status==='archived'}).sort(function(a,b){return Date.parse(b.updated_at||b.created_at)-Date.parse(a.updated_at||a.created_at)});
     r.innerHTML='<div class="businessHub businessSubPage">'+
-      businessSubHeader('ХРОНИКА БИЗНЕСА','Что уже было',b.name)+
+      businessSubHeader('ХРОНИКА '+(isOrganization(b)?'ОРГАНИЗАЦИИ':'БИЗНЕСА'),'Что уже было',b.name)+
       '<section class="businessSection"><div class="businessSectionHead"><div><span class="ey">ПРОШЕДШИЕ СОБЫТИЯ</span><h2>'+past.length+' в истории</h2></div></div>'+
         (past.length?'<div class="businessChronicleList">'+past.map(function(e){return '<article><button type="button" data-business-event="'+esc(e.id)+'"><time>'+esc(businessWhen(e.starts_at,false))+'</time><h3>'+esc(e.title)+'</h3><p>'+esc(e.location_name||'')+'</p></button><button type="button" class="businessRepeat" data-business-repeat="'+esc(e.id)+'">Повторить</button></article>'}).join('')+'</div>':'<div class="businessEmpty">После первых проведённых событий здесь появится история бизнеса.</div>')+
       '</section>'+
-      (archived.length?'<section class="businessSection"><div class="businessSectionHead"><div><span class="ey">АРХИВ</span><h2>Снятые предложения</h2></div></div>'+offeringRows(archived)+'</section>':'')+
+      (!isOrganization(b)&&archived.length?'<section class="businessSection"><div class="businessSectionHead"><div><span class="ey">АРХИВ</span><h2>Снятые предложения</h2></div></div>'+offeringRows(archived)+'</section>':'')+
     '</div>';
     bindSubCommon(r);
     r.querySelectorAll('[data-business-event]').forEach(function(x){x.onclick=function(){if(typeof window.openEventView==='function')window.openEventView(x.dataset.businessEvent,'business')}});
-    r.querySelectorAll('[data-business-repeat]').forEach(function(x){x.onclick=function(){var ev=past.find(function(e){return String(e.id)===String(x.dataset.businessRepeat)});if(ev&&typeof window.openLyaCreateEvent==='function'){window.LyaBusinessCreateContext={business_id:b.id,business_name:b.name};window.openLyaCreateEvent({business_id:b.id,business_name:b.name,title:ev.title||'',place:ev.location_name||'',visibility:b.verification_status==='verified'?'public':'open',repeat:true})}}});
+    r.querySelectorAll('[data-business-repeat]').forEach(function(x){x.onclick=function(){var ev=past.find(function(e){return String(e.id)===String(x.dataset.businessRepeat)});if(ev&&typeof window.openLyaCreateEvent==='function'){window.LyaBusinessCreateContext={business_id:b.id,business_name:b.name};window.openLyaCreateEvent({business_id:b.id,business_name:b.name,title:ev.title||'',place:ev.location_name||'',visibility:publicVisibilityFor(b),repeat:true})}}});
     syncBusinessNav('chronicle')
   }
   function render(){
     var r=root();if(!r)return;
     var d=state.data;if(!d||!d.business){onboarding();return}
-    window.LyaBusinessState={id:d.business.id,name:d.business.name,verification_status:d.business.verification_status,subscription_tier:d.business.subscription_tier,subscription_status:d.business.subscription_status};
+    rememberKind(d.business);window.LyaBusinessState={id:d.business.id,name:d.business.name,account_kind:d.business.account_kind,legal_status:d.business.legal_status,inn:d.business.inn||null,verification_status:d.business.verification_status,subscription_tier:d.business.subscription_tier,subscription_status:d.business.subscription_status};
     if(state.section==='stats')return renderStats();
     if(state.section==='events')return renderEvents();
     if(state.section==='chronicle')return renderChronicle();
@@ -333,20 +363,21 @@
   }
 
   function publicBusinessMarkup(d){
-    var x=d.business,events=d.events||[],offers=d.offerings||[],places=d.places||[],comms=d.communities||[];
-    return '<article class="businessPublic"><div class="businessPublicCover '+(x.cover_url?'hasPhoto':'')+'"'+(x.cover_url?' style="background-image:url(&quot;'+esc(x.cover_url)+'&quot;)"':'')+'></div><div class="businessPublicHead"><span class="businessPublicLogo">'+esc((x.name||'Б').slice(0,1).toUpperCase())+'</span><h1>'+esc(x.name)+'</h1><p>'+esc(x.category||'Бизнес')+(x.city?' · '+esc(x.city):'')+'</p>'+(x.verification_status==='verified'?'<span class="businessVerifiedMark">Подтверждённый бизнес</span>':'')+'<div class="businessPublicLinks">'+(x.website_url?'<a href="'+esc(x.website_url)+'" target="_blank" rel="noopener">Сайт ↗</a>':'')+'</div></div>'+
+    var x=d.business,org=isOrganization(x),events=d.events||[],offers=org?[]:(d.offerings||[]),places=d.places||[],comms=d.communities||[];
+    return '<article class="businessPublic"><div class="businessPublicCover '+(x.cover_url?'hasPhoto':'')+'"'+(x.cover_url?' style="background-image:url(&quot;'+esc(x.cover_url)+'&quot;)"':'')+'></div><div class="businessPublicHead"><span class="businessPublicLogo">'+esc((x.name||'Б').slice(0,1).toUpperCase())+'</span><h1>'+esc(x.name)+'</h1><p>'+esc(x.category||(org?'Организация':'Бизнес'))+(x.city?' · '+esc(x.city):'')+'</p>'+(x.verification_status==='verified'?'<span class="businessVerifiedMark">Реквизиты подтверждены</span>':x.legal_status==='informal'?'<span class="businessVerifiedMark neutral">Общественная инициатива</span>':'')+'<div class="businessPublicLinks">'+(x.website_url?'<a href="'+esc(x.website_url)+'" target="_blank" rel="noopener">Сайт ↗</a>':'')+'</div></div>'+
       '<section><span class="ey">СКОРО</span><h2>События</h2>'+(events.length?events.map(function(e){return '<button type="button" class="businessPublicEvent" data-business-event="'+esc(e.id)+'"><b>'+esc(e.title)+'</b><small>'+new Intl.DateTimeFormat('ru-RU',{day:'numeric',month:'long',hour:'2-digit',minute:'2-digit',timeZone:'Europe/Moscow'}).format(new Date(e.starts_at))+'</small></button>'}).join(''):'<div class="businessEmpty">Пока нет опубликованных событий.</div>')+'</section>'+
-      '<section><span class="ey">ПРЕДЛОЖЕНИЯ</span><h2>Что можно сделать</h2>'+(offers.length?offers.map(function(y){return '<article class="businessPublicOffer"><span>'+esc(offeringKind(y.kind))+'</span><h3>'+esc(y.title)+'</h3><p>'+esc(y.description||'')+'</p><div><b>'+rub(y.price_minor)+'</b>'+(y.external_url?'<a href="'+esc(y.external_url)+'" target="_blank" rel="noopener">'+esc(actionLabel(y.action_type))+' ↗</a>':'<button type="button" disabled>'+esc(actionLabel(y.action_type))+'</button>')+'</div></article>'}).join(''):'<div class="businessEmpty">Предложений пока нет.</div>')+'</section>'+
+      (!org?'<section><span class="ey">ПРЕДЛОЖЕНИЯ</span><h2>Что можно сделать</h2>'+(offers.length?offers.map(function(y){return '<article class="businessPublicOffer"><span>'+esc(offeringKind(y.kind))+'</span><h3>'+esc(y.title)+'</h3><p>'+esc(y.description||'')+'</p><div><b>'+rub(y.price_minor)+'</b>'+(y.external_url?'<a href="'+esc(y.external_url)+'" target="_blank" rel="noopener">'+esc(actionLabel(y.action_type))+' ↗</a>':'<button type="button" disabled>'+esc(actionLabel(y.action_type))+'</button>')+'</div></article>'}).join(''):'<div class="businessEmpty">Предложений пока нет.</div>')+'</section>':'')+
       '<section><span class="ey">МЕСТА</span><h2>Где нас найти</h2>'+placeRows(places)+'</section>'+
       (comms.length?'<section><span class="ey">СООБЩЕСТВА</span><h2>Наши сообщества</h2>'+comms.map(function(c){return '<button type="button" class="businessPublicCommunity" data-business-community="'+esc(c.id)+'"><b>'+esc(c.name)+'</b><p>'+esc(c.description||'')+'</p></button>'}).join('')+'</section>':'')+
     '</article>'
   }
+
   async function openPublicBusiness(businessId){
     if(!businessId)return;
-    var o=sheet('Бизнес-профиль','<div class="businessEmpty">Загружаю публичную страницу…</div>','publicPreview');
+    var o=sheet('Профиль проекта','<div class="businessEmpty">Загружаю публичную страницу…</div>','publicPreview');
     try{
       var d=await publicCall('get_public_business',{business_id:businessId}),body=o.querySelector('.businessSheetBody');
-      o.querySelector('.businessSheetHead h2').textContent=d.business&&d.business.name||'Бизнес-профиль';
+      o.querySelector('.businessSheetHead h2').textContent=d.business&&d.business.name||'Профиль проекта';
       body.innerHTML=publicBusinessMarkup(d);
       body.querySelectorAll('[data-business-place]').forEach(function(x){x.onclick=function(){closeOverlay(o);if(typeof window.openPlaceView==='function')window.openPlaceView(x.dataset.businessPlace)}});
       body.querySelectorAll('[data-business-event]').forEach(function(x){x.onclick=function(){closeOverlay(o);if(typeof window.openEventView==='function')window.openEventView(x.dataset.businessEvent,'business')}});
@@ -357,16 +388,16 @@
   window.openLyaBusinessPublicProfile=openPublicBusiness;
 
   async function load(){
-    var r=root();if(!r)return;setProfileMode('business');state.loading=true;r.innerHTML='<div class="businessLoading">Собираю ЛЯ Business…</div>';
+    var r=root();if(!r)return;setProfileMode('business');state.loading=true;r.innerHTML='<div class="businessLoading">Собираю профиль…</div>';
     try{state.data=await call('get_dashboard',{});render()}catch(e){r.innerHTML='<div class="businessOnboarding"><div class="businessModeRow">'+modeSwitch('business')+'</div><div class="businessStatus error">'+esc(e.message)+'</div></div>';var personal=r.querySelector('[data-profile-mode="personal"]');if(personal)personal.onclick=openPersonalProfile}finally{state.loading=false}
   }
   async function ensureBusinessContext(){
     if(state.data&&state.data.business)return state.data.business;
     if(!token())throw new Error('Нужно войти в аккаунт');
     state.data=await call('get_dashboard',{});
-    if(!state.data||!state.data.business)throw new Error('Сначала создайте бизнес-профиль');
+    if(!state.data||!state.data.business)throw new Error('Сначала создайте профессиональный профиль');
     var b=state.data.business;
-    window.LyaBusinessState={id:b.id,name:b.name,verification_status:b.verification_status,subscription_tier:b.subscription_tier,subscription_status:b.subscription_status};
+    rememberKind(b);window.LyaBusinessState={id:b.id,name:b.name,account_kind:b.account_kind,legal_status:b.legal_status,inn:b.inn||null,verification_status:b.verification_status,subscription_tier:b.subscription_tier,subscription_status:b.subscription_status};
     return b
   }
   window.getLyaProfileMode=getProfileMode;
