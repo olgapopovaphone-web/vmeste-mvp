@@ -3,3 +3,17 @@
 @media(min-width:700px){body{padding:20px 0}.app{border-radius:30px;overflow:hidden;min-height:calc(100vh - 40px)}.bottom{bottom:20px;border-radius:0 0 30px 30px}.view{min-height:calc(100vh - 40px)}}
 /* CALENDAR → DISCOVERY · 2026-10-05 */
 .calendarDiscover{margin-top:14px;padding:18px;border:1px solid #e2ddd5;border-radius:20px;background:#fff}.calendarDiscover h3{margin:5px 0 6px;font-size:20px;line-height:1.1}.calendarDiscover p{margin:0 0 13px;color:#77776f;font-size:11px;line-height:1.45}.calendarDiscover .calendar-discover-button{width:100%}
+
+/* CALENDAR DAY LIST · 2026-10-05 */
+.calendarDaySection{margin-top:14px}
+.calendarDaySectionHead{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:9px}
+.calendarDaySectionHead>span:last-child{font-size:10px;color:#77776f;font-weight:700}
+.calendarDaySectionHead h3{font-size:20px;line-height:1.08;margin:4px 0 0}
+.calendarDayDiscovery{padding-top:14px;border-top:1px solid #e8e3dc}
+.calendarSuggestions{display:grid;gap:8px}
+.calendarSuggestion{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;background:#fff;border:1px solid #e5e0d9;border-radius:16px;padding:12px 12px 12px 14px}
+.calendarSuggestionBody{min-width:0}.calendarSuggestionBody h3{font-size:15px;line-height:1.15;margin:4px 0 5px}.calendarSuggestionBody p{margin:0;color:#74746e;font-size:9.5px;line-height:1.4}
+.calendarSuggestionAction{min-height:34px;border:0;border-radius:999px;background:#171815;color:#fff;padding:0 12px;font-size:9.5px;font-weight:800;white-space:nowrap}
+.calendarSuggestionEmpty{padding:16px;border:1px dashed #d9d2c9;border-radius:14px;color:#77776f;font-size:10px;text-align:center}
+.calendarDayDiscovery>.calendar-discover-button{width:100%;margin-top:9px}
+@media(max-width:380px){.calendarSuggestion{grid-template-columns:1fr}.calendarSuggestionAction{width:100%}}
