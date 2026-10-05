@@ -31,6 +31,13 @@
   function sessionData(){try{return JSON.parse(localStorage.getItem('vmeste_session_v1')||'null')}catch(e){return null}}
   function token(){var s=sessionData();return s&&s.access_token||''}
   function myId(){var s=sessionData();return s&&s.user&&s.user.id||''}
+  function hasBusinessProfile(p){
+    try{return !!((p&&p.account_type==='business')||(typeof account!=='undefined'&&account&&account.profile&&account.profile.account_type==='business')||window.LyaBusinessState)}catch(e){return !!window.LyaBusinessState}
+  }
+  function profileModeSwitch(active){
+    if(typeof window.renderLyaProfileModeSwitch==='function')return window.renderLyaProfileModeSwitch(active);
+    return '<div class="lyaProfileModeSwitch" role="group" aria-label="Режим профиля"><button type="button" data-profile-mode="personal" class="'+(active==='personal'?'active':'')+'">Личный</button><button type="button" data-profile-mode="business" class="'+(active==='business'?'active':'')+'">Бизнес</button></div>'
+  }
   function localGroups(){try{var x=JSON.parse(localStorage.getItem(GROUPS_KEY)||'[]');return Array.isArray(x)?x:[]}catch(e){return[]}}
   async function circle(action,payload){
     var t=token();if(!t)throw new Error('Нужно войти в аккаунт');
@@ -198,7 +205,7 @@
     '</div></section>'
   }
   function profileMarkup(detail,isSelf){
-    var p=detail.profile||{},comms=mergeCommunities(detail,isSelf),now=Date.now();
+    var p=detail.profile||{},comms=mergeCommunities(detail,isSelf),now=Date.now(),businessReady=isSelf&&hasBusinessProfile(p);
     var events=(detail.events||[]).filter(function(e){
       var t=Date.parse(e.starts_at||'');return Number.isFinite(t)&&t>=now-60000
     }).sort(function(a,b){
@@ -214,6 +221,7 @@
         '<div class="profileV2NameRow"><div><h1>'+esc(p.display_name||'Участник')+'</h1><p>⌖ '+esc(p.city||'Город не указан')+'</p></div><i></i></div>'+
         about+
       '</div>'+
+      (businessReady?'<div class="profileV2ModeWrap">'+profileModeSwitch('personal')+'</div>':'')+
       actions(detail)+
       notificationCenterBlock(isSelf)+
       wantBlock(detail,isSelf)+
@@ -225,7 +233,7 @@
       placesBlock(detail,isSelf)+
       momentsBlock(detail,isSelf)+
       pinnedBlock(detail,isSelf)+
-      (isSelf?'<section class="profileV2BusinessEntry"><button type="button" data-profile-business><span><small>ДЛЯ БИЗНЕСА</small><b>ЛЯ Business</b><em>Места · события · сообщества · предложения</em></span><i>→</i></button></section>':'')+
+      (isSelf&&!businessReady?'<section class="profileV2BusinessEntry"><button type="button" data-profile-business><span><small>ДЛЯ БИЗНЕСА</small><b>Создать бизнес-профиль</b><em>Места · события · сообщества · предложения</em></span><i>→</i></button></section>':'')+
       (isSelf?'<button type="button" class="profileV2Signout" data-profile-signout>Выйти из аккаунта</button>':'')+
       '<div class="profileV2Foot">ЛЯ · 2026</div>'+
       '<input id="profile-cover-input-v3" class="profileV2FileInput" type="file" data-profile-cover-input accept="image/jpeg,image/png,image/webp">'+
@@ -435,7 +443,8 @@
     root.querySelectorAll('[data-profile-invite],[data-profile-want-invite]').forEach(function(invite){invite.onclick=function(){if(!invite.disabled)openInvitePicker(p)}});
     var add=root.querySelector('[data-profile-add]');if(add)add.onclick=async function(){add.disabled=true;try{await sendCircleRequest(p.id);add.textContent='Запрос отправлен';detail.relation={status:'pending',direction:'outgoing'};document.dispatchEvent(new CustomEvent('vmeste-circle-changed'))}catch(e){alert(e.message);add.disabled=false}};
     var accept=root.querySelector('[data-profile-accept]');if(accept)accept.onclick=async function(){accept.disabled=true;try{await respondCircle(detail.relation.connection_id,'accepted');detail.relation={status:'accepted'};if(closePublic)openPublicProfile(p);document.dispatchEvent(new CustomEvent('vmeste-circle-changed'))}catch(e){alert(e.message);accept.disabled=false}};
-    var business=root.querySelector('[data-profile-business]');if(business)business.onclick=function(){if(typeof window.openLyaBusinessHub==='function')window.openLyaBusinessHub();else if(typeof openView==='function')openView('business')};
+    var businessMode=root.querySelector('[data-profile-mode="business"]');if(businessMode)businessMode.onclick=function(){if(typeof window.setLyaProfileMode==='function')window.setLyaProfileMode('business');if(typeof window.openLyaBusinessHub==='function')window.openLyaBusinessHub();else if(typeof openView==='function')openView('business')};
+    var business=root.querySelector('[data-profile-business]');if(business)business.onclick=function(){if(typeof window.setLyaProfileMode==='function')window.setLyaProfileMode('business');if(typeof window.openLyaBusinessHub==='function')window.openLyaBusinessHub();else if(typeof openView==='function')openView('business')};
     var signout=root.querySelector('[data-profile-signout]');if(signout)signout.onclick=function(){if(typeof signOut==='function')signOut()};
 
     if(isSelf){
@@ -479,7 +488,7 @@
 
   async function getDetail(userId){return circle('get_person_profile',{user_id:userId})}
   async function renderSelf(){
-    var root=document.getElementById('profile-root');if(!root)return;if(!token()){root.innerHTML='<div class="profileV2Guest"><h2>Войдите в ЛЯ</h2><button type="button">Войти</button></div>';root.querySelector('button').onclick=function(){if(typeof openView==='function')openView('login')};return}
+    var root=document.getElementById('profile-root');if(!root)return;var profileView=document.querySelector('[data-view="profile"]');if(profileView&&profileView.classList.contains('active')&&typeof window.setLyaProfileMode==='function')window.setLyaProfileMode('personal');if(!token()){root.innerHTML='<div class="profileV2Guest"><h2>Войдите в ЛЯ</h2><button type="button">Войти</button></div>';root.querySelector('button').onclick=function(){if(typeof openView==='function')openView('login')};return}
     root.innerHTML='<div class="profileV2Loading">Собираю вашу страницу…</div>';
     try{var detail=await getDetail(myId());root.innerHTML=profileMarkup(detail,true);bindProfile(root,detail,true,null)}catch(e){root.innerHTML='<div class="profileV2Loading">'+esc(e.message)+'</div>'}
   }

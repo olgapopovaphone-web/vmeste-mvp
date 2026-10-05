@@ -143,13 +143,13 @@ function openView(name){
   $$('.view').forEach(v=>v.classList.toggle('active',v.dataset.view===name));
   $$('.nav').forEach(b=>b.classList.toggle('active',b.dataset.go===name));
   const bottom=$('#bottom-nav');
-  bottom.style.display=(name==='profile'||name==='login'||name==='business')?'none':'grid';
+  bottom.style.display=(name==='profile'||name==='login')?'none':'grid';
   if(name==='profile')renderProfile();
   if(name==='calendar')loadEvents();
   window.scrollTo(0,0);
 }
 $$('.nav').forEach(b=>b.addEventListener('click',()=>openView(b.dataset.go)));
-$$('.js-profile').forEach(b=>b.addEventListener('click',()=>openView('profile')));
+$('.js-profile').forEach(b=>b.addEventListener('click',()=>{const businessMode=typeof window.getLyaProfileMode==='function'&&window.getLyaProfileMode()==='business';if(businessMode&&typeof window.openLyaBusinessHub==='function')window.openLyaBusinessHub();else openView('profile')}));
 $$('.js-home').forEach(b=>b.addEventListener('click',()=>openView('home')));
 
 function updateAvatars(){const letter=(account?.profile?.display_name||account?.user?.email||'В').trim().slice(0,1).toUpperCase()||'В';$$('.avatar').forEach(a=>a.textContent=letter)}
@@ -172,7 +172,7 @@ async function saveProfile(e){
   e.preventDefault();const status=$('#profile-status');status.hidden=false;status.className='status';status.textContent='Сохраняю…';
   try{const data=await api('update_profile',{display_name:$('#profile-name').value.trim(),birth_date:$('#profile-birth').value||null});account.profile=data.profile;updateAvatars();status.textContent='Сохранено'}catch(err){status.className='status error';status.textContent=err.message}
 }
-async function signOut(){try{if(session?.access_token)await api('logout')}catch{}clearPinConfig();clearSession();openView('home')}
+async function signOut(){try{if(session?.access_token)await api('logout')}catch{}try{localStorage.removeItem('lya_profile_mode_v1')}catch{}window.LyaBusinessState=null;clearPinConfig();clearSession();openView('home')}
 
 function showStandardAuth(){
   $('#auth-tabs').hidden=false;$('#auth-form').hidden=false;$('#password-reset-request').hidden=true;$('#password-reset-new').hidden=true;$('#auth-title').textContent='Вход'
