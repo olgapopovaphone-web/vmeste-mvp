@@ -143,7 +143,7 @@ function openView(name){
   $$('.view').forEach(v=>v.classList.toggle('active',v.dataset.view===name));
   $$('.nav').forEach(b=>b.classList.toggle('active',b.dataset.go===name));
   const bottom=$('#bottom-nav');
-  bottom.style.display=(name==='profile'||name==='login')?'none':'grid';
+  bottom.style.display=(name==='profile'||name==='login'||name==='business')?'none':'grid';
   if(name==='profile')renderProfile();
   if(name==='calendar')loadEvents();
   window.scrollTo(0,0);
