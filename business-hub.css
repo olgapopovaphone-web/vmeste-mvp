@@ -24,3 +24,5 @@
 .businessVerifiedMark{display:inline-block;margin-top:8px;padding:5px 8px;border-radius:999px;background:#eef3eb;color:#425846;font:800 8px Manrope,Arial,sans-serif}
 button.businessPublicEvent{display:block;width:100%;border:0;text-align:left}
 button.businessPublicCommunity{display:block;width:100%;border:0;background:transparent;text-align:left}
+
+button.businessMiniCard{border:0;text-align:left;color:inherit}
