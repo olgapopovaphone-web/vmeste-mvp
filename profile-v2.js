@@ -225,6 +225,7 @@
       placesBlock(detail,isSelf)+
       momentsBlock(detail,isSelf)+
       pinnedBlock(detail,isSelf)+
+      (isSelf?'<section class="profileV2BusinessEntry"><button type="button" data-profile-business><span><small>ДЛЯ БИЗНЕСА</small><b>ЛЯ Business</b><em>Места · события · сообщества · предложения</em></span><i>→</i></button></section>':'')+
       (isSelf?'<button type="button" class="profileV2Signout" data-profile-signout>Выйти из аккаунта</button>':'')+
       '<div class="profileV2Foot">ЛЯ · 2026</div>'+
       '<input id="profile-cover-input-v3" class="profileV2FileInput" type="file" data-profile-cover-input accept="image/jpeg,image/png,image/webp">'+
@@ -434,6 +435,7 @@
     root.querySelectorAll('[data-profile-invite],[data-profile-want-invite]').forEach(function(invite){invite.onclick=function(){if(!invite.disabled)openInvitePicker(p)}});
     var add=root.querySelector('[data-profile-add]');if(add)add.onclick=async function(){add.disabled=true;try{await sendCircleRequest(p.id);add.textContent='Запрос отправлен';detail.relation={status:'pending',direction:'outgoing'};document.dispatchEvent(new CustomEvent('vmeste-circle-changed'))}catch(e){alert(e.message);add.disabled=false}};
     var accept=root.querySelector('[data-profile-accept]');if(accept)accept.onclick=async function(){accept.disabled=true;try{await respondCircle(detail.relation.connection_id,'accepted');detail.relation={status:'accepted'};if(closePublic)openPublicProfile(p);document.dispatchEvent(new CustomEvent('vmeste-circle-changed'))}catch(e){alert(e.message);accept.disabled=false}};
+    var business=root.querySelector('[data-profile-business]');if(business)business.onclick=function(){if(typeof window.openLyaBusinessHub==='function')window.openLyaBusinessHub();else if(typeof openView==='function')openView('business')};
     var signout=root.querySelector('[data-profile-signout]');if(signout)signout.onclick=function(){if(typeof signOut==='function')signOut()};
 
     if(isSelf){

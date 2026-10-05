@@ -100,7 +100,7 @@
     if(p){p.classList.remove('hasPhoto');p.style.backgroundImage='';p.innerHTML='<span class="createCoverPlus">＋</span><strong>Добавить обложку</strong><small>Фото можно заменить позже</small>'}
   }
   function resetCommunity(){communityForm.reset();communityForm.dataset.createDirty='';resetCover();var s=communityForm.querySelector('.createCommunityStatus');if(s){s.hidden=true;s.textContent='';s.className='status createCommunityStatus'}}
-  function resetEvent(){eventForm.reset();eventForm.dataset.createDirty='';delete eventForm.dataset.communityId;delete eventForm.dataset.placeId;document.querySelector('.communityCreateContext')?.remove();document.querySelector('.chronicleRepeatContext')?.remove();var s=eventForm.querySelector('#event-status');if(s){s.hidden=true;s.textContent='';s.className='status'}if(typeof window.clearPendingEventCircleInviteIds==='function')window.clearPendingEventCircleInviteIds()}
+  function resetEvent(){eventForm.reset();eventForm.dataset.createDirty='';delete eventForm.dataset.communityId;delete eventForm.dataset.placeId;delete eventForm.dataset.businessId;delete eventForm.dataset.businessPublic;document.querySelector('.communityCreateContext')?.remove();document.querySelector('.chronicleRepeatContext')?.remove();document.querySelector('.businessCreateContext')?.remove();var s=eventForm.querySelector('#event-status');if(s){s.hidden=true;s.textContent='';s.className='status'}if(typeof window.clearPendingEventCircleInviteIds==='function')window.clearPendingEventCircleInviteIds()}
 
   function canClose(form){return form.dataset.createDirty!=='1'||confirm('Закрыть без сохранения?')}
   function showLanding(force){
@@ -141,8 +141,13 @@
     if(date&&opts.date!==undefined)date.value=opts.date||'';
     if(time&&opts.time!==undefined)time.value=opts.time||'';if(opts.visibility){var visibilityInput=eventForm.querySelector('input[name="event-visibility"][value="'+opts.visibility+'"]');if(visibilityInput)visibilityInput.checked=true}
     if(opts.community_id)eventForm.dataset.communityId=String(opts.community_id);else delete eventForm.dataset.communityId;if(opts.place_id)eventForm.dataset.placeId=String(opts.place_id);else delete eventForm.dataset.placeId;
+    if(opts.business_id){eventForm.dataset.businessId=String(opts.business_id);eventForm.dataset.businessPublic=opts.visibility==='public'?'1':'0'}else{delete eventForm.dataset.businessId;delete eventForm.dataset.businessPublic}
     document.querySelector('.communityCreateContext')?.remove();
     document.querySelector('.chronicleRepeatContext')?.remove();
+    document.querySelector('.businessCreateContext')?.remove();
+    if(opts.business_id){
+      var biz=document.createElement('div');biz.className='businessCreateContext';biz.innerHTML='<span>СОБЫТИЕ БИЗНЕСА</span><strong>'+esc(opts.business_name||'ЛЯ Business')+'</strong><small>'+(opts.visibility==='public'?'После создания событие будет публичным.':'До подтверждения бизнеса событие будет открытым для участников ЛЯ.')+'</small>';eventForm.insertAdjacentElement('beforebegin',biz)
+    }
     if(opts.community_id){
       var box=document.createElement('div');box.className='communityCreateContext';box.innerHTML='<span>СОБЫТИЕ ДЛЯ СООБЩЕСТВА</span><strong>'+esc(opts.community_name||'Сообщество')+'</strong><small>Сообщество уже выбрано. Событие будет связано с ним автоматически.</small>';eventForm.insertAdjacentElement('beforebegin',box)
     }else if(opts.repeat){
@@ -186,18 +191,20 @@
       var sourceUrl=((eventForm.querySelector('#event-source')||{}).value||'').trim();
       var communityId=eventForm.dataset.communityId||null;
       var placeId=eventForm.dataset.placeId||null;
+      var businessId=eventForm.dataset.businessId||null;
+      if(businessId&&eventForm.dataset.businessPublic==='1'&&visibility!=='invite_only')visibility='public';
       var inviteTargets=typeof window.getPendingEventInviteTargets==='function'?window.getPendingEventInviteTargets():{user_ids:(typeof window.getPendingEventCircleInviteIds==='function'?window.getPendingEventCircleInviteIds():[]),community_ids:[]};
-      var d=await api('create_event',{title:title,starts_at:starts.toISOString(),ends_at:ends.toISOString(),location_name:place||null,price_minor:Math.round((Number.isFinite(price)?price:0)*100),visibility:visibility,community_id:communityId,place_id:placeId});
+      var d=await api('create_event',{title:title,starts_at:starts.toISOString(),ends_at:ends.toISOString(),location_name:place||null,price_minor:Math.round((Number.isFinite(price)?price:0)*100),visibility:visibility,community_id:communityId,place_id:placeId,business_id:businessId});
       var ev=d&&d.event;
       if(ev&&ev.id&&sourceUrl&&typeof window.eventRaw==='function'){try{await window.eventRaw('set_location_url',{event_id:ev.id,location_url:sourceUrl})}catch(ignore){}}
       var invitedCount=0;
       var hasInviteTargets=(inviteTargets.user_ids||[]).length||(inviteTargets.community_ids||[]).length;
       if(ev&&ev.id&&hasInviteTargets&&(typeof window.inviteTargetsToEvent==='function'||typeof window.inviteCircleToEvent==='function')){try{var inviteFn=window.inviteTargetsToEvent||window.inviteCircleToEvent;var inviteResult=await inviteFn(ev.id,inviteTargets);invitedCount=(inviteResult.invited_ids||[]).length}catch(inviteErr){if(status){status.hidden=false;status.className='status';status.textContent='Событие создано. Часть приглашений не отправилась — можно повторить из карточки события.'}}}
       eventForm.dataset.createDirty='';
-      if(status)status.textContent=(visibility==='open'?'Событие опубликовано во «Вокруг»':'Событие создано по приглашению')+(invitedCount?' · позвали: '+invitedCount:'');
-      currentFlow=null;section.classList.remove('createFlowEvent');eventForm.hidden=true;shell.hidden=false;
+      if(status)status.textContent=((visibility==='open'||visibility==='public')?'Событие опубликовано во «Вокруг»':'Событие создано по приглашению')+(invitedCount?' · позвали: '+invitedCount:'');
+      currentFlow=null;section.classList.remove('createFlowEvent');eventForm.hidden=true;shell.hidden=false;if(businessId)window.LyaBusinessCreateContext=null;
       if(typeof window.loadEvents==='function'){try{await window.loadEvents()}catch(ignore){}}
-      if(visibility==='open'&&typeof window.loadAfisha==='function'){try{await window.loadAfisha()}catch(ignore){}}
+      if((visibility==='open'||visibility==='public')&&typeof window.loadAfisha==='function'){try{await window.loadAfisha()}catch(ignore){}}
       if(ev&&ev.id&&typeof window.openEventView==='function')window.openEventView(ev.id,'create');
       else if(typeof window.openView==='function')window.openView('calendar');
       resetEvent();
@@ -205,21 +212,45 @@
     finally{if(submit)submit.disabled=false}
   };
 
-  communityForm.onsubmit=function(e){
+  async function prepareCommunityCover(file){
+    if(!file)return null;
+    return new Promise(function(resolve,reject){
+      var src=URL.createObjectURL(file),img=new Image();
+      img.onload=function(){try{
+        var w=1200,h=900,scale=Math.max(w/img.naturalWidth,h/img.naturalHeight),sw=w/scale,sh=h/scale,sx=(img.naturalWidth-sw)/2,sy=(img.naturalHeight-sh)/2;
+        var canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;canvas.getContext('2d').drawImage(img,sx,sy,sw,sh,0,0,w,h);
+        URL.revokeObjectURL(src);resolve(canvas.toDataURL('image/jpeg',.82))
+      }catch(err){URL.revokeObjectURL(src);reject(err)}};
+      img.onerror=function(){URL.revokeObjectURL(src);reject(new Error('Не удалось прочитать обложку'))};img.src=src
+    })
+  }
+
+  communityForm.onsubmit=async function(e){
     e.preventDefault();
     if(!communityForm.reportValidity())return;
-    var status=communityForm.querySelector('.createCommunityStatus');
-    status.hidden=false;status.className='status createCommunityStatus';
-    status.textContent='Создаю сообщество…';
-    section.dispatchEvent(new CustomEvent('lya:create-community-submit',{bubbles:true,detail:{
-      name:(communityForm.querySelector('#community-name').value||'').trim(),
-      description:(communityForm.querySelector('#community-description').value||'').trim(),
-      access:(communityForm.querySelector('input[name="community-access"]:checked')||{}).value||'open',
-      chat_enabled:!!communityForm.querySelector('#community-chat').checked,
-      cover_file:coverInput&&coverInput.files?coverInput.files[0]||null:null
-    }}))
+    if(!window.LyaCommunityStore||typeof window.LyaCommunityStore.create!=='function'){alert('Сервис сообществ не загрузился. Обновите страницу.');return}
+    var status=communityForm.querySelector('.createCommunityStatus'),submit=communityForm.querySelector('button[type="submit"]'),businessContext=window.LyaBusinessCreateContext||null;
+    status.hidden=false;status.className='status createCommunityStatus';status.textContent='Создаю сообщество…';if(submit)submit.disabled=true;
+    try{
+      var coverFile=coverInput&&coverInput.files?coverInput.files[0]||null:null,coverData=coverFile?await prepareCommunityCover(coverFile):null;
+      var community=await window.LyaCommunityStore.create({
+        name:(communityForm.querySelector('#community-name').value||'').trim(),
+        description:(communityForm.querySelector('#community-description').value||'').trim(),
+        access:(communityForm.querySelector('input[name="community-access"]:checked')||{}).value||'open',
+        chat_enabled:!!communityForm.querySelector('#community-chat').checked,
+        cover_url:coverData,
+        business_id:businessContext&&businessContext.business_id||null
+      });
+      status.textContent='Сообщество создано';communityForm.dataset.createDirty='';
+      currentFlow=null;section.classList.remove('createFlowCommunity');communityForm.hidden=true;shell.hidden=false;
+      if(businessContext)window.LyaBusinessCreateContext=null;
+      document.dispatchEvent(new CustomEvent('vmeste-community-changed',{detail:{community:community}}));
+      resetCommunity();
+      if(community&&typeof window.openCommunityDetail==='function')window.openCommunityDetail(community.id,community)
+    }catch(err){status.hidden=false;status.className='status createCommunityStatus error';status.textContent=err&&err.message?err.message:'Не удалось создать сообщество'}
+    finally{if(submit)submit.disabled=false}
   };
 
-  document.querySelector('.nav[data-go="create"]')?.addEventListener('click',function(){setTimeout(function(){showLanding(true)},0)},true);
+  document.querySelector('.nav[data-go="create"]')?.addEventListener('click',function(){window.LyaBusinessCreateContext=null;setTimeout(function(){showLanding(true)},0)},true);
   showLanding(true);
 })();
