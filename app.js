@@ -8,7 +8,7 @@ const PENDING_INVITE_KEY='vmeste_pending_invite_v1';
 const TZ='Europe/Moscow';
 let session=loadSession();
 let account=null;
-let authMode='signup';
+let authMode='login';
 let recoveryMode=false;
 let calendarEvents=[];
 let calendarSuggestionCache=new Map();
@@ -140,7 +140,8 @@ async function api(action,payload={},needsAuth=true,retry=true){
 }
 
 function openView(name){
-  $$('.view').forEach(v=>v.classList.toggle('active',v.dataset.view===name));
+  if(name==='login'&&!recoveryMode)setAuthMode('login');
+  $('.view').forEach(v=>v.classList.toggle('active',v.dataset.view===name));
   $$('.nav').forEach(b=>b.classList.toggle('active',b.dataset.go===name));
   const bottom=$('#bottom-nav');
   bottom.style.display=(name==='profile'||name==='login')?'none':'grid';
@@ -178,11 +179,12 @@ function showStandardAuth(){
   $('#auth-tabs').hidden=false;$('#auth-form').hidden=false;$('#password-reset-request').hidden=true;$('#password-reset-new').hidden=true;$('#auth-title').textContent='Вход'
 }
 function setAuthMode(mode){
-  showStandardAuth();authMode=mode;
-  $('#signup-tab').classList.toggle('active',mode==='signup');$('#login-tab').classList.toggle('active',mode==='login');
-  $('#name-field').style.display=mode==='signup'?'grid':'none';$('#auth-name').required=mode==='signup';
-  $('#auth-submit').textContent=mode==='signup'?'Создать аккаунт':'Войти';
-  $('#forgot-password').hidden=mode!=='login';$('#auth-status').hidden=true
+  showStandardAuth();authMode=mode==='signup'?'signup':'login';
+  $('#signup-tab').classList.toggle('active',authMode==='signup');$('#login-tab').classList.toggle('active',authMode==='login');
+  $('#name-field').style.display=authMode==='signup'?'grid':'none';$('#auth-name').required=authMode==='signup';
+  $('#auth-title').textContent=authMode==='signup'?'Создать аккаунт':'Войти в ЛЯ';
+  $('#auth-submit').textContent=authMode==='signup'?'Создать аккаунт':'Войти';
+  $('#forgot-password').hidden=authMode!=='login';$('#auth-status').hidden=true
 }
 function showLoginWithEmail(email,message){
   openView('login');setAuthMode('login');if(email)$('#auth-email').value=email;
@@ -446,16 +448,23 @@ async function showPendingInvite(){
     clearPinConfig();openPasswordResetNew();return
   }
   const startedWithSession=!!session?.access_token;
+  if(!startedWithSession){
+    setAuthMode('login');
+    openView('home');
+  }
   if(startedWithSession&&pinMatchesSession()&&!pinIsUnlocked()){
     const unlocked=await showPinUnlockGate();
-    if(!unlocked){await loadEvents();renderCalendar();return}
+    if(!unlocked){openView('home');await loadEvents();renderCalendar();return}
   }
   const ok=await loadAccount();
   if(ok){
     await ensurePinSetup();
     if(document.querySelector('[data-view="login"].active'))openView('home')
   }else if(startedWithSession&&!session?.access_token){
-    showLoginWithEmail(loadPinConfig()?.email||'','Сессия закончилась. Войдите по почте и паролю — все данные аккаунта сохранены.')
+    const rememberedEmail=loadPinConfig()?.email||'';
+    setAuthMode('login');
+    if(rememberedEmail&&!$('#auth-email').value)$('#auth-email').value=rememberedEmail;
+    openView('home');
   }
   await loadEvents();renderCalendar();if(pendingInviteToken)await showPendingInvite()
 })();
