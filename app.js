@@ -180,7 +180,13 @@ function dayEventHtml(ev){
   return `<article class="calendarEvent"><div class="eventKind">${own?'МОЁ СОБЫТИЕ':pending?'МЕНЯ ПРИГЛАСИЛИ':'Я УЧАСТВУЮ'}</div><div class="calendarEventTop"><div><h3>${escapeHtml(ev.title)}</h3><p class="muted">${eventTime(ev.starts_at)}${ev.location_name?' · '+escapeHtml(ev.location_name):''} · ${eventPrice(ev)}</p></div><span class="tag">${eventBadge(ev)}</span></div><div class="calendarEventActions">${own?`<button class="smallPrimary invite-circle-button" data-event-id="${escapeHtml(ev.id)}">Позвать своих</button><button class="repeat invite-link-button" data-event-id="${escapeHtml(ev.id)}" data-event-title="${escapeHtml(ev.title)}">По ссылке</button>`:''}${pending?`<button class="smallPrimary invite-response" data-invitation-id="${escapeHtml(ev.invitation_id)}" data-response="accepted">Принять</button><button class="repeat invite-response" data-invitation-id="${escapeHtml(ev.invitation_id)}" data-response="declined">Отклонить</button>`:''}</div><div class="invite-area" id="invite-${escapeHtml(ev.id)}"></div></article>`;
 }
 function renderDayEvents(){
-  const root=$('#day-events');if(!root)return;$('#selected-date-title').textContent=fullDateLabel(selectedDateKey);const events=eventsForDate(selectedDateKey);root.innerHTML=events.length?events.map(dayEventHtml).join(''):'<div class="emptyDay">На этот день событий пока нет.</div>';bindCalendarActions();
+  const root=$('#day-events');if(!root)return;
+  $('#selected-date-title').textContent=fullDateLabel(selectedDateKey);
+  const events=eventsForDate(selectedDateKey);
+  const planned=events.length?events.map(dayEventHtml).join(''):'<div class="emptyDay">На этот день у вас пока ничего не запланировано.</div>';
+  const discover=selectedDateKey>=todayKey()?'<div class="calendarDiscover"><span class="ey">ЕСТЬ СВОБОДНОЕ ВРЕМЯ?</span><h3>Найти повод на этот день</h3><p>Посмотрите события именно на выбранную дату и сразу позовите своих.</p><button class="smallPrimary calendar-discover-button" data-date="'+escapeHtml(selectedDateKey)+'">Что можно сделать вместе</button></div>':'';
+  root.innerHTML=planned+discover;
+  bindCalendarActions();
 }
 function renderMonth(){
   const firstKey=`${calendarYear}-${pad(calendarMonth+1)}-01`;const firstOffset=weekdayIndex(firstKey);const currentDays=daysInMonth(calendarYear,calendarMonth);const prevMonth=calendarMonth===0?11:calendarMonth-1;const prevYear=calendarMonth===0?calendarYear-1:calendarYear;const prevDays=daysInMonth(prevYear,prevMonth);const cells=[];
@@ -215,6 +221,7 @@ function bindCalendarActions(){
   $('.invite-circle-button').forEach(button=>button.onclick=()=>{if(typeof window.openEventCircleInvitePicker==='function')window.openEventCircleInvitePicker(button.dataset.eventId);else openEventView(button.dataset.eventId,'calendar')});
   $('.invite-link-button').forEach(button=>button.onclick=()=>showInviteLink(button.dataset.eventId,button.dataset.eventTitle));
   $('.invite-response').forEach(button=>button.onclick=()=>respondInvitation(button.dataset.invitationId,button.dataset.response));
+  $('.calendar-discover-button').forEach(button=>button.onclick=()=>{if(typeof window.openAfishaForDate==='function')window.openAfishaForDate(button.dataset.date)});
 }
 async function showInviteLink(eventId,eventTitle){
   const area=document.getElementById('invite-'+eventId);if(!area)return;area.innerHTML='<div class="inviteBox">Создаю ссылку…</div>';
