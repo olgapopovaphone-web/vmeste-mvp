@@ -380,6 +380,34 @@
     var remove=o.querySelector('.profileV2MomentRemove');if(remove)remove.onclick=async function(){if(!confirm('Убрать этот момент из профиля? Хроника не изменится.'))return;remove.disabled=true;try{await momentRequest('remove_moment',{moment_id:m.id});close();await renderSelf()}catch(e){alert(e.message);remove.disabled=false}}
   }
 
+  function openWantInline(root,detail){
+    var current=root.querySelector('[data-block="status"]');if(!current)return;
+    var p=detail.profile||{},editor=document.createElement('section');
+    editor.className='profileV2Want profileV2WantInline';editor.dataset.block='status';
+    editor.innerHTML='<span class="profileV2Eyebrow">Сейчас хочу</span><form class="profileV2WantInlineForm"><input type="text" maxlength="180" autocomplete="off" placeholder="Например: на выставку в субботу" value="'+esc(p.want_text||'')+'"><button type="submit">OK</button></form><small>Напишите статус прямо здесь.</small><div class="profileV2WantInlineStatus" hidden></div>';
+    current.replaceWith(editor);
+    var form=editor.querySelector('form'),input=editor.querySelector('input'),button=editor.querySelector('button'),status=editor.querySelector('.profileV2WantInlineStatus');
+    setTimeout(function(){input.focus();input.setSelectionRange(input.value.length,input.value.length)},0);
+    form.onsubmit=async function(e){
+      e.preventDefault();
+      var value=String(input.value||'').trim();
+      button.disabled=true;input.disabled=true;button.textContent='…';status.hidden=true;
+      try{
+        var apiFn=window.api||(typeof api==='function'?api:null);
+        if(typeof apiFn!=='function')throw new Error('Сервис профиля не загрузился. Обновите страницу.');
+        var data=await apiFn('update_profile',{want_text:value||null,want_expires_at:null});
+        detail.profile=Object.assign({},detail.profile||{},data.profile||{},{want_text:value||null,want_expires_at:null});
+        if(typeof account!=='undefined'&&account)account.profile=Object.assign({},account.profile||{},data.profile||{});
+        var y=window.scrollY;
+        root.innerHTML=profileMarkup(detail,true);bindProfile(root,detail,true,null);
+        requestAnimationFrame(function(){window.scrollTo(0,y)})
+      }catch(err){
+        status.hidden=false;status.textContent=(err&&err.message)||'Не удалось сохранить статус';status.classList.add('error');
+        button.disabled=false;input.disabled=false;button.textContent='OK';input.focus()
+      }
+    };
+  }
+
   function bindProfile(root,detail,isSelf,closePublic){
     var p=detail.profile||{};
     var back=root.querySelector('[data-profile-back]');if(back)back.onclick=function(){if(closePublic)closePublic();else if(typeof openView==='function')openView('home')};
@@ -393,7 +421,7 @@
     }
     var editNotifications=root.querySelector('[data-profile-edit-notifications]');if(editNotifications)editNotifications.onclick=function(){openEditor(detail,false);setTimeout(function(){document.querySelector('[data-notification-settings]')?.scrollIntoView({behavior:'smooth',block:'start'})},140)};
     var openNotifications=root.querySelector('[data-profile-open-notifications]');if(openNotifications)openNotifications.onclick=function(e){if(typeof window.openLyaNotifications==='function')window.openLyaNotifications(e)};
-    var ew=root.querySelector('[data-profile-edit-want]');if(ew)ew.onclick=function(){openEditor(detail,true)};
+    var ew=root.querySelector('[data-profile-edit-want]');if(ew)ew.onclick=function(){openWantInline(root,detail)};
     root.querySelectorAll('[data-profile-event]').forEach(function(b){b.onclick=function(){if(closePublic)closePublic();if(typeof openEventView==='function')openEventView(b.dataset.profileEvent,'profile')}});
     root.querySelectorAll('[data-profile-community]').forEach(function(b){b.onclick=function(){var c=mergeCommunities(detail,isSelf).find(function(x){return String(x.id)===String(b.dataset.profileCommunity)});if(closePublic)closePublic();if(c&&typeof window.openCommunityDetail==='function')window.openCommunityDetail(c.id,c)}});
     root.querySelectorAll('[data-profile-place]').forEach(function(b){b.onclick=function(){if(closePublic)closePublic();if(typeof window.openPlaceView==='function')window.openPlaceView(b.dataset.profilePlace)}});

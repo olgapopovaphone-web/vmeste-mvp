@@ -58,6 +58,14 @@
 .profileV2WantEmpty{display:block;width:calc(100% - 34px);text-align:left}
 .profileV2WantEmpty small{display:block;color:var(--mut);font-size:9.5px;line-height:1.4}
 .profileV2WantEmpty>button{display:none}
+.profileV2WantInline{display:block}
+.profileV2WantInlineForm{display:grid;grid-template-columns:minmax(0,1fr) 44px;gap:7px;margin-top:9px}
+.profileV2WantInlineForm input{min-width:0;height:36px;border:1px solid rgba(17,17,17,.14);border-radius:999px;background:#fff;color:#111;padding:0 13px;font-size:11px;outline:none}
+.profileV2WantInlineForm input:focus{border-color:rgba(17,17,17,.42)}
+.profileV2WantInlineForm button{height:36px;border:0;border-radius:999px;background:#111;color:#fff;font-size:10px;font-weight:800;padding:0}
+.profileV2WantInlineForm button:disabled{opacity:.55}
+.profileV2WantInline>small{display:block;margin-top:7px;color:var(--mut);font-size:8.5px}
+.profileV2WantInlineStatus{margin-top:7px;font-size:9px;color:#8A332A}
 
 /* circle */
 .profileV2CircleSection{margin-top:23px;padding:19px 17px;border-block:1px solid var(--line);background:rgba(255,255,255,.18)}
