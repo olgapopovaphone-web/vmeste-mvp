@@ -212,20 +212,43 @@
     finally{if(submit)submit.disabled=false}
   };
 
-  communityForm.onsubmit=function(e){
+  async function prepareCommunityCover(file){
+    if(!file)return null;
+    return new Promise(function(resolve,reject){
+      var src=URL.createObjectURL(file),img=new Image();
+      img.onload=function(){try{
+        var w=1200,h=900,scale=Math.max(w/img.naturalWidth,h/img.naturalHeight),sw=w/scale,sh=h/scale,sx=(img.naturalWidth-sw)/2,sy=(img.naturalHeight-sh)/2;
+        var canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;canvas.getContext('2d').drawImage(img,sx,sy,sw,sh,0,0,w,h);
+        URL.revokeObjectURL(src);resolve(canvas.toDataURL('image/jpeg',.82))
+      }catch(err){URL.revokeObjectURL(src);reject(err)}};
+      img.onerror=function(){URL.revokeObjectURL(src);reject(new Error('Не удалось прочитать обложку'))};img.src=src
+    })
+  }
+
+  communityForm.onsubmit=async function(e){
     e.preventDefault();
     if(!communityForm.reportValidity())return;
-    var status=communityForm.querySelector('.createCommunityStatus');
-    status.hidden=false;status.className='status createCommunityStatus';
-    status.textContent='Создаю сообщество…';
-    section.dispatchEvent(new CustomEvent('lya:create-community-submit',{bubbles:true,detail:{
-      name:(communityForm.querySelector('#community-name').value||'').trim(),
-      description:(communityForm.querySelector('#community-description').value||'').trim(),
-      access:(communityForm.querySelector('input[name="community-access"]:checked')||{}).value||'open',
-      chat_enabled:!!communityForm.querySelector('#community-chat').checked,
-      cover_file:coverInput&&coverInput.files?coverInput.files[0]||null:null,
-      business_id:window.LyaBusinessCreateContext&&window.LyaBusinessCreateContext.business_id||null
-    }}))
+    if(!window.LyaCommunityStore||typeof window.LyaCommunityStore.create!=='function'){alert('Сервис сообществ не загрузился. Обновите страницу.');return}
+    var status=communityForm.querySelector('.createCommunityStatus'),submit=communityForm.querySelector('button[type="submit"]'),businessContext=window.LyaBusinessCreateContext||null;
+    status.hidden=false;status.className='status createCommunityStatus';status.textContent='Создаю сообщество…';if(submit)submit.disabled=true;
+    try{
+      var coverFile=coverInput&&coverInput.files?coverInput.files[0]||null:null,coverData=coverFile?await prepareCommunityCover(coverFile):null;
+      var community=await window.LyaCommunityStore.create({
+        name:(communityForm.querySelector('#community-name').value||'').trim(),
+        description:(communityForm.querySelector('#community-description').value||'').trim(),
+        access:(communityForm.querySelector('input[name="community-access"]:checked')||{}).value||'open',
+        chat_enabled:!!communityForm.querySelector('#community-chat').checked,
+        cover_url:coverData,
+        business_id:businessContext&&businessContext.business_id||null
+      });
+      status.textContent='Сообщество создано';communityForm.dataset.createDirty='';
+      currentFlow=null;section.classList.remove('createFlowCommunity');communityForm.hidden=true;shell.hidden=false;
+      if(businessContext)window.LyaBusinessCreateContext=null;
+      document.dispatchEvent(new CustomEvent('vmeste-community-changed',{detail:{community:community}}));
+      resetCommunity();
+      if(community&&typeof window.openCommunityDetail==='function')window.openCommunityDetail(community.id,community)
+    }catch(err){status.hidden=false;status.className='status createCommunityStatus error';status.textContent=err&&err.message?err.message:'Не удалось создать сообщество'}
+    finally{if(submit)submit.disabled=false}
   };
 
   document.querySelector('.nav[data-go="create"]')?.addEventListener('click',function(){window.LyaBusinessCreateContext=null;setTimeout(function(){showLanding(true)},0)},true);
