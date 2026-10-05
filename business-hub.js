@@ -196,7 +196,7 @@
   window.openLyaBusinessPublicProfile=openPublicBusiness;
 
   async function load(){
-    var r=root();if(!r)return;state.loading=true;r.innerHTML='<div class="businessLoading">Собираю ЛЯ Business…</div>';
+    var r=root();if(!r)return;setProfileMode('business');state.loading=true;r.innerHTML='<div class="businessLoading">Собираю ЛЯ Business…</div>';
     try{state.data=await call('get_dashboard',{});render()}catch(e){r.innerHTML='<div class="businessOnboarding"><div class="businessModeRow">'+modeSwitch('business')+'</div><div class="businessStatus error">'+esc(e.message)+'</div></div>';var personal=r.querySelector('[data-profile-mode="personal"]');if(personal)personal.onclick=openPersonalProfile}finally{state.loading=false}
   }
   async function ensureBusinessContext(){
