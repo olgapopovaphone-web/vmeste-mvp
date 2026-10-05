@@ -323,8 +323,8 @@
   };
 
   document.querySelector('.nav[data-go="create"]')?.addEventListener('click',function(){window.LyaBusinessCreateContext=null;setTimeout(function(){showLanding(true)},0)},true);
-  document.addEventListener('vmeste-session-refreshed',function(){if(shell&&!shell.hidden)renderCreateActions()});
-  document.addEventListener('lya-profile-mode-changed',function(){window.LyaBusinessCreateContext=null;if(shell&&!shell.hidden)renderCreateActions()});
+  document.addEventListener('vmeste-session-refreshed',function(){if(shell)renderCreateActions()});
+  document.addEventListener('lya-profile-mode-changed',function(){window.LyaBusinessCreateContext=null;if(currentFlow)showLanding(true);else if(shell)renderCreateActions()});
   renderCreateActions();
   showLanding(true);
 })();
