@@ -21,6 +21,8 @@
   async function mount(){var home=document.querySelector('[data-view="home"]');if(!home)return;var tabs=home.querySelector('.homeDiscoveryTabs');if(tabs)tabs.remove();var f=home.querySelector('[data-af-filter="for-me"]');if(f)f.textContent='Рекомендации';if(!document.getElementById('home-discovery-root')){var r=document.createElement('div');r.id='home-discovery-root';r.className='homeDiscoveryRoot';home.insertBefore(r,document.getElementById('afisha-root'))}if(home.dataset.discoveryResetBound!=='1'){home.dataset.discoveryResetBound='1';var nav=document.querySelector('.nav[data-go="home"]');if(nav)nav.addEventListener('click',function(){if(mode!=='for-me'){mode='for-me';render()}})}await load(false);render()}
   window.refreshVmestePlaces=function(){return load(true).then(render)};
   window.addEventListener('click',function(e){var home=e.target&&e.target.closest&&e.target.closest('.nav[data-go="home"]');if(!home)return;if(mode!=='for-me'){mode='for-me';setTimeout(function(){render();window.scrollTo(0,0)},0)}},true);
+  document.addEventListener('lya:calendar-date-afisha',function(){mode='events';render();window.scrollTo(0,0)});
+  document.addEventListener('lya:calendar-date-afisha-clear',function(){mode='for-me';render()});
   document.addEventListener('vmeste-home-reset',function(){if(mode!=='for-me'){mode='for-me';render();window.scrollTo(0,0)}});
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mount);else mount();setTimeout(function(){load(true).then(render)},1500)
 })();
