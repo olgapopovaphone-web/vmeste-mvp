@@ -123,3 +123,10 @@ button.businessMiniCard{border:0;text-align:left;color:inherit}
 .businessLegalChoice[hidden]{display:none}
 .businessVerifiedMark.neutral{background:#f2f0eb;color:#6c706c}
 .businessVerifyForm .businessSheetIntro{margin-bottom:2px}
+
+.businessServicePayment{display:grid;gap:13px;padding:14px;border-radius:16px;background:#f7f6f3;border:1px solid #e3dfd8}
+.businessServicePayment[hidden]{display:none}
+.businessServicePayment .businessHint{margin-top:-2px}
+.businessPublicOffer .businessPublicPayment{margin:8px 0 10px;padding:8px 10px;border-radius:10px;background:#f7f6f3;color:#555b55;font:700 9px/1.35 Manrope,Arial,sans-serif}
+.businessPublicOfferActions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:6px}
+.businessPublicOfferActions a,.businessPublicOfferActions button{white-space:nowrap}
