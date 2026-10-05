@@ -51,7 +51,7 @@
   function kindLabel(k){return({restaurant:'Ресторан',bar:'Бар',cafe:'Кафе',museum:'Музей',gallery:'Галерея',spa:'SPA',bathhouse:'Бани / сауна',sports_space:'Спорт',karaoke:'Караоке',theatre:'Театр',club:'Клуб',park:'Парк',shop:'Магазин',salon:'Салон',studio:'Студия',venue:'Место'})[k]||'Место'}
   function offeringKind(k){return k==='product'?'Товар':k==='service'?'Услуга':'Предложение'}
   function actionLabel(x){return x==='book'?'Забронировать':x==='signup'?'Записаться':'Купить'}
-  function paymentLabel(x){return x==='onsite'?'На месте':x==='online'?'Онлайн':x==='contact'?'Уточнить при записи':''}
+  function paymentLabel(x){return x==='onsite'?'На месте':x==='online'?'В ЛЯ':x==='contact'?'Уточнить при записи':''}
   function verification(v){return v==='verified'?'Реквизиты подтверждены':v==='pending'?'Реквизиты на проверке':v==='rejected'?'Нужно уточнить реквизиты':'Реквизиты не подтверждены'}
   function subscription(b){if(isOrganization(b))return 'Организация Free';return b.subscription_tier==='business'&&b.subscription_status==='active'?'ЛЯ Business':'ЛЯ Business · Free'}
   function closeOverlay(o){if(o)o.remove()}
@@ -258,8 +258,10 @@
   function openPaymentChoice(offering){
     if(!offering)return;
     var selected='';
-    var o=sheet('Оплата','<div class="businessPaymentChoice"><span class="ey">СПОСОБ ОПЛАТЫ</span><h3>'+esc(offering.title||'Услуга')+'</h3><strong>'+rub(offering.price_minor)+'</strong><div class="businessPaymentMethods"><button type="button" data-pay-choice="card"><span class="businessPayIcon">▭</span><span><b>Банковской картой</b><small>Данные карты — на стороне платёжного сервиса</small></span><i>›</i></button><button type="button" data-pay-choice="sbp"><span class="businessPayIcon">СБП</span><span><b>СБП</b><small>Оплата через приложение банка</small></span><i>›</i></button></div><p class="businessPaymentNote">Сейчас это выбор способа оплаты в интерфейсе. Подключение платёжного провайдера сделаем отдельно.</p></div>','paymentChoice');
-    o.querySelectorAll('[data-pay-choice]').forEach(function(btn){btn.onclick=function(){selected=btn.dataset.payChoice||'';o.querySelectorAll('[data-pay-choice]').forEach(function(x){x.classList.toggle('selected',x===btn)})}});
+    var o=sheet('Оплата','<div class="businessPaymentChoice"><span class="ey">ОПЛАТА В ЛЯ</span><h3>'+esc(offering.title||'Услуга')+'</h3><strong>'+rub(offering.price_minor)+'</strong><p class="businessPaymentIntro">Выберите удобный способ.</p><div class="businessPaymentMethods"><button type="button" data-pay-choice="card"><span class="businessPayIcon">▭</span><span><b>Банковской картой</b><small>Оплата картой через защищённый платёжный сервис</small></span><i>›</i></button><button type="button" data-pay-choice="sbp"><span class="businessPayIcon">СБП</span><span><b>СБП</b><small>Оплата через приложение вашего банка</small></span><i>›</i></button></div><button type="button" class="businessPrimary businessPaymentContinue" data-pay-continue disabled>Продолжить к оплате</button><div class="businessStatus businessPaymentDemo" hidden></div><p class="businessPaymentNote">Тестовый шаг: способ оплаты можно выбрать, но списания денег пока нет. Платёжного провайдера подключим отдельно.</p></div>','paymentChoice');
+    var next=o.querySelector('[data-pay-continue]'),status=o.querySelector('.businessPaymentDemo');
+    o.querySelectorAll('[data-pay-choice]').forEach(function(btn){btn.onclick=function(){selected=btn.dataset.payChoice||'';o.querySelectorAll('[data-pay-choice]').forEach(function(x){x.classList.toggle('selected',x===btn)});next.disabled=!selected;status.hidden=true}});
+    next.onclick=function(){if(!selected)return;status.hidden=false;status.className='businessStatus businessPaymentDemo';status.textContent=(selected==='sbp'?'СБП':'Банковская карта')+' выбрано. На следующем этапе здесь откроется реальная оплата.'};
     return o
   }
 
