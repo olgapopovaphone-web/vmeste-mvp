@@ -13,3 +13,6 @@
   line-height:1.45;
   max-height:4.35em;
 }
+
+/* DATE CONTEXT FROM CALENDAR · 2026-10-05 */
+.afishaDateContext{background:#fff;border:1px solid #e2ddd5;border-radius:20px;padding:16px;margin-bottom:16px}.afishaDateContext h2{font-size:24px;line-height:1.05;margin:5px 0 5px}.afishaDateContext p{margin:0;color:#77776f;font-size:11px}.afishaDateContextActions{display:flex;gap:8px;margin-top:13px}.afishaDateContextActions button{border:1px solid #d8d1c6;background:transparent;border-radius:12px;padding:10px 12px;font-size:10px}.afishaDateContextActions button:first-child{background:#171815;color:#fff;border-color:#171815}
