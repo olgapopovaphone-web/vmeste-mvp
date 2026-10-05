@@ -201,10 +201,10 @@
       var hasInviteTargets=(inviteTargets.user_ids||[]).length||(inviteTargets.community_ids||[]).length;
       if(ev&&ev.id&&hasInviteTargets&&(typeof window.inviteTargetsToEvent==='function'||typeof window.inviteCircleToEvent==='function')){try{var inviteFn=window.inviteTargetsToEvent||window.inviteCircleToEvent;var inviteResult=await inviteFn(ev.id,inviteTargets);invitedCount=(inviteResult.invited_ids||[]).length}catch(inviteErr){if(status){status.hidden=false;status.className='status';status.textContent='Событие создано. Часть приглашений не отправилась — можно повторить из карточки события.'}}}
       eventForm.dataset.createDirty='';
-      if(status)status.textContent=(visibility==='open'?'Событие опубликовано во «Вокруг»':'Событие создано по приглашению')+(invitedCount?' · позвали: '+invitedCount:'');
-      currentFlow=null;section.classList.remove('createFlowEvent');eventForm.hidden=true;shell.hidden=false;
+      if(status)status.textContent=((visibility==='open'||visibility==='public')?'Событие опубликовано во «Вокруг»':'Событие создано по приглашению')+(invitedCount?' · позвали: '+invitedCount:'');
+      currentFlow=null;section.classList.remove('createFlowEvent');eventForm.hidden=true;shell.hidden=false;if(businessId)window.LyaBusinessCreateContext=null;
       if(typeof window.loadEvents==='function'){try{await window.loadEvents()}catch(ignore){}}
-      if(visibility==='open'&&typeof window.loadAfisha==='function'){try{await window.loadAfisha()}catch(ignore){}}
+      if((visibility==='open'||visibility==='public')&&typeof window.loadAfisha==='function'){try{await window.loadAfisha()}catch(ignore){}}
       if(ev&&ev.id&&typeof window.openEventView==='function')window.openEventView(ev.id,'create');
       else if(typeof window.openView==='function')window.openView('calendar');
       resetEvent();
