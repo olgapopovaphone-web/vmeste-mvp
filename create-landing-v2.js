@@ -62,19 +62,20 @@
   }
   function renderCreateActions(){
     var grid=shell.querySelector('.createActionGrid'),banner=shell.querySelector('[data-create-banner-slot]');if(!grid)return;
-    var business=isBusinessCreateMode();
+    var business=isBusinessCreateMode(),state=window.LyaBusinessState||{},org=state.account_kind==='organization';
+    if(!state.account_kind){try{org=localStorage.getItem('lya_professional_kind_v1')==='organization'}catch(e){}}
     shell.classList.toggle('createBusinessLanding',business);
     grid.classList.toggle('businessExpanded',business);
     if(business){
-      var name=window.LyaBusinessState&&window.LyaBusinessState.name||'вашего бизнеса';
-      if(banner)banner.innerHTML='<div class="createBusinessBanner"><span>ЛЯ BUSINESS</span><h2>Создать для '+esc(name)+'</h2><p>Публикуйте то, что приводит людей к действию.</p></div>';
+      var name=state.name||(org?'вашей организации':'вашего бизнеса');
+      if(banner)banner.innerHTML='<div class="createBusinessBanner"><span>'+(org?'ОРГАНИЗАЦИЯ FREE':'ЛЯ BUSINESS')+'</span><h2>Создать для '+esc(name)+'</h2><p>'+(org?'События, места и сообщества без коммерческих функций.':'Публикуйте то, что приводит людей к действию.')+'</p></div>';
       grid.innerHTML=
         actionCard('event','Событие','Опубликовать повод и собрать людей')+
-        actionCard('place','Место','Добавить магазин, студию или площадку')+
-        actionCard('community','Сообщество','Собрать людей вокруг бизнеса или идеи')+
-        actionCard('product','Товар','Добавить товар с прямой ссылкой на покупку')+
-        actionCard('service','Услуга','Добавить запись или бронирование')+
-        actionCard('offer','Предложение','Опубликовать специальное предложение');
+        actionCard('place','Место','Добавить точку или площадку')+
+        actionCard('community','Сообщество','Собрать людей вокруг проекта или идеи')+
+        (!org?actionCard('product','Товар','Добавить товар с прямой ссылкой на покупку'):'')+
+        (!org?actionCard('service','Услуга','Добавить запись или бронирование'):'')+
+        (!org?actionCard('offer','Предложение','Опубликовать специальное предложение'):'');
     }else{
       if(banner)banner.innerHTML='';
       grid.innerHTML=
@@ -85,7 +86,7 @@
   async function getBusinessCreateContext(){
     if(typeof window.ensureLyaBusinessContext!=='function')throw new Error('ЛЯ Business ещё загружается. Обновите страницу.');
     var b=await window.ensureLyaBusinessContext();
-    window.LyaBusinessCreateContext={business_id:b.id,business_name:b.name};
+    window.LyaBusinessCreateContext={business_id:b.id,business_name:b.name,account_kind:b.account_kind,legal_status:b.legal_status};
     return b
   }
 
@@ -194,7 +195,7 @@
     document.querySelector('.chronicleRepeatContext')?.remove();
     document.querySelector('.businessCreateContext')?.remove();
     if(opts.business_id){
-      var biz=document.createElement('div');biz.className='businessCreateContext';biz.innerHTML='<span>СОБЫТИЕ БИЗНЕСА</span><strong>'+esc(opts.business_name||'ЛЯ Business')+'</strong><small>'+(opts.visibility==='public'?'После создания событие будет публичным.':'До подтверждения бизнеса событие будет открытым для участников ЛЯ.')+'</small>';eventForm.insertAdjacentElement('beforebegin',biz)
+      var biz=document.createElement('div');biz.className='businessCreateContext';biz.innerHTML='<span>СОБЫТИЕ ПРОЕКТА</span><strong>'+esc(opts.business_name||(opts.account_kind==='organization'?'Организация':'ЛЯ Business'))+'</strong><small>'+(opts.visibility==='public'?'После создания событие будет публичным.':'До подтверждения реквизитов событие будет открытым для участников ЛЯ.')+'</small>';eventForm.insertAdjacentElement('beforebegin',biz)
     }
     if(opts.community_id){
       var box=document.createElement('div');box.className='communityCreateContext';box.innerHTML='<span>СОБЫТИЕ ДЛЯ СООБЩЕСТВА</span><strong>'+esc(opts.community_name||'Сообщество')+'</strong><small>Сообщество уже выбрано. Событие будет связано с ним автоматически.</small>';eventForm.insertAdjacentElement('beforebegin',box)
@@ -217,7 +218,7 @@
     try{
       var b=await getBusinessCreateContext();
       if(action==='event'){
-        window.openLyaCreateEvent({business_id:b.id,business_name:b.name,visibility:b.verification_status==='verified'?'public':'open'});
+        window.openLyaCreateEvent({business_id:b.id,business_name:b.name,account_kind:b.account_kind,visibility:(b.verification_status==='verified'||(b.account_kind==='organization'&&b.legal_status==='informal'))?'public':'open'});
       }else if(action==='community'){
         showCommunity();
       }else if(action==='place'){
