@@ -257,6 +257,7 @@ $('#password-reset-request-form').onsubmit=async function(e){
   catch(err){status.className='status error';status.textContent=err.message}
   finally{btn.disabled=false}
 };
+$('#reset-new-restart').onclick=function(){clearSession();recoveryMode=false;openPasswordResetRequest()};
 $('#password-reset-new-form').onsubmit=async function(e){
   e.preventDefault();const a=$('#reset-new-password').value,b=$('#reset-new-password-2').value,status=$('#reset-new-status'),btn=e.target.querySelector('button[type="submit"]');
   status.hidden=false;status.className='status';
