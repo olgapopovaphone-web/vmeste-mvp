@@ -26,3 +26,17 @@ button.businessPublicEvent{display:block;width:100%;border:0;text-align:left}
 button.businessPublicCommunity{display:block;width:100%;border:0;background:transparent;text-align:left}
 
 button.businessMiniCard{border:0;text-align:left;color:inherit}
+
+.lyaProfileModeSwitch{display:grid;grid-template-columns:1fr 1fr;gap:3px;padding:3px;border:1px solid #ddd9d2;border-radius:999px;background:#eeebe5;min-width:150px}
+.lyaProfileModeSwitch button{border:0;border-radius:999px;background:transparent;color:#676b67;padding:8px 14px;font:800 9px/1 Manrope,Arial,sans-serif;white-space:nowrap}
+.lyaProfileModeSwitch button.active{background:#171815;color:#fff}
+.profileV2ModeWrap{padding:0 18px 8px;background:#FAFAF8}
+.profileV2ModeWrap .lyaProfileModeSwitch{width:100%}
+.businessModeRow{display:flex;justify-content:flex-start}
+.businessOnboarding .businessModeRow+.ey{margin-top:28px}
+.businessHeroTop .lyaProfileModeSwitch{min-width:146px;background:#e9e6df}
+@media(max-width:370px){
+  .businessHeroTop{align-items:flex-start;gap:10px}
+  .businessHeroTop .lyaProfileModeSwitch{min-width:132px}
+  .lyaProfileModeSwitch button{padding-left:10px;padding-right:10px}
+}
