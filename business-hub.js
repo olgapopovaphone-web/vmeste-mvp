@@ -51,7 +51,7 @@
   function kindLabel(k){return({restaurant:'Ресторан',bar:'Бар',cafe:'Кафе',museum:'Музей',gallery:'Галерея',spa:'SPA',bathhouse:'Бани / сауна',sports_space:'Спорт',karaoke:'Караоке',theatre:'Театр',club:'Клуб',park:'Парк',shop:'Магазин',salon:'Салон',studio:'Студия',venue:'Место'})[k]||'Место'}
   function offeringKind(k){return k==='product'?'Товар':k==='service'?'Услуга':'Предложение'}
   function actionLabel(x){return x==='book'?'Забронировать':x==='signup'?'Записаться':'Купить'}
-  function paymentLabel(x){return x==='onsite'?'На месте':x==='online_link'?'По ссылке':x==='contact'?'Уточнить при записи':''}
+  function paymentLabel(x){return x==='onsite'?'На месте':x==='online'?'Онлайн':x==='contact'?'Уточнить при записи':''}
   function verification(v){return v==='verified'?'Реквизиты подтверждены':v==='pending'?'Реквизиты на проверке':v==='rejected'?'Нужно уточнить реквизиты':'Реквизиты не подтверждены'}
   function subscription(b){if(isOrganization(b))return 'Организация Free';return b.subscription_tier==='business'&&b.subscription_status==='active'?'ЛЯ Business':'ЛЯ Business · Free'}
   function closeOverlay(o){if(o)o.remove()}
@@ -230,24 +230,17 @@
     var b=state.data&&state.data.business;if(!b)return;if(isOrganization(b)){alert('Организация Free работает без коммерческих предложений.');return;}
     var initial=['product','service','offer'].includes(String(presetKind||''))?String(presetKind):'offer';
     var title=initial==='product'?'Новый товар':initial==='service'?'Новая услуга':'Новое предложение';
-    var o=sheet(title,'<form class="businessForm"><label>Тип<select name="kind"><option value="product">Товар</option><option value="service">Услуга</option><option value="offer">Предложение</option></select></label><label>Название<input name="title" maxlength="140" required></label><label>Описание<textarea name="description" rows="4" maxlength="1200"></textarea></label><label>Цена, ₽<input name="price" type="number" min="0" step="1" value="0"></label><label>Действие<select name="action_type"><option value="buy">Купить</option><option value="book">Забронировать</option><option value="signup">Записаться</option></select></label><div class="businessServicePayment" data-service-payment hidden><label>Способ оплаты<select name="payment_method"><option value="onsite">На месте</option><option value="online_link">По ссылке</option><option value="contact">Уточнить при записи</option></select></label><label data-payment-url hidden>Ссылка на оплату<input name="payment_url" type="url" placeholder="https://"></label><p class="businessHint">Для оплаты по ссылке укажите страницу платёжного сервиса или банка. ЛЯ не запрашивает и не хранит данные карты покупателя.</p></div><label><span data-external-label>Прямая ссылка на товар / сайт</span><input name="external_url" type="url" placeholder="https://"></label><p class="businessHint" data-offering-hint>Для товара ссылка обязательна и должна вести прямо на конкретный товар.</p><div class="businessStatus" hidden></div><button class="businessPrimary" type="submit">Опубликовать</button></form>');
-    var f=o.querySelector('form'),kind=f.elements.kind,action=f.elements.action_type,payment=f.elements.payment_method,price=f.elements.price;
-    var payBlock=f.querySelector('[data-service-payment]'),payUrlRow=f.querySelector('[data-payment-url]'),externalLabel=f.querySelector('[data-external-label]'),hint=f.querySelector('[data-offering-hint]');
+    var o=sheet(title,'<form class="businessForm"><label>Тип<select name="kind"><option value="product">Товар</option><option value="service">Услуга</option><option value="offer">Предложение</option></select></label><label>Название<input name="title" maxlength="140" required></label><label>Описание<textarea name="description" rows="4" maxlength="1200"></textarea></label><label>Цена, ₽<input name="price" type="number" min="0" step="1" value="0"></label><label>Действие<select name="action_type"><option value="buy">Купить</option><option value="book">Забронировать</option><option value="signup">Записаться</option></select></label><div class="businessServicePayment" data-service-payment hidden><label>Оплата<select name="payment_method"><option value="online">Онлайн</option><option value="onsite">На месте</option><option value="contact">Уточнить при записи</option></select></label><p class="businessHint">Для онлайн-оплаты клиент увидит выбор: банковская карта или СБП. Платёжный провайдер подключим отдельным этапом.</p></div><label><span data-external-label>Прямая ссылка на товар / сайт</span><input name="external_url" type="url" placeholder="https://"></label><p class="businessHint" data-offering-hint>Для товара ссылка обязательна и должна вести прямо на конкретный товар.</p><div class="businessStatus" hidden></div><button class="businessPrimary" type="submit">Опубликовать</button></form>');
+    var f=o.querySelector('form'),kind=f.elements.kind,action=f.elements.action_type,payment=f.elements.payment_method;
+    var payBlock=f.querySelector('[data-service-payment]'),externalLabel=f.querySelector('[data-external-label]'),hint=f.querySelector('[data-offering-hint]');
     kind.value=initial;action.value=initial==='service'?'book':'buy';
-    function syncPayment(){
-      var service=kind.value==='service';payBlock.hidden=!service;
-      if(service){
-        payUrlRow.hidden=payment.value!=='online_link';
-        price.disabled=false;
-      }else{payUrlRow.hidden=true;price.disabled=false}
-    }
     function syncKind(){
-      if(kind.value==='service'){action.value='book';externalLabel.textContent='Ссылка на запись / сайт';hint.textContent='Ссылка на запись необязательна. Способ оплаты указывается отдельно.'}
+      var service=kind.value==='service';payBlock.hidden=!service;
+      if(service){action.value='book';externalLabel.textContent='Ссылка на запись / сайт';hint.textContent='Ссылка на запись необязательна. Оплата настраивается отдельно.'}
       else if(kind.value==='product'){action.value='buy';externalLabel.textContent='Прямая ссылка на товар';hint.textContent='Для товара ссылка обязательна и должна вести прямо на конкретный товар.'}
       else{action.value='buy';externalLabel.textContent='Ссылка на предложение / сайт';hint.textContent='Добавьте ссылку, если действие происходит вне ЛЯ.'}
-      syncPayment()
     }
-    kind.onchange=syncKind;payment.onchange=syncPayment;syncKind();
+    kind.onchange=syncKind;syncKind();
     f.onsubmit=async function(e){
       e.preventDefault();var fd=new FormData(f),st=f.querySelector('.businessStatus'),btn=f.querySelector('button[type="submit"]');btn.disabled=true;st.hidden=false;st.className='businessStatus';st.textContent='Публикую…';
       try{
@@ -255,12 +248,19 @@
           business_id:b.id,kind:fd.get('kind'),title:fd.get('title'),description:fd.get('description'),
           price_minor:Math.round(Number(fd.get('price')||0)*100),action_type:fd.get('action_type'),external_url:fd.get('external_url'),
           payment_method:fd.get('kind')==='service'?fd.get('payment_method'):null,
-          payment_url:fd.get('kind')==='service'?fd.get('payment_url'):null,
           status:'published'
         });
         closeOverlay(o);await load()
       }catch(err){st.className='businessStatus error';st.textContent=err.message;btn.disabled=false}
     }
+  }
+
+  function openPaymentChoice(offering){
+    if(!offering)return;
+    var selected='';
+    var o=sheet('Оплата','<div class="businessPaymentChoice"><span class="ey">СПОСОБ ОПЛАТЫ</span><h3>'+esc(offering.title||'Услуга')+'</h3><strong>'+rub(offering.price_minor)+'</strong><div class="businessPaymentMethods"><button type="button" data-pay-choice="card"><span class="businessPayIcon">▭</span><span><b>Банковской картой</b><small>Visa · Mastercard · МИР</small></span><i>›</i></button><button type="button" data-pay-choice="sbp"><span class="businessPayIcon">СБП</span><span><b>СБП</b><small>Оплата через приложение банка</small></span><i>›</i></button></div><p class="businessPaymentNote">Сейчас это выбор способа оплаты в интерфейсе. Подключение платёжного провайдера сделаем отдельно.</p></div>','paymentChoice');
+    o.querySelectorAll('[data-pay-choice]').forEach(function(btn){btn.onclick=function(){selected=btn.dataset.payChoice||'';o.querySelectorAll('[data-pay-choice]').forEach(function(x){x.classList.toggle('selected',x===btn)})}});
+    return o
   }
 
   function businessDateKey(v){
@@ -393,7 +393,7 @@
     var x=d.business,org=isOrganization(x),events=d.events||[],offers=org?[]:(d.offerings||[]),places=d.places||[],comms=d.communities||[];
     return '<article class="businessPublic"><div class="businessPublicCover '+(x.cover_url?'hasPhoto':'')+'"'+(x.cover_url?' style="background-image:url(&quot;'+esc(x.cover_url)+'&quot;)"':'')+'></div><div class="businessPublicHead"><span class="businessPublicLogo">'+esc((x.name||'Б').slice(0,1).toUpperCase())+'</span><h1>'+esc(x.name)+'</h1><p>'+esc(x.category||(org?'Организация':'Бизнес'))+(x.city?' · '+esc(x.city):'')+'</p>'+(x.verification_status==='verified'?'<span class="businessVerifiedMark">Реквизиты подтверждены</span>':x.legal_status==='informal'?'<span class="businessVerifiedMark neutral">Общественная инициатива</span>':'')+'<div class="businessPublicLinks">'+(x.website_url?'<a href="'+esc(x.website_url)+'" target="_blank" rel="noopener">Сайт ↗</a>':'')+'</div></div>'+
       '<section><span class="ey">СКОРО</span><h2>События</h2>'+(events.length?events.map(function(e){return '<button type="button" class="businessPublicEvent" data-business-event="'+esc(e.id)+'"><b>'+esc(e.title)+'</b><small>'+new Intl.DateTimeFormat('ru-RU',{day:'numeric',month:'long',hour:'2-digit',minute:'2-digit',timeZone:'Europe/Moscow'}).format(new Date(e.starts_at))+'</small></button>'}).join(''):'<div class="businessEmpty">Пока нет опубликованных событий.</div>')+'</section>'+
-      (!org?'<section><span class="ey">ПРЕДЛОЖЕНИЯ</span><h2>Что можно сделать</h2>'+(offers.length?offers.map(function(y){return '<article class="businessPublicOffer"><span>'+esc(offeringKind(y.kind))+'</span><h3>'+esc(y.title)+'</h3><p>'+esc(y.description||'')+'</p>'+(y.kind==='service'&&y.payment_method?'<p class="businessPublicPayment">Оплата: '+esc(paymentLabel(y.payment_method))+'</p>':'')+'<div><b>'+rub(y.price_minor)+'</b><span class="businessPublicOfferActions">'+(y.external_url?'<a href="'+esc(y.external_url)+'" target="_blank" rel="noopener">'+esc(actionLabel(y.action_type))+' ↗</a>':'<button type="button" disabled>'+esc(actionLabel(y.action_type))+'</button>')+(y.kind==='service'&&y.payment_method==='online_link'&&y.payment_url?'<a href="'+esc(y.payment_url)+'" target="_blank" rel="noopener">Оплатить ↗</a>':'')+'</span></div></article>'}).join(''):'<div class="businessEmpty">Предложений пока нет.</div>')+'</section>':'')+
+      (!org?'<section><span class="ey">ПРЕДЛОЖЕНИЯ</span><h2>Что можно сделать</h2>'+(offers.length?offers.map(function(y){return '<article class="businessPublicOffer"><span>'+esc(offeringKind(y.kind))+'</span><h3>'+esc(y.title)+'</h3><p>'+esc(y.description||'')+'</p>'+(y.kind==='service'&&y.payment_method?'<p class="businessPublicPayment">Оплата: '+esc(paymentLabel(y.payment_method))+'</p>':'')+'<div><b>'+rub(y.price_minor)+'</b><span class="businessPublicOfferActions">'+(y.external_url?'<a href="'+esc(y.external_url)+'" target="_blank" rel="noopener">'+esc(actionLabel(y.action_type))+' ↗</a>':'<button type="button" disabled>'+esc(actionLabel(y.action_type))+'</button>')+(y.kind==='service'&&y.payment_method==='online'?'<button type="button" data-business-payment="'+esc(y.id)+'">Оплатить</button>':'')+'</span></div></article>'}).join(''):'<div class="businessEmpty">Предложений пока нет.</div>')+'</section>':'')+
       '<section><span class="ey">МЕСТА</span><h2>Где нас найти</h2>'+placeRows(places)+'</section>'+
       (comms.length?'<section><span class="ey">СООБЩЕСТВА</span><h2>Наши сообщества</h2>'+comms.map(function(c){return '<button type="button" class="businessPublicCommunity" data-business-community="'+esc(c.id)+'"><b>'+esc(c.name)+'</b><p>'+esc(c.description||'')+'</p></button>'}).join('')+'</section>':'')+
     '</article>'
@@ -409,6 +409,7 @@
       body.querySelectorAll('[data-business-place]').forEach(function(x){x.onclick=function(){closeOverlay(o);if(typeof window.openPlaceView==='function')window.openPlaceView(x.dataset.businessPlace)}});
       body.querySelectorAll('[data-business-event]').forEach(function(x){x.onclick=function(){closeOverlay(o);if(typeof window.openEventView==='function')window.openEventView(x.dataset.businessEvent,'business')}});
       body.querySelectorAll('[data-business-community]').forEach(function(x){x.onclick=function(){var c=(d.communities||[]).find(function(y){return String(y.id)===String(x.dataset.businessCommunity)});closeOverlay(o);if(c&&typeof window.openCommunityDetail==='function')window.openCommunityDetail(c.id,c)}});
+      body.querySelectorAll('[data-business-payment]').forEach(function(x){x.onclick=function(){var offer=(d.offerings||[]).find(function(y){return String(y.id)===String(x.dataset.businessPayment)});closeOverlay(o);openPaymentChoice(offer)}});
     }catch(e){o.querySelector('.businessSheetBody').innerHTML='<div class="businessStatus error">'+esc(e.message)+'</div>'}
   }
   async function openPreview(){var b=state.data&&state.data.business;if(b)openPublicBusiness(b.id)}
