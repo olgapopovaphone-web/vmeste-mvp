@@ -186,12 +186,13 @@
       var sourceUrl=((eventForm.querySelector('#event-source')||{}).value||'').trim();
       var communityId=eventForm.dataset.communityId||null;
       var placeId=eventForm.dataset.placeId||null;
-      var inviteIds=typeof window.getPendingEventCircleInviteIds==='function'?window.getPendingEventCircleInviteIds():[];
+      var inviteTargets=typeof window.getPendingEventInviteTargets==='function'?window.getPendingEventInviteTargets():{user_ids:(typeof window.getPendingEventCircleInviteIds==='function'?window.getPendingEventCircleInviteIds():[]),community_ids:[]};
       var d=await api('create_event',{title:title,starts_at:starts.toISOString(),ends_at:ends.toISOString(),location_name:place||null,price_minor:Math.round((Number.isFinite(price)?price:0)*100),visibility:visibility,community_id:communityId,place_id:placeId});
       var ev=d&&d.event;
       if(ev&&ev.id&&sourceUrl&&typeof window.eventRaw==='function'){try{await window.eventRaw('set_location_url',{event_id:ev.id,location_url:sourceUrl})}catch(ignore){}}
       var invitedCount=0;
-      if(ev&&ev.id&&inviteIds.length&&typeof window.inviteCircleToEvent==='function'){try{var inviteResult=await window.inviteCircleToEvent(ev.id,inviteIds);invitedCount=(inviteResult.invited_ids||inviteIds).length}catch(inviteErr){if(status){status.hidden=false;status.className='status';status.textContent='Событие создано. Часть приглашений не отправилась — можно повторить из карточки события.'}}}
+      var hasInviteTargets=(inviteTargets.user_ids||[]).length||(inviteTargets.community_ids||[]).length;
+      if(ev&&ev.id&&hasInviteTargets&&(typeof window.inviteTargetsToEvent==='function'||typeof window.inviteCircleToEvent==='function')){try{var inviteFn=window.inviteTargetsToEvent||window.inviteCircleToEvent;var inviteResult=await inviteFn(ev.id,inviteTargets);invitedCount=(inviteResult.invited_ids||[]).length}catch(inviteErr){if(status){status.hidden=false;status.className='status';status.textContent='Событие создано. Часть приглашений не отправилась — можно повторить из карточки события.'}}}
       eventForm.dataset.createDirty='';
       if(status)status.textContent=(visibility==='open'?'Событие опубликовано во «Вокруг»':'Событие создано по приглашению')+(invitedCount?' · позвали: '+invitedCount:'');
       currentFlow=null;section.classList.remove('createFlowEvent');eventForm.hidden=true;shell.hidden=false;
