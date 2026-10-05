@@ -20,3 +20,7 @@
 
 .profileV2BusinessEntry{padding:0 18px 18px}.profileV2BusinessEntry>button{width:100%;border:1px solid #e2ddd5;background:#f7f6f3;border-radius:18px;padding:16px;display:flex;justify-content:space-between;align-items:center;text-align:left}.profileV2BusinessEntry span{display:grid;gap:3px}.profileV2BusinessEntry small{font:800 8px Manrope,Arial,sans-serif;letter-spacing:1.2px;color:#8b7168}.profileV2BusinessEntry b{font:800 16px Manrope,Arial,sans-serif}.profileV2BusinessEntry em{font:500 9px Manrope,Arial,sans-serif;color:#747974;font-style:normal}.profileV2BusinessEntry i{font:500 20px Manrope,Arial,sans-serif;font-style:normal}
 .businessCreateContext{margin:0 0 12px;padding:13px 15px;border-radius:15px;background:#f2f0eb;border:1px solid #e1ddd5}.businessCreateContext span,.businessCreateContext strong,.businessCreateContext small{display:block}.businessCreateContext span{font:800 8px Manrope,Arial,sans-serif;letter-spacing:1px;color:#8a6d61}.businessCreateContext strong{font:800 13px Manrope,Arial,sans-serif;margin-top:4px}.businessCreateContext small{font:500 9px/1.4 Manrope,Arial,sans-serif;color:#747974;margin-top:3px}
+
+.businessVerifiedMark{display:inline-block;margin-top:8px;padding:5px 8px;border-radius:999px;background:#eef3eb;color:#425846;font:800 8px Manrope,Arial,sans-serif}
+button.businessPublicEvent{display:block;width:100%;border:0;text-align:left}
+button.businessPublicCommunity{display:block;width:100%;border:0;background:transparent;text-align:left}
