@@ -3,6 +3,7 @@
   var CIRCLE_API='https://nmeoakrpafxhpdrplsuo.supabase.co/functions/v1/vmeste-circle-api';
   var AVATAR_API='https://nmeoakrpafxhpdrplsuo.supabase.co/functions/v1/vmeste-avatar-api';
   var INVITE_API='https://nmeoakrpafxhpdrplsuo.supabase.co/functions/v1/vmeste-invite-api';
+  var MOMENT_API='https://nmeoakrpafxhpdrplsuo.supabase.co/functions/v1/vmeste-chronicle-api';
   var GROUPS_KEY='vmeste_groups_proto_v1';
   var interestsList=['Кино','Музыка','Театр','Юмор','Выставки','С детьми','Прогулки','Еда','Спорт','Искусство','Книги','Путешествия'];
   var notificationMeta=[
@@ -49,6 +50,12 @@
   async function inviteToEvent(eventId,userId){
     var t=token();var opts={method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'invite_from_circle',event_id:eventId,user_ids:[userId]})};var r=window.lyaAuthedFetch?await window.lyaAuthedFetch(INVITE_API,opts,true):await fetch(INVITE_API,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+t},body:opts.body});
     var d=await r.json().catch(function(){return{error:'Некорректный ответ сервера'}});if(!r.ok)throw new Error(d.error||'Не удалось отправить приглашение');return d
+  }
+  async function momentRequest(action,payload){
+    var t=token();if(!t)throw new Error('Нужно войти в аккаунт');
+    var opts={method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.assign({action:action},payload||{}))};
+    var r=window.lyaAuthedFetch?await window.lyaAuthedFetch(MOMENT_API,opts,true):await fetch(MOMENT_API,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+t},body:opts.body});
+    var d=await r.json().catch(function(){return{error:'Некорректный ответ сервера'}});if(!r.ok)throw new Error(d.error||'Не удалось выполнить действие');return d
   }
   function fmtDate(value){try{return new Intl.DateTimeFormat('ru-RU',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit',timeZone:'Europe/Moscow'}).format(new Date(value))}catch(e){return''}}
   function avatarHtml(p,cls){var name=p.display_name||'У',c=cls||'';if(p.avatar_url)return '<span class="profileV2Avatar '+c+' has-photo" style="background-image:url(\''+esc(String(p.avatar_url).replace(/'/g,'%27'))+'\')"></span>';return '<span class="profileV2Avatar '+c+'">'+esc(name.trim().slice(0,1).toUpperCase()||'У')+'</span>'}
@@ -179,13 +186,14 @@
       (rest.length?'<div class="profileV2PlaceMini">'+rest.map(function(p){return '<button type="button" data-profile-place="'+esc(p.id)+'">'+esc(p.name)+'</button>'}).join('')+'</div>':'')+
     '</section>'
   }
+  function momentCover(m){return m&&m.url?m.url:(m&&Array.isArray(m.media)&&m.media[0]?m.media[0].url:'')}
   function momentsBlock(detail,isSelf){
     var items=detail.moments||[];
     if(!items.length&&!isSelf)return'';
-    if(!items.length)return '<section class="profileV2Section" data-block="chronicle"><div class="profileV2Title"><div><span class="profileV2Eyebrow">Хроника</span><h2>Недавние моменты</h2></div></div><div class="profileV2Empty">Выберите фотографии из завершённых событий.</div></section>';
-    return '<section class="profileV2Section" data-block="chronicle"><div class="profileV2Title"><div><span class="profileV2Eyebrow">Хроника</span><h2>Недавние моменты</h2></div><span class="profileV2Count">'+items.length+'</span></div><div class="profileV2Moments">'+
-      '<button type="button" class="big" data-profile-moment="0"><img src="'+esc(items[0].url)+'" alt=""></button>'+
-      (items[1]?'<button type="button" data-profile-moment="1"><img src="'+esc(items[1].url)+'" alt=""></button>':'<span></span>')+
+    if(!items.length)return '<section class="profileV2Section" data-block="chronicle"><div class="profileV2Title"><div><span class="profileV2Eyebrow">Хроника</span><h2>Мои моменты</h2></div></div><div class="profileV2Empty">Поделитесь моментом из Хроники — сама Хроника останется приватной.</div></section>';
+    return '<section class="profileV2Section" data-block="chronicle"><div class="profileV2Title"><div><span class="profileV2Eyebrow">Хроника</span><h2>Мои моменты</h2></div><span class="profileV2Count">'+items.length+'</span></div><div class="profileV2Moments">'+
+      '<button type="button" class="big" data-profile-moment="0"><img src="'+esc(momentCover(items[0]))+'" alt=""></button>'+
+      (items[1]?'<button type="button" data-profile-moment="1"><img src="'+esc(momentCover(items[1]))+'" alt=""></button>':'<span></span>')+
       (items.length>2?'<button type="button" class="more" data-profile-moment="2"><b>+'+(items.length-2)+'</b><span>момента</span></button>':'<span class="more"><b>1</b><span>момент</span></span>')+
     '</div></section>'
   }
@@ -278,7 +286,7 @@
         '<section class="profileV2EditorGroup" data-notification-settings><div class="profileV2EditorTitleRow"><h3>Уведомления</h3><button type="button" class="profileV2SoundTest" data-test-notification-sound>Проверить звук</button></div>'+notificationEditor(p.notification_settings||{})+'<button type="button" class="profileV2OpenNotifications" data-open-all-notifications>Открыть все уведомления</button></section>'+
         '<section class="profileV2EditorGroup"><h3>Что показывать другим</h3>'+visibilityEditor(p.profile_visibility||{})+'</section>'+
         '<section class="profileV2EditorGroup"><h3>Мои места · до 5</h3>'+placesEditor(detail)+'</section>'+
-        '<section class="profileV2EditorGroup"><h3>Моменты · до 6</h3>'+momentsEditor(detail)+'</section>'+
+
         '<section class="profileV2EditorGroup"><h3>Закрепить</h3>'+pinEditor(detail)+'</section>'+
         '<div class="profileV2EditActions"><button type="button" class="profileV2RemoveCover" '+(p.cover_url?'':'hidden')+'>Вернуть стандартный фон</button><button class="profileV2Save" type="submit">Сохранить</button></div>'+
         '<div class="profileV2EditStatus" hidden></div>'+
@@ -288,7 +296,7 @@
     function limitChecked(selector,max){
       o.querySelectorAll(selector).forEach(function(input){input.onchange=function(){var checked=o.querySelectorAll(selector+':checked');if(checked.length>max){input.checked=false;alert('Можно выбрать не больше '+max)}}})
     }
-    limitChecked('.profileV2InterestEditor input',7);limitChecked('[data-place-pick]',5);limitChecked('[data-moment-pick]',6);
+    limitChecked('.profileV2InterestEditor input',7);limitChecked('[data-place-pick]',5);
     var soundTest=o.querySelector('[data-test-notification-sound]');if(soundTest)soundTest.onclick=function(){if(typeof window.playLyaNotificationSound==='function')window.playLyaNotificationSound(true);else alert('Звук уведомлений ещё загружается. Закройте настройки и откройте снова.')};
     var allNotifications=o.querySelector('[data-open-all-notifications]');if(allNotifications)allNotifications.onclick=function(e){if(typeof window.openLyaNotifications==='function'){close();window.openLyaNotifications(e)}};
 
@@ -316,7 +324,6 @@
 
         var selectedInterests=Array.from(form.querySelectorAll('.profileV2InterestEditor input:checked')).map(function(x){return x.value});
         var selectedPlaces=Array.from(form.querySelectorAll('[data-place-pick]:checked')).map(function(x){return x.value});
-        var selectedMoments=Array.from(form.querySelectorAll('[data-moment-pick]:checked')).map(function(x){return x.value});
         var visibility={};form.querySelectorAll('[data-visibility]').forEach(function(x){visibility[x.dataset.visibility]=x.checked===true});
         var notifications={};form.querySelectorAll('[data-notification]').forEach(function(x){notifications[x.dataset.notification]=x.checked===true});
         var pin=String(pinInput.value||''),parts=pin?pin.split(':'):[],pinType=parts.shift()||null,pinId=parts.join(':')||null;
@@ -333,7 +340,6 @@
           profile_visibility:visibility,
           notification_settings:notifications,
           profile_place_ids:selectedPlaces,
-          profile_moment_ids:selectedMoments,
           pinned_type:pinType,
           pinned_id:pinId
         });
@@ -362,8 +368,16 @@
     Promise.resolve(window.api('list_events')).then(function(d){var now=Date.now(),events=(d.events||[]).filter(function(e){return !['finished','cancelled'].includes(e.status)&&Date.parse(e.ends_at||e.starts_at)>now});body.innerHTML=events.length?events.map(function(e){return '<button type="button" class="profileV2InviteEvent" data-invite-event="'+esc(e.id)+'"><span>'+esc(fmtDate(e.starts_at))+'</span><strong>'+esc(e.title)+'</strong></button>'}).join(''):'<div class="profileV2Empty">Нет будущих событий, куда можно пригласить.</div>';body.querySelectorAll('[data-invite-event]').forEach(function(b){b.onclick=async function(){b.disabled=true;try{await inviteToEvent(b.dataset.inviteEvent,person.id);b.textContent='Приглашение отправлено ✓'}catch(e){alert(e.message);b.disabled=false}}})}).catch(function(e){body.innerHTML='<div class="profileV2Empty">'+esc(e.message)+'</div>'})
   }
 
-  function openMomentViewer(items,index){
-    var m=items[index];if(!m)return;document.querySelector('.profileV2MomentOverlay')?.remove();var o=document.createElement('div');o.className='profileV2MomentOverlay';o.innerHTML='<button type="button">×</button><img src="'+esc(m.url)+'" alt="">';document.body.appendChild(o);o.onclick=function(e){if(e.target===o||e.target.tagName==='BUTTON')o.remove()}
+  function openMomentViewer(items,index,isSelf){
+    var m=items[index];if(!m)return;document.querySelector('.profileV2MomentOverlay')?.remove();
+    var media=Array.isArray(m.media)&&m.media.length?m.media:(m.url?[{url:m.url}]:[]);
+    if(!media.length)return;
+    var o=document.createElement('div');o.className='profileV2MomentOverlay';
+    o.innerHTML='<div class="profileV2MomentSheet"><button type="button" class="profileV2MomentClose">×</button><div class="profileV2MomentMedia">'+media.map(function(x){return '<img src="'+esc(x.url)+'" alt="">'}).join('')+'</div>'+(m.caption?'<p class="profileV2MomentCaption">'+esc(m.caption)+'</p>':'')+(isSelf?'<button type="button" class="profileV2MomentRemove">Убрать из «Моих моментов»</button>':'')+'</div>';
+    document.body.appendChild(o);
+    function close(){o.remove()}
+    o.onclick=function(e){if(e.target===o)close()};o.querySelector('.profileV2MomentClose').onclick=close;
+    var remove=o.querySelector('.profileV2MomentRemove');if(remove)remove.onclick=async function(){if(!confirm('Убрать этот момент из профиля? Хроника не изменится.'))return;remove.disabled=true;try{await momentRequest('remove_moment',{moment_id:m.id});close();await renderSelf()}catch(e){alert(e.message);remove.disabled=false}}
   }
 
   function bindProfile(root,detail,isSelf,closePublic){
@@ -384,7 +398,7 @@
     root.querySelectorAll('[data-profile-community]').forEach(function(b){b.onclick=function(){var c=mergeCommunities(detail,isSelf).find(function(x){return String(x.id)===String(b.dataset.profileCommunity)});if(closePublic)closePublic();if(c&&typeof window.openCommunityDetail==='function')window.openCommunityDetail(c.id,c)}});
     root.querySelectorAll('[data-profile-place]').forEach(function(b){b.onclick=function(){if(closePublic)closePublic();if(typeof window.openPlaceView==='function')window.openPlaceView(b.dataset.profilePlace)}});
     root.querySelectorAll('[data-profile-person]').forEach(function(b){b.onclick=function(){var x=(detail.circle_people||[]).find(function(q){return String(q.id)===String(b.dataset.profilePerson)});if(x)openPublicProfile(x)}});
-    root.querySelectorAll('[data-profile-moment]').forEach(function(b){b.onclick=function(){openMomentViewer(detail.moments||[],Number(b.dataset.profileMoment))}});
+    root.querySelectorAll('[data-profile-moment]').forEach(function(b){b.onclick=function(){openMomentViewer(detail.moments||[],Number(b.dataset.profileMoment),isSelf)}});
 
     var pin=root.querySelector('[data-profile-pinned]');if(pin)pin.onclick=function(){var x=detail.pinned;if(!x)return;if(x.type==='event'&&typeof openEventView==='function'){if(closePublic)closePublic();openEventView(x.id,'profile')}else if(x.type==='place'&&typeof window.openPlaceView==='function'){if(closePublic)closePublic();window.openPlaceView(x.id)}else if(x.type==='community'&&typeof window.openCommunityDetail==='function'){if(closePublic)closePublic();window.openCommunityDetail(x.id,x)}};
 
@@ -445,6 +459,8 @@
     var o=document.createElement('div');o.className='profileV2PublicOverlay';o.innerHTML='<div class="profileV2Loading">Открываю профиль…</div>';document.body.appendChild(o);var close=function(){o.remove()};
     try{var detail=await getDetail(seed.id);o.innerHTML=profileMarkup(detail,false);bindProfile(o,detail,false,close)}catch(e){o.innerHTML='<div class="profileV2PublicError"><button type="button">×</button><p>'+esc(e.message)+'</p></div>';o.querySelector('button').onclick=close}
   }
+
+  document.addEventListener('lya-profile-moment-shared',function(){var root=document.getElementById('profile-root');if(root&&document.querySelector('[data-view="profile"]')?.classList.contains('active'))renderSelf()});
 
   window.openLyaPublicProfileV2=openPublicProfile;
   window.openLyaPersonProfile=openPublicProfile;
