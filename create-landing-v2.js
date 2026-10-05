@@ -42,7 +42,10 @@
   section.insertBefore(shell,oldChoice);
 
   function isBusinessCreateMode(){
-    try{return !!((typeof account!=='undefined'&&account&&account.profile&&account.profile.account_type==='business')||window.LyaBusinessState)}catch(e){return !!window.LyaBusinessState}
+    try{
+      if(typeof window.getLyaProfileMode==='function')return window.getLyaProfileMode()==='business';
+      return localStorage.getItem('lya_profile_mode_v1')==='business'
+    }catch(e){return false}
   }
   function actionIcon(type){
     var icons={
@@ -321,6 +324,7 @@
 
   document.querySelector('.nav[data-go="create"]')?.addEventListener('click',function(){window.LyaBusinessCreateContext=null;setTimeout(function(){showLanding(true)},0)},true);
   document.addEventListener('vmeste-session-refreshed',function(){if(shell&&!shell.hidden)renderCreateActions()});
+  document.addEventListener('lya-profile-mode-changed',function(){window.LyaBusinessCreateContext=null;if(shell&&!shell.hidden)renderCreateActions()});
   renderCreateActions();
   showLanding(true);
 })();
