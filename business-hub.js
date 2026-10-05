@@ -142,9 +142,13 @@
     btn.onclick=search;input.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();search()}})
   }
 
-  function openOffering(){
-    var b=state.data.business,o=sheet('Новое предложение','<form class="businessForm"><label>Тип<select name="kind"><option value="product">Товар</option><option value="service">Услуга</option><option value="offer">Предложение</option></select></label><label>Название<input name="title" maxlength="140" required></label><label>Описание<textarea name="description" rows="4" maxlength="1200"></textarea></label><label>Цена, ₽<input name="price" type="number" min="0" step="1" value="0"></label><label>Действие<select name="action_type"><option value="buy">Купить</option><option value="book">Забронировать</option><option value="signup">Записаться</option></select></label><label>Прямая ссылка на товар / сайт<input name="external_url" type="url" placeholder="https://"></label><p class="businessHint">Для товара ссылка обязательна и должна вести прямо на конкретный товар. Услуги позже сможем закрывать оплатой внутри ЛЯ.</p><div class="businessStatus" hidden></div><button class="businessPrimary" type="submit">Опубликовать</button></form>');
+  function openOffering(presetKind){
+    var b=state.data&&state.data.business;if(!b)return;
+    var initial=['product','service','offer'].includes(String(presetKind||''))?String(presetKind):'offer';
+    var title=initial==='product'?'Новый товар':initial==='service'?'Новая услуга':'Новое предложение';
+    var o=sheet(title,'<form class="businessForm"><label>Тип<select name="kind"><option value="product">Товар</option><option value="service">Услуга</option><option value="offer">Предложение</option></select></label><label>Название<input name="title" maxlength="140" required></label><label>Описание<textarea name="description" rows="4" maxlength="1200"></textarea></label><label>Цена, ₽<input name="price" type="number" min="0" step="1" value="0"></label><label>Действие<select name="action_type"><option value="buy">Купить</option><option value="book">Забронировать</option><option value="signup">Записаться</option></select></label><label>Прямая ссылка на товар / сайт<input name="external_url" type="url" placeholder="https://"></label><p class="businessHint">Для товара ссылка обязательна и должна вести прямо на конкретный товар. Услуги позже сможем закрывать оплатой внутри ЛЯ.</p><div class="businessStatus" hidden></div><button class="businessPrimary" type="submit">Опубликовать</button></form>');
     var f=o.querySelector('form'),kind=f.elements.kind,action=f.elements.action_type;
+    kind.value=initial;action.value=initial==='service'?'book':'buy';
     kind.onchange=function(){if(kind.value==='service')action.value='book';else action.value='buy'};
     f.onsubmit=async function(e){e.preventDefault();var fd=new FormData(f),st=f.querySelector('.businessStatus'),btn=f.querySelector('button[type="submit"]');btn.disabled=true;st.hidden=false;st.className='businessStatus';st.textContent='Публикую…';try{await call('create_offering',{business_id:b.id,kind:fd.get('kind'),title:fd.get('title'),description:fd.get('description'),price_minor:Math.round(Number(fd.get('price')||0)*100),action_type:fd.get('action_type'),external_url:fd.get('external_url'),status:'published'});closeOverlay(o);await load()}catch(err){st.className='businessStatus error';st.textContent=err.message;btn.disabled=false}}
   }
@@ -177,6 +181,19 @@
     var r=root();if(!r)return;state.loading=true;r.innerHTML='<div class="businessLoading">Собираю ЛЯ Business…</div>';
     try{state.data=await call('get_dashboard',{});render()}catch(e){r.innerHTML='<div class="businessOnboarding"><button type="button" class="businessBack" data-business-back>← Профиль</button><div class="businessStatus error">'+esc(e.message)+'</div></div>';r.querySelector('[data-business-back]').onclick=function(){openView('profile')}}finally{state.loading=false}
   }
+  async function ensureBusinessContext(){
+    if(state.data&&state.data.business)return state.data.business;
+    if(!token())throw new Error('Нужно войти в аккаунт');
+    state.data=await call('get_dashboard',{});
+    if(!state.data||!state.data.business)throw new Error('Сначала создайте бизнес-профиль');
+    var b=state.data.business;
+    window.LyaBusinessState={id:b.id,name:b.name,verification_status:b.verification_status,subscription_tier:b.subscription_tier,subscription_status:b.subscription_status};
+    return b
+  }
+  window.ensureLyaBusinessContext=ensureBusinessContext;
+  window.openLyaBusinessCreatePlace=async function(){await ensureBusinessContext();openCreatePlace()};
+  window.openLyaBusinessClaimPlace=async function(){await ensureBusinessContext();openClaimPlace()};
+  window.openLyaBusinessCreateOffering=async function(kind){await ensureBusinessContext();openOffering(kind)};
   window.openLyaBusinessHub=function(){if(!token()){openView('login');return}openView('business');load()};
   window.refreshLyaBusinessHub=load;
 })();

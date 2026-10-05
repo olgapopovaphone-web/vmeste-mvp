@@ -41,6 +41,51 @@
     </div>';
   section.insertBefore(shell,oldChoice);
 
+  function isBusinessCreateMode(){
+    try{return !!((typeof account!=='undefined'&&account&&account.profile&&account.profile.account_type==='business')||window.LyaBusinessState)}catch(e){return !!window.LyaBusinessState}
+  }
+  function actionIcon(type){
+    var icons={
+      event:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5.5" width="17" height="15" rx="3"></rect><path d="M7.5 3.5v4M16.5 3.5v4M3.5 10h17"></path></svg>',
+      community:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="9" r="3"></circle><circle cx="17" cy="10" r="2.4"></circle><path d="M3.5 20a5.5 5.5 0 0 1 11 0M14.5 16a4.5 4.5 0 0 1 6 4"></path></svg>',
+      place:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s6-5.2 6-11a6 6 0 1 0-12 0c0 5.8 6 11 6 11z"></path><circle cx="12" cy="10" r="2"></circle></svg>',
+      product:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h14l-1 12H6L5 8z"></path><path d="M9 8V6a3 3 0 0 1 6 0v2"></path></svg>',
+      service:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h16M12 4v16"></path><circle cx="12" cy="12" r="8"></circle></svg>',
+      offer:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5V4h3.5L20 16.5 16.5 20 4 7.5z"></path><circle cx="7" cy="7" r="1"></circle></svg>'
+    };return icons[type]||icons.event
+  }
+  function actionCard(type,title,copy){
+    return '<button type="button" class="createActionCard" data-create-action="'+type+'"><span class="createActionIcon">'+actionIcon(type)+'</span><span class="createActionCopy"><strong>'+title+'</strong><span>'+copy+'</span></span><span class="createActionArrow">→</span></button>'
+  }
+  function renderCreateActions(){
+    var grid=shell.querySelector('.createActionGrid'),banner=shell.querySelector('[data-create-banner-slot]');if(!grid)return;
+    var business=isBusinessCreateMode();
+    shell.classList.toggle('createBusinessLanding',business);
+    grid.classList.toggle('businessExpanded',business);
+    if(business){
+      var name=window.LyaBusinessState&&window.LyaBusinessState.name||'вашего бизнеса';
+      if(banner)banner.innerHTML='<div class="createBusinessBanner"><span>ЛЯ BUSINESS</span><h2>Создать для '+esc(name)+'</h2><p>Публикуйте то, что приводит людей к действию.</p></div>';
+      grid.innerHTML=
+        actionCard('event','Событие','Опубликовать повод и собрать людей')+
+        actionCard('place','Место','Добавить магазин, студию или площадку')+
+        actionCard('community','Сообщество','Собрать людей вокруг бизнеса или идеи')+
+        actionCard('product','Товар','Добавить товар с прямой ссылкой на покупку')+
+        actionCard('service','Услуга','Добавить запись или бронирование')+
+        actionCard('offer','Предложение','Опубликовать специальное предложение');
+    }else{
+      if(banner)banner.innerHTML='';
+      grid.innerHTML=
+        actionCard('event','Событие','Создайте повод и позовите своих')+
+        actionCard('community','Сообщество','Люди вокруг общего интереса, идеи или дела');
+    }
+  }
+  async function getBusinessCreateContext(){
+    if(typeof window.ensureLyaBusinessContext!=='function')throw new Error('ЛЯ Business ещё загружается. Обновите страницу.');
+    var b=await window.ensureLyaBusinessContext();
+    window.LyaBusinessCreateContext={business_id:b.id,business_name:b.name};
+    return b
+  }
+
   var legacyEy=eventForm.querySelector(':scope > .ey');
   var legacyTitle=eventForm.querySelector(':scope > h3');
   if(legacyEy)legacyEy.classList.add('createLegacyHeading');
@@ -110,7 +155,7 @@
     if(currentFlow==='community')resetCommunity();
     currentFlow=null;
     section.classList.remove('createFlowEvent','createFlowCommunity');
-    eventForm.hidden=true;communityForm.hidden=true;shell.hidden=false;
+    eventForm.hidden=true;communityForm.hidden=true;shell.hidden=false;renderCreateActions();
     window.scrollTo(0,0);return true
   }
   function requireLogin(){if(typeof window.openView==='function')window.openView('login');else document.querySelector('[data-view="login"]')?.classList.add('active')}
@@ -157,8 +202,31 @@
     setTimeout(function(){eventForm.scrollIntoView({behavior:'smooth',block:'start'});if(opts.inviteOwn&&typeof window.openCreateCircleInvitePicker==='function')window.openCreateCircleInvitePicker()},80)
   };
 
-  shell.querySelector('[data-create-action="event"]').onclick=showEvent;
-  shell.querySelector('[data-create-action="community"]').onclick=showCommunity;
+  shell.addEventListener('click',async function(e){
+    var btn=e.target&&e.target.closest&&e.target.closest('[data-create-action]');if(!btn)return;
+    var action=btn.dataset.createAction;
+    if(!isBusinessCreateMode()){
+      if(action==='event')showEvent();
+      else if(action==='community')showCommunity();
+      return
+    }
+    btn.disabled=true;
+    try{
+      var b=await getBusinessCreateContext();
+      if(action==='event'){
+        window.openLyaCreateEvent({business_id:b.id,business_name:b.name,visibility:b.verification_status==='verified'?'public':'open'});
+      }else if(action==='community'){
+        showCommunity();
+      }else if(action==='place'){
+        window.LyaBusinessCreateContext=null;
+        if(typeof window.openLyaBusinessCreatePlace==='function')await window.openLyaBusinessCreatePlace();
+      }else if(['product','service','offer'].includes(action)){
+        window.LyaBusinessCreateContext=null;
+        if(typeof window.openLyaBusinessCreateOffering==='function')await window.openLyaBusinessCreateOffering(action);
+      }
+    }catch(err){alert(err&&err.message?err.message:'Не удалось открыть создание')}
+    finally{btn.disabled=false}
+  });
   section.querySelectorAll('[data-create-close]').forEach(function(btn){btn.onclick=function(){showLanding(false)}});
 
   var coverInput=communityForm.querySelector('#community-cover');
@@ -252,5 +320,7 @@
   };
 
   document.querySelector('.nav[data-go="create"]')?.addEventListener('click',function(){window.LyaBusinessCreateContext=null;setTimeout(function(){showLanding(true)},0)},true);
+  document.addEventListener('vmeste-session-refreshed',function(){if(shell&&!shell.hidden)renderCreateActions()});
+  renderCreateActions();
   showLanding(true);
 })();
