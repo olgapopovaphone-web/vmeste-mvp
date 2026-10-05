@@ -100,7 +100,7 @@
     if(p){p.classList.remove('hasPhoto');p.style.backgroundImage='';p.innerHTML='<span class="createCoverPlus">＋</span><strong>Добавить обложку</strong><small>Фото можно заменить позже</small>'}
   }
   function resetCommunity(){communityForm.reset();communityForm.dataset.createDirty='';resetCover();var s=communityForm.querySelector('.createCommunityStatus');if(s){s.hidden=true;s.textContent='';s.className='status createCommunityStatus'}}
-  function resetEvent(){eventForm.reset();eventForm.dataset.createDirty='';delete eventForm.dataset.communityId;delete eventForm.dataset.placeId;document.querySelector('.communityCreateContext')?.remove();document.querySelector('.chronicleRepeatContext')?.remove();var s=eventForm.querySelector('#event-status');if(s){s.hidden=true;s.textContent='';s.className='status'}if(typeof window.clearPendingEventCircleInviteIds==='function')window.clearPendingEventCircleInviteIds()}
+  function resetEvent(){eventForm.reset();eventForm.dataset.createDirty='';delete eventForm.dataset.communityId;delete eventForm.dataset.placeId;delete eventForm.dataset.businessId;delete eventForm.dataset.businessPublic;document.querySelector('.communityCreateContext')?.remove();document.querySelector('.chronicleRepeatContext')?.remove();document.querySelector('.businessCreateContext')?.remove();var s=eventForm.querySelector('#event-status');if(s){s.hidden=true;s.textContent='';s.className='status'}if(typeof window.clearPendingEventCircleInviteIds==='function')window.clearPendingEventCircleInviteIds()}
 
   function canClose(form){return form.dataset.createDirty!=='1'||confirm('Закрыть без сохранения?')}
   function showLanding(force){
@@ -141,8 +141,13 @@
     if(date&&opts.date!==undefined)date.value=opts.date||'';
     if(time&&opts.time!==undefined)time.value=opts.time||'';if(opts.visibility){var visibilityInput=eventForm.querySelector('input[name="event-visibility"][value="'+opts.visibility+'"]');if(visibilityInput)visibilityInput.checked=true}
     if(opts.community_id)eventForm.dataset.communityId=String(opts.community_id);else delete eventForm.dataset.communityId;if(opts.place_id)eventForm.dataset.placeId=String(opts.place_id);else delete eventForm.dataset.placeId;
+    if(opts.business_id){eventForm.dataset.businessId=String(opts.business_id);eventForm.dataset.businessPublic=opts.visibility==='public'?'1':'0'}else{delete eventForm.dataset.businessId;delete eventForm.dataset.businessPublic}
     document.querySelector('.communityCreateContext')?.remove();
     document.querySelector('.chronicleRepeatContext')?.remove();
+    document.querySelector('.businessCreateContext')?.remove();
+    if(opts.business_id){
+      var biz=document.createElement('div');biz.className='businessCreateContext';biz.innerHTML='<span>СОБЫТИЕ БИЗНЕСА</span><strong>'+esc(opts.business_name||'ЛЯ Business')+'</strong><small>'+(opts.visibility==='public'?'После создания событие будет публичным.':'До подтверждения бизнеса событие будет открытым для участников ЛЯ.')+'</small>';eventForm.insertAdjacentElement('beforebegin',biz)
+    }
     if(opts.community_id){
       var box=document.createElement('div');box.className='communityCreateContext';box.innerHTML='<span>СОБЫТИЕ ДЛЯ СООБЩЕСТВА</span><strong>'+esc(opts.community_name||'Сообщество')+'</strong><small>Сообщество уже выбрано. Событие будет связано с ним автоматически.</small>';eventForm.insertAdjacentElement('beforebegin',box)
     }else if(opts.repeat){
@@ -186,8 +191,10 @@
       var sourceUrl=((eventForm.querySelector('#event-source')||{}).value||'').trim();
       var communityId=eventForm.dataset.communityId||null;
       var placeId=eventForm.dataset.placeId||null;
+      var businessId=eventForm.dataset.businessId||null;
+      if(businessId&&eventForm.dataset.businessPublic==='1'&&visibility!=='invite_only')visibility='public';
       var inviteTargets=typeof window.getPendingEventInviteTargets==='function'?window.getPendingEventInviteTargets():{user_ids:(typeof window.getPendingEventCircleInviteIds==='function'?window.getPendingEventCircleInviteIds():[]),community_ids:[]};
-      var d=await api('create_event',{title:title,starts_at:starts.toISOString(),ends_at:ends.toISOString(),location_name:place||null,price_minor:Math.round((Number.isFinite(price)?price:0)*100),visibility:visibility,community_id:communityId,place_id:placeId});
+      var d=await api('create_event',{title:title,starts_at:starts.toISOString(),ends_at:ends.toISOString(),location_name:place||null,price_minor:Math.round((Number.isFinite(price)?price:0)*100),visibility:visibility,community_id:communityId,place_id:placeId,business_id:businessId});
       var ev=d&&d.event;
       if(ev&&ev.id&&sourceUrl&&typeof window.eventRaw==='function'){try{await window.eventRaw('set_location_url',{event_id:ev.id,location_url:sourceUrl})}catch(ignore){}}
       var invitedCount=0;
@@ -216,10 +223,11 @@
       description:(communityForm.querySelector('#community-description').value||'').trim(),
       access:(communityForm.querySelector('input[name="community-access"]:checked')||{}).value||'open',
       chat_enabled:!!communityForm.querySelector('#community-chat').checked,
-      cover_file:coverInput&&coverInput.files?coverInput.files[0]||null:null
+      cover_file:coverInput&&coverInput.files?coverInput.files[0]||null:null,
+      business_id:window.LyaBusinessCreateContext&&window.LyaBusinessCreateContext.business_id||null
     }}))
   };
 
-  document.querySelector('.nav[data-go="create"]')?.addEventListener('click',function(){setTimeout(function(){showLanding(true)},0)},true);
+  document.querySelector('.nav[data-go="create"]')?.addEventListener('click',function(){window.LyaBusinessCreateContext=null;setTimeout(function(){showLanding(true)},0)},true);
   showLanding(true);
 })();
