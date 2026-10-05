@@ -13,6 +13,12 @@
     if(!r.ok)throw new Error(d.error||'Ошибка бизнес-аккаунта');
     return d;
   }
+  async function publicCall(action,payload){
+    var opts={method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.assign({action:action},payload||{}))};
+    var r=await fetch(API,opts),d=await r.json().catch(function(){return{error:'Некорректный ответ сервера'}});
+    if(!r.ok)throw new Error(d.error||'Не удалось открыть бизнес-профиль');
+    return d
+  }
   function root(){return document.getElementById('business-root')}
   function rub(v){return new Intl.NumberFormat('ru-RU').format(Math.round(Number(v||0)/100))+' ₽'}
   function kindLabel(k){return({restaurant:'Ресторан',bar:'Бар',cafe:'Кафе',museum:'Музей',gallery:'Галерея',spa:'SPA',bathhouse:'Бани / сауна',sports_space:'Спорт',karaoke:'Караоке',theatre:'Театр',club:'Клуб',park:'Парк',shop:'Магазин',salon:'Салон',studio:'Студия',venue:'Место'})[k]||'Место'}
@@ -125,19 +131,29 @@
     f.onsubmit=async function(e){e.preventDefault();var fd=new FormData(f),st=f.querySelector('.businessStatus'),btn=f.querySelector('button[type="submit"]');btn.disabled=true;st.hidden=false;st.className='businessStatus';st.textContent='Публикую…';try{await call('create_offering',{business_id:b.id,kind:fd.get('kind'),title:fd.get('title'),description:fd.get('description'),price_minor:Math.round(Number(fd.get('price')||0)*100),action_type:fd.get('action_type'),external_url:fd.get('external_url'),status:'published'});closeOverlay(o);await load()}catch(err){st.className='businessStatus error';st.textContent=err.message;btn.disabled=false}}
   }
 
-  async function openPreview(){
-    var b=state.data.business,o=sheet(b.name,'<div class="businessEmpty">Загружаю публичную страницу…</div>','publicPreview');
+  function publicBusinessMarkup(d){
+    var x=d.business,events=d.events||[],offers=d.offerings||[],places=d.places||[],comms=d.communities||[];
+    return '<article class="businessPublic"><div class="businessPublicCover '+(x.cover_url?'hasPhoto':'')+'"'+(x.cover_url?' style="background-image:url(&quot;'+esc(x.cover_url)+'&quot;)"':'')+'></div><div class="businessPublicHead"><span class="businessPublicLogo">'+esc((x.name||'Б').slice(0,1).toUpperCase())+'</span><h1>'+esc(x.name)+'</h1><p>'+esc(x.category||'Бизнес')+(x.city?' · '+esc(x.city):'')+'</p>'+(x.verification_status==='verified'?'<span class="businessVerifiedMark">Подтверждённый бизнес</span>':'')+'<div class="businessPublicLinks">'+(x.website_url?'<a href="'+esc(x.website_url)+'" target="_blank" rel="noopener">Сайт ↗</a>':'')+'</div></div>'+
+      '<section><span class="ey">СКОРО</span><h2>События</h2>'+(events.length?events.map(function(e){return '<button type="button" class="businessPublicEvent" data-business-event="'+esc(e.id)+'"><b>'+esc(e.title)+'</b><small>'+new Intl.DateTimeFormat('ru-RU',{day:'numeric',month:'long',hour:'2-digit',minute:'2-digit',timeZone:'Europe/Moscow'}).format(new Date(e.starts_at))+'</small></button>'}).join(''):'<div class="businessEmpty">Пока нет опубликованных событий.</div>')+'</section>'+
+      '<section><span class="ey">ПРЕДЛОЖЕНИЯ</span><h2>Что можно сделать</h2>'+(offers.length?offers.map(function(y){return '<article class="businessPublicOffer"><span>'+esc(offeringKind(y.kind))+'</span><h3>'+esc(y.title)+'</h3><p>'+esc(y.description||'')+'</p><div><b>'+rub(y.price_minor)+'</b>'+(y.external_url?'<a href="'+esc(y.external_url)+'" target="_blank" rel="noopener">'+esc(actionLabel(y.action_type))+' ↗</a>':'<button type="button" disabled>'+esc(actionLabel(y.action_type))+'</button>')+'</div></article>'}).join(''):'<div class="businessEmpty">Предложений пока нет.</div>')+'</section>'+
+      '<section><span class="ey">МЕСТА</span><h2>Где нас найти</h2>'+placeRows(places)+'</section>'+
+      (comms.length?'<section><span class="ey">СООБЩЕСТВА</span><h2>Наши сообщества</h2>'+comms.map(function(c){return '<button type="button" class="businessPublicCommunity" data-business-community="'+esc(c.id)+'"><b>'+esc(c.name)+'</b><p>'+esc(c.description||'')+'</p></button>'}).join('')+'</section>':'')+
+    '</article>'
+  }
+  async function openPublicBusiness(businessId){
+    if(!businessId)return;
+    var o=sheet('Бизнес-профиль','<div class="businessEmpty">Загружаю публичную страницу…</div>','publicPreview');
     try{
-      var d=await call('get_public_business',{business_id:b.id}),body=o.querySelector('.businessSheetBody'),x=d.business,events=d.events||[],offers=d.offerings||[],places=d.places||[],comms=d.communities||[];
-      body.innerHTML='<article class="businessPublic"><div class="businessPublicCover '+(x.cover_url?'hasPhoto':'')+'"'+(x.cover_url?' style="background-image:url(&quot;'+esc(x.cover_url)+'&quot;)"':'')+'></div><div class="businessPublicHead"><span class="businessPublicLogo">'+esc((x.name||'Б').slice(0,1).toUpperCase())+'</span><h1>'+esc(x.name)+'</h1><p>'+esc(x.category||'Бизнес')+(x.city?' · '+esc(x.city):'')+'</p><div class="businessPublicLinks">'+(x.website_url?'<a href="'+esc(x.website_url)+'" target="_blank" rel="noopener">Сайт ↗</a>':'')+'</div></div>'+
-        '<section><span class="ey">СКОРО</span><h2>События</h2>'+(events.length?events.map(function(e){return '<div class="businessPublicEvent"><b>'+esc(e.title)+'</b><small>'+new Intl.DateTimeFormat('ru-RU',{day:'numeric',month:'long',hour:'2-digit',minute:'2-digit',timeZone:'Europe/Moscow'}).format(new Date(e.starts_at))+'</small></div>'}).join(''):'<div class="businessEmpty">Пока нет опубликованных событий.</div>')+'</section>'+
-        '<section><span class="ey">ПРЕДЛОЖЕНИЯ</span><h2>Что можно сделать</h2>'+(offers.length?offers.map(function(y){return '<article class="businessPublicOffer"><span>'+esc(offeringKind(y.kind))+'</span><h3>'+esc(y.title)+'</h3><p>'+esc(y.description||'')+'</p><div><b>'+rub(y.price_minor)+'</b>'+(y.external_url?'<a href="'+esc(y.external_url)+'" target="_blank" rel="noopener">'+esc(actionLabel(y.action_type))+' ↗</a>':'<button type="button" disabled>'+esc(actionLabel(y.action_type))+'</button>')+'</div></article>'}).join(''):'<div class="businessEmpty">Предложений пока нет.</div>')+'</section>'+
-        '<section><span class="ey">МЕСТА</span><h2>Где нас найти</h2>'+placeRows(places)+'</section>'+
-        (comms.length?'<section><span class="ey">СООБЩЕСТВА</span><h2>Наши сообщества</h2>'+comms.map(function(c){return '<div class="businessPublicCommunity"><b>'+esc(c.name)+'</b><p>'+esc(c.description||'')+'</p></div>'}).join('')+'</section>':'')+
-      '</article>';
-      body.querySelectorAll('[data-business-place]').forEach(function(x){x.onclick=function(){closeOverlay(o);if(typeof window.openPlaceView==='function')window.openPlaceView(x.dataset.businessPlace)}})
+      var d=await publicCall('get_public_business',{business_id:businessId}),body=o.querySelector('.businessSheetBody');
+      o.querySelector('.businessSheetHead h2').textContent=d.business&&d.business.name||'Бизнес-профиль';
+      body.innerHTML=publicBusinessMarkup(d);
+      body.querySelectorAll('[data-business-place]').forEach(function(x){x.onclick=function(){closeOverlay(o);if(typeof window.openPlaceView==='function')window.openPlaceView(x.dataset.businessPlace)}});
+      body.querySelectorAll('[data-business-event]').forEach(function(x){x.onclick=function(){closeOverlay(o);if(typeof window.openEventView==='function')window.openEventView(x.dataset.businessEvent,'business')}});
+      body.querySelectorAll('[data-business-community]').forEach(function(x){x.onclick=function(){var c=(d.communities||[]).find(function(y){return String(y.id)===String(x.dataset.businessCommunity)});closeOverlay(o);if(c&&typeof window.openCommunityDetail==='function')window.openCommunityDetail(c.id,c)}});
     }catch(e){o.querySelector('.businessSheetBody').innerHTML='<div class="businessStatus error">'+esc(e.message)+'</div>'}
   }
+  async function openPreview(){var b=state.data&&state.data.business;if(b)openPublicBusiness(b.id)}
+  window.openLyaBusinessPublicProfile=openPublicBusiness;
 
   async function load(){
     var r=root();if(!r)return;state.loading=true;r.innerHTML='<div class="businessLoading">Собираю ЛЯ Business…</div>';
