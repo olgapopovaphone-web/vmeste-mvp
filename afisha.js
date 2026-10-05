@@ -8,6 +8,7 @@ let afishaLiked=new Set();
 let afishaCompared=new Set();
 let afishaProfile=null;
 let afishaFilter='for-me';
+let afishaDateFilter=null;
 let afishaCity='Ростов-на-Дону';
 const afishaActionLocks=new Set();
 
@@ -20,6 +21,8 @@ function afMonth(v){return new Intl.DateTimeFormat('ru-RU',{month:'short',timeZo
 function afDateKey(v){const p=new Intl.DateTimeFormat('en-CA',{year:'numeric',month:'2-digit',day:'2-digit',timeZone:'Europe/Moscow'}).formatToParts(new Date(v));const g=t=>p.find(x=>x.type===t)?.value;return `${g('year')}-${g('month')}-${g('day')}`}
 function afTodayKey(){return afDateKey(new Date())}
 function afEndOfWeek(){const d=new Date();d.setDate(d.getDate()+7);return d}
+function afNextDateKey(key){const [y,m,d]=String(key).split('-').map(Number);const x=new Date(Date.UTC(y,m-1,d+1,12));return x.getUTCFullYear()+'-'+String(x.getUTCMonth()+1).padStart(2,'0')+'-'+String(x.getUTCDate()).padStart(2,'0')}
+function afDateTitleFromKey(key){try{return new Intl.DateTimeFormat('ru-RU',{weekday:'long',day:'numeric',month:'long',timeZone:'UTC'}).format(new Date(key+'T12:00:00Z')).replace(/^./,c=>c.toUpperCase())}catch{return key}}
 function afToast(text){const old=document.querySelector('.afishaToast');if(old)old.remove();const el=document.createElement('div');el.className='afishaToast';el.textContent=text;document.body.appendChild(el);setTimeout(()=>el.remove(),2200)}
 function afTimeout(ms=6500){return new Promise((_,reject)=>setTimeout(()=>reject(new Error('Сервис Афиши отвечает слишком долго')),ms))}
 
@@ -36,9 +39,11 @@ async function afRaw(action,payload={},needsAuth=false,retry=true){
   return data;
 }
 
-async function loadPublicAfishaFeed(city){
+async function loadPublicAfishaFeed(city,dateFilter=null){
   const select='id,city,title,description,category,starts_at,ends_at,timezone,venue,source_name,source_url,cover_url,price_text,is_free';
-  const qs=new URLSearchParams({select,city:`eq.${city}`,published:'eq.true',starts_at:`gte.${new Date().toISOString()}`,order:'starts_at.asc',limit:'60'});
+  const start=dateFilter?new Date(dateFilter+'T00:00:00+03:00').toISOString():new Date().toISOString();
+  const qs=new URLSearchParams({select,city:`eq.${city}`,published:'eq.true',starts_at:`gte.${start}`,order:'starts_at.asc',limit:dateFilter?'120':'60'});
+  if(dateFilter)qs.set('starts_at',`gte.${start}`),qs.append('starts_at',`lt.${new Date(afNextDateKey(dateFilter)+'T00:00:00+03:00').toISOString()}`);
   const response=await Promise.race([
     fetch(`${SUPABASE_REST}/afisha_events?${qs.toString()}`,{headers:{apikey:SUPABASE_PUBLISHABLE_KEY}}),
     afTimeout(6500)
@@ -50,6 +55,7 @@ async function loadPublicAfishaFeed(city){
 
 function filteredAfisha(){
   let items=[...afishaEvents];
+  if(afishaDateFilter)items=items.filter(e=>afDateKey(e.starts_at)===afishaDateFilter);
   if(afishaFilter==='today')items=items.filter(e=>afDateKey(e.starts_at)===afTodayKey());
   if(afishaFilter==='week'){const end=afEndOfWeek();items=items.filter(e=>new Date(e.starts_at)<=end)}
   if(afishaFilter==='free')items=items.filter(e=>e.is_free);
@@ -85,16 +91,19 @@ function decorateLyaAfishaCovers(root=document){
 function renderAfisha(){
   const root=document.querySelector('#afisha-root');if(!root)return;
   const items=filteredAfisha();
+  const dateContext=afishaDateFilter?`<section class="afishaDateContext"><div><span class="ey">ИЗ КАЛЕНДАРЯ</span><h2>${afEsc(afDateTitleFromKey(afishaDateFilter))}</h2><p>Что можно сделать вместе в этот день.</p></div><div class="afishaDateContextActions"><button type="button" data-af-date-back>← К календарю</button><button type="button" data-af-date-clear>Все поводы</button></div></section>`:'';
   const empty=!afishaEvents.length
-    ?'<div class="afishaEmpty afishaEmptyFeed"><strong>На ближайшие дни событий пока нет</strong><span>Пока можно посмотреть места и людей вокруг — новые события появятся здесь автоматически.</span></div>'
-    :'<div class="afishaEmpty"><strong>По этому фильтру пока ничего нет</strong><span>Выберите другой фильтр — общая лента событий никуда не делась.</span></div>';
-  root.innerHTML=`${onboardingHtml()}<div class="afishaFeed">${items.length?items.map(afishaCard).join(''):empty}</div>`;
+    ?'<div class="afishaEmpty afishaEmptyFeed"><strong>На эту дату пока ничего не нашли</strong><span>Можно выбрать место и создать встречу самим.</span></div>'
+    :'<div class="afishaEmpty"><strong>По этому фильтру пока ничего нет</strong><span>Попробуйте другой вариант.</span></div>';
+  root.innerHTML=`${dateContext}${onboardingHtml()}<div class="afishaFeed">${items.length?items.map(afishaCard).join(''):empty}</div>`;
   document.querySelector('#afisha-city-label')?.replaceChildren(document.createTextNode(afishaCity));
   bindAfishaActions();renderAfishaCompareBar();decorateLyaAfishaCovers(root);
 }
 
 function bindAfishaActions(){
   document.querySelectorAll('#interest-chips button,#time-chips button').forEach(b=>b.onclick=()=>b.classList.toggle('active'));
+  document.querySelector('[data-af-date-back]')?.addEventListener('click',()=>{if(typeof openView==='function')openView('calendar')});
+  document.querySelector('[data-af-date-clear]')?.addEventListener('click',async()=>{afishaDateFilter=null;afishaFilter='for-me';document.querySelectorAll('[data-af-filter]').forEach(x=>x.classList.toggle('active',x.dataset.afFilter==='for-me'));document.dispatchEvent(new CustomEvent('lya:calendar-date-afisha-clear'));await loadAfisha({date:null})});
   const closeOnboarding=document.querySelector('#close-afisha-onboarding');if(closeOnboarding)closeOnboarding.onclick=()=>{localStorage.setItem(AFISHA_ONBOARDING_DISMISSED_KEY,'1');document.querySelector('#afisha-onboarding')?.remove()};
   const save=document.querySelector('#save-afisha-prefs');if(save)save.onclick=saveAfishaPreferences;
   document.querySelectorAll('.af-like').forEach(b=>b.onclick=()=>toggleAfisha('like',b.dataset.id));
@@ -159,21 +168,22 @@ async function openAfishaComparison(){
   try{const data=await afRaw('compare',{},true);body.innerHTML=`<div class="compareGrid">${(data.events||[]).map(e=>`<article class="compareItem"><span class="ey">${afEsc(AFISHA_CATEGORIES[e.category]||'СОБЫТИЕ')}</span><h3>${afEsc(e.title)}</h3><dl><div><dt>КОГДА</dt><dd>${afEsc(afDate(e.starts_at))}</dd></div><div><dt>ГДЕ</dt><dd>${afEsc(e.venue||'Не указано')}</dd></div><div><dt>СТОИМОСТЬ</dt><dd>${afEsc(e.price_text||'У организатора')}</dd></div></dl><a href="${afEsc(e.source_url)}" target="_blank" rel="noopener">Источник ↗</a><button class="primary compareCollect" data-id="${afEsc(e.id)}" style="margin-top:10px">Позвать своих</button></article>`).join('')}</div>`;document.querySelectorAll('.compareCollect').forEach(b=>b.onclick=()=>{modal.hidden=true;collectCompany(b.dataset.id)})}catch(err){body.innerHTML=`<div class="status error">${afEsc(err.message)}</div>`}
 }
 
-async function loadAfisha(){
+async function loadAfisha(opts={}){
   const root=document.querySelector('#afisha-root');if(!root)return;
+  const requestedDate=Object.prototype.hasOwnProperty.call(opts,'date')?opts.date:afishaDateFilter;
   root.innerHTML='<div class="afishaLoading">Загружаю настоящую афишу…</div>';
   try{
     let data;
     if(account){
       try{
-        data=await afRaw('feed',{city:afishaCity},false);
+        data=await afRaw('feed',{city:afishaCity,date:requestedDate||null},false);
       }catch(personalError){
         console.warn('Personal Afisha feed unavailable, using public fallback',personalError);
-        data=await loadPublicAfishaFeed(afishaCity);
+        data=await loadPublicAfishaFeed(afishaCity,requestedDate||null);
       }
     }else{
-      try{ data=await afRaw('feed',{city:afishaCity},false); }
-      catch(publicApiError){ console.warn('Afisha API unavailable, using REST fallback',publicApiError); data=await loadPublicAfishaFeed(afishaCity); }
+      try{ data=await afRaw('feed',{city:afishaCity,date:requestedDate||null},false); }
+      catch(publicApiError){ console.warn('Afisha API unavailable, using REST fallback',publicApiError); data=await loadPublicAfishaFeed(afishaCity,requestedDate||null); }
     }
     afishaEvents=data.events||[];
     afishaProfile=data.profile||null;
@@ -187,11 +197,22 @@ async function loadAfisha(){
   }
 }
 
+window.openAfishaForDate=async function(dateKey){
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(String(dateKey||'')))return;
+  afishaDateFilter=String(dateKey);
+  afishaFilter='for-me';
+  document.querySelectorAll('[data-af-filter]').forEach(x=>x.classList.toggle('active',x.dataset.afFilter==='for-me'));
+  document.dispatchEvent(new CustomEvent('lya:calendar-date-afisha',{detail:{date:afishaDateFilter}}));
+  if(typeof openView==='function')openView('home');
+  await loadAfisha({date:afishaDateFilter});
+};
+
 async function processPendingAfishaAction(){
   if(!account)return;let pending=null;try{pending=JSON.parse(sessionStorage.getItem(PENDING_AFISHA_KEY)||'null')}catch{}if(!pending)return;sessionStorage.removeItem(PENDING_AFISHA_KEY);await loadAfisha();if(pending.action==='collect')return collectCompany(pending.id);if(pending.action==='like'||pending.action==='compare')return toggleAfisha(pending.action,pending.id);
 }
 
 document.querySelectorAll('[data-af-filter]').forEach(b=>b.onclick=()=>{afishaFilter=b.dataset.afFilter;document.querySelectorAll('[data-af-filter]').forEach(x=>x.classList.toggle('active',x===b));renderAfisha()});
+document.querySelector('.nav[data-go="home"]')?.addEventListener('click',()=>{if(!afishaDateFilter)return;afishaDateFilter=null;afishaFilter='for-me';document.dispatchEvent(new CustomEvent('lya:calendar-date-afisha-clear'))});
 document.querySelector('#close-afisha-compare')?.addEventListener('click',()=>document.querySelector('#afisha-compare-modal').hidden=true);
 document.querySelector('#afisha-compare-modal')?.addEventListener('click',e=>{if(e.target.id==='afisha-compare-modal')e.currentTarget.hidden=true});
 
