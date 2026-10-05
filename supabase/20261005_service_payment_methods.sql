@@ -10,7 +10,7 @@ alter table public.business_offerings
   add constraint business_offerings_payment_method_check
     check (
       payment_method is null
-      or payment_method in ('onsite','online_link','free','contact')
+      or payment_method in ('onsite','online_link','contact')
     );
 
 alter table public.business_offerings
