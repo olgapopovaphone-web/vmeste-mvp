@@ -40,3 +40,37 @@ button.businessMiniCard{border:0;text-align:left;color:inherit}
   .businessHeroTop .lyaProfileModeSwitch{min-width:132px}
   .lyaProfileModeSwitch button{padding-left:10px;padding-right:10px}
 }
+
+.businessSubPage{padding-bottom:92px}
+.businessSubHero{padding:28px 22px 24px;background:#f5f4f1;border-bottom:1px solid #e8e5df}
+.businessSubHero .businessHeroTop{margin-bottom:34px}
+.businessSubHero h1{margin:7px 0 8px;font:800 32px/1 Manrope,Arial,sans-serif;letter-spacing:-.7px}
+.businessSubHero>p{margin:0;color:#6d716d;font:500 11px/1.45 Manrope,Arial,sans-serif}
+.businessMetricGrid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;padding:18px 22px;border-bottom:1px solid #ebe8e2}
+.businessMetricGrid>div{min-height:104px;border-radius:16px;background:#f7f6f3;padding:14px;display:flex;flex-direction:column;justify-content:flex-end}
+.businessMetricGrid b{font:800 29px/1 Manrope,Arial,sans-serif}
+.businessMetricGrid span{margin-top:6px;font:650 9px/1.3 Manrope,Arial,sans-serif;color:#717670}
+.businessStatRows{display:grid;border-top:1px solid #ebe8e2}
+.businessStatRows>div{display:flex;justify-content:space-between;gap:16px;padding:12px 0;border-bottom:1px solid #ebe8e2}
+.businessStatRows span{font:600 10px Manrope,Arial,sans-serif;color:#737873}.businessStatRows b{font:800 10px Manrope,Arial,sans-serif;text-align:right}
+.businessAnalyticsPending{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:12px}
+.businessAnalyticsPending>div{border:1px dashed #d8d4cd;border-radius:14px;padding:13px;background:#fbfaf8}
+.businessAnalyticsPending b{display:block;font:800 20px Manrope,Arial,sans-serif;color:#999}.businessAnalyticsPending span{display:block;margin-top:4px;font:650 9px Manrope,Arial,sans-serif;color:#767a76}
+.businessCalendarSection{padding-top:20px}.businessCalendarNav{display:grid;grid-template-columns:38px 1fr 38px;align-items:center;gap:8px;margin-bottom:14px}
+.businessCalendarNav h2{margin:0;text-align:center;font:800 19px Manrope,Arial,sans-serif;text-transform:capitalize}
+.businessCalendarNav button{width:38px;height:38px;border:1px solid #dfdbd4;border-radius:50%;background:#fff;font:700 16px Manrope,Arial,sans-serif}
+.businessCalendarWeek,.businessCalendarGrid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
+.businessCalendarWeek{margin-bottom:6px}.businessCalendarWeek span{text-align:center;font:800 7px Manrope,Arial,sans-serif;color:#989b97}
+.businessCalDay{aspect-ratio:1;border:1px solid #ebe7e0;border-radius:11px;background:#fff;position:relative;color:#252724;font:700 10px Manrope,Arial,sans-serif}
+.businessCalDay.empty{border:0;background:transparent}.businessCalDay.hasEvent{background:#f4f1eb}
+.businessCalDay.selected{background:#171815;color:#fff;border-color:#171815}
+.businessCalDay i{position:absolute;right:4px;bottom:4px;min-width:15px;height:15px;padding:0 3px;border-radius:99px;background:#ef5a3c;color:#fff;display:grid;place-items:center;font:800 7px Manrope,Arial,sans-serif;font-style:normal}
+.businessEventList{display:grid;gap:8px}.businessEventList>button{display:grid;gap:4px;text-align:left;border:0;border-radius:14px;background:#f7f6f3;padding:13px}
+.businessEventList time{font:700 8px Manrope,Arial,sans-serif;color:#8a6d61;text-transform:uppercase}.businessEventList b{font:800 13px Manrope,Arial,sans-serif}.businessEventList small{font:500 9px Manrope,Arial,sans-serif;color:#777c77}
+.businessChronicleList{display:grid;gap:9px}.businessChronicleList article{border:1px solid #e5e1da;border-radius:16px;overflow:hidden;background:#fff}
+.businessChronicleList article>button:first-child{display:block;width:100%;border:0;background:#f8f7f4;padding:14px;text-align:left}
+.businessChronicleList time{font:700 8px Manrope,Arial,sans-serif;color:#8a6d61}.businessChronicleList h3{margin:6px 0 3px;font:800 14px Manrope,Arial,sans-serif}.businessChronicleList p{margin:0;color:#777c77;font:500 9px Manrope,Arial,sans-serif}
+.businessRepeat{width:100%;border:0;border-top:1px solid #e9e5de;background:#fff;padding:10px;font:800 9px Manrope,Arial,sans-serif}
+
+.businessCommunityRow{grid-template-columns:46px 1fr auto}
+.businessCommunityBadge{width:46px;height:46px;border-radius:13px;background:#0D4B38;color:#fff;display:grid;place-items:center;font:800 11px Manrope,Arial,sans-serif}
