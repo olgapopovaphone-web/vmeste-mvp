@@ -17,3 +17,19 @@
 .calendarSuggestionEmpty{padding:16px;border:1px dashed #d9d2c9;border-radius:14px;color:#77776f;font-size:10px;text-align:center}
 .calendarDayDiscovery>.calendar-discover-button{width:100%;margin-top:9px}
 @media(max-width:380px){.calendarSuggestion{grid-template-columns:1fr}.calendarSuggestionAction{width:100%}}
+
+/* AUTH · PIN + RECOVERY · 2026-10-05 */
+.authLink{border:0;background:transparent;color:#5f665f;font:700 10px/1.2 Manrope,Arial,sans-serif;padding:5px 0;text-align:left}
+.authBackLink{display:block;margin-top:10px;text-align:center;width:100%}
+.authIntro{margin:0 0 14px;color:#6e746f;font-size:11px;line-height:1.5}
+.pinGate{position:fixed;inset:0;z-index:1200;background:#FAFAF8;display:grid;place-items:center;padding:24px}
+.pinGate[hidden]{display:none}
+.pinGateCard{width:min(100%,380px);background:#fff;border:1px solid #e2ddd5;border-radius:24px;padding:24px;box-shadow:0 24px 70px #00000014}
+.pinGateCard h2{font:700 28px/1.05 Manrope,Arial,sans-serif;margin:8px 0 7px}
+.pinGateCard>p{color:#747a75;font-size:11px;line-height:1.5;margin:0 0 18px}
+.pinGateCard form{display:grid;gap:10px}
+.pinGateCard label{display:grid;gap:6px;font-size:10px;font-weight:800}
+.pinInput{height:54px;border:1px solid #d8d1c6;border-radius:15px;background:#fff;padding:0 16px;text-align:center;font:800 25px/1 Manrope,Arial,sans-serif;letter-spacing:.38em}
+.pinInput:focus{outline:none;border-color:#171815}
+.pinForgot{display:block;margin:12px auto 0;text-align:center}
+.pinGate .status{margin:0}
