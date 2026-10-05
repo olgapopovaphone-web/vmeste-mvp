@@ -36,7 +36,8 @@
   }
   function profileModeSwitch(active){
     if(typeof window.renderLyaProfileModeSwitch==='function')return window.renderLyaProfileModeSwitch(active);
-    return '<div class="lyaProfileModeSwitch" role="group" aria-label="Режим профиля"><button type="button" data-profile-mode="personal" class="'+(active==='personal'?'active':'')+'">Личный</button><button type="button" data-profile-mode="business" class="'+(active==='business'?'active':'')+'">Бизнес</button></div>'
+    var label='Бизнес';try{if(localStorage.getItem('lya_professional_kind_v1')==='organization')label='Организация'}catch(e){}
+    return '<div class="lyaProfileModeSwitch" role="group" aria-label="Режим профиля"><button type="button" data-profile-mode="personal" class="'+(active==='personal'?'active':'')+'">Личный</button><button type="button" data-profile-mode="business" class="'+(active==='business'?'active':'')+'">'+label+'</button></div>'
   }
   function localGroups(){try{var x=JSON.parse(localStorage.getItem(GROUPS_KEY)||'[]');return Array.isArray(x)?x:[]}catch(e){return[]}}
   async function circle(action,payload){
@@ -233,7 +234,7 @@
       placesBlock(detail,isSelf)+
       momentsBlock(detail,isSelf)+
       pinnedBlock(detail,isSelf)+
-      (isSelf&&!businessReady?'<section class="profileV2BusinessEntry"><button type="button" data-profile-business><span><small>ДЛЯ БИЗНЕСА</small><b>Создать бизнес-профиль</b><em>Места · события · сообщества · предложения</em></span><i>→</i></button></section>':'')+
+      (isSelf&&!businessReady?'<section class="profileV2BusinessEntry"><button type="button" data-profile-business><span><small>ДЛЯ ПРОЕКТА</small><b>Создать бизнес или организацию</b><em>Места · события · сообщества · статистика</em></span><i>→</i></button></section>':'')+
       (isSelf?'<button type="button" class="profileV2Signout" data-profile-signout>Выйти из аккаунта</button>':'')+
       '<div class="profileV2Foot">ЛЯ · 2026</div>'+
       '<input id="profile-cover-input-v3" class="profileV2FileInput" type="file" data-profile-cover-input accept="image/jpeg,image/png,image/webp">'+
