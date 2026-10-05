@@ -257,12 +257,12 @@ function shiftCalendar(delta){if(calendarMode==='month')shiftMonth(delta);else s
 $$('[data-cal-mode]').forEach(b=>b.onclick=()=>{calendarMode=b.dataset.calMode;renderCalendar()});$('#calendar-prev').onclick=()=>shiftCalendar(-1);$('#calendar-next').onclick=()=>shiftCalendar(1);$('#calendar-today').onclick=()=>{selectedDateKey=todayKey();const [y,m]=selectedDateKey.split('-').map(Number);calendarYear=y;calendarMonth=m-1;renderCalendar()};
 
 function bindCalendarActions(){
-  $('.invite-circle-button').forEach(button=>button.onclick=()=>{if(typeof window.openEventCircleInvitePicker==='function')window.openEventCircleInvitePicker(button.dataset.eventId);else openEventView(button.dataset.eventId,'calendar')});
-  $('.invite-link-button').forEach(button=>button.onclick=()=>showInviteLink(button.dataset.eventId,button.dataset.eventTitle));
-  $('.invite-response').forEach(button=>button.onclick=()=>respondInvitation(button.dataset.invitationId,button.dataset.response));
-  $('.calendar-discover-button').forEach(button=>button.onclick=()=>{if(typeof window.openAfishaForDate==='function')window.openAfishaForDate(button.dataset.date)});
-  $('[data-calendar-afisha-invite]').forEach(button=>button.onclick=()=>{if(typeof window.collectAfishaCompany==='function')window.collectAfishaCompany(button.dataset.calendarAfishaInvite);else if(typeof window.openAfishaForDate==='function')window.openAfishaForDate(selectedDateKey)});
-  $('[data-calendar-lya-event]').forEach(button=>button.onclick=()=>{if(typeof openEventView==='function')openEventView(button.dataset.calendarLyaEvent,'calendar')});
+  $$('.invite-circle-button').forEach(button=>button.onclick=()=>{if(typeof window.openEventCircleInvitePicker==='function')window.openEventCircleInvitePicker(button.dataset.eventId);else openEventView(button.dataset.eventId,'calendar')});
+  $$('.invite-link-button').forEach(button=>button.onclick=()=>showInviteLink(button.dataset.eventId,button.dataset.eventTitle));
+  $$('.invite-response').forEach(button=>button.onclick=()=>respondInvitation(button.dataset.invitationId,button.dataset.response));
+  $$('.calendar-discover-button').forEach(button=>button.onclick=()=>{if(typeof window.openAfishaForDate==='function')window.openAfishaForDate(button.dataset.date)});
+  $$('[data-calendar-afisha-invite]').forEach(button=>button.onclick=()=>{if(typeof window.collectAfishaCompany==='function')window.collectAfishaCompany(button.dataset.calendarAfishaInvite);else if(typeof window.openAfishaForDate==='function')window.openAfishaForDate(selectedDateKey)});
+  $$('[data-calendar-lya-event]').forEach(button=>button.onclick=()=>{if(typeof openEventView==='function')openEventView(button.dataset.calendarLyaEvent,'calendar')});
 }
 async function showInviteLink(eventId,eventTitle){
   const area=document.getElementById('invite-'+eventId);if(!area)return;area.innerHTML='<div class="inviteBox">Создаю ссылку…</div>';
