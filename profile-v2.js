@@ -216,12 +216,12 @@
     var topRight=isSelf?'<div class="profileV2TopBtns"><label class="profileV2TopIcon" for="profile-cover-input-v3" data-profile-cover aria-label="Загрузить фон">◫</label><button type="button" class="profileV2TopIcon" data-profile-edit aria-label="Настройки">⚙</button></div>':'';
     return '<article class="profileV2">'+
       '<header class="profileV2Hero '+(p.cover_url?'has-cover':'standard-cover')+'"'+coverStyle(p)+'><div class="profileV2HeroShade"></div><div class="profileV2Top">'+topLeft+topRight+'</div></header>'+
-      (businessReady?'<div class="profileV2ModeWrap">'+profileModeSwitch('personal')+'</div>':'')+
       '<div class="profileV2Head">'+
         '<button type="button" class="profileV2AvatarButton" '+(isSelf?'data-profile-avatar':'')+'>'+avatarHtml(p,'large')+'</button>'+
         '<div class="profileV2NameRow"><div><h1>'+esc(p.display_name||'Участник')+'</h1><p>⌖ '+esc(p.city||'Город не указан')+'</p></div><i></i></div>'+
         about+
       '</div>'+
+      (businessReady?'<div class="profileV2ModeWrap">'+profileModeSwitch('personal')+'</div>':'')+
       actions(detail)+
       notificationCenterBlock(isSelf)+
       wantBlock(detail,isSelf)+
