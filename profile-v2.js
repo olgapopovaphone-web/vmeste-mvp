@@ -36,7 +36,7 @@
   }
   function profileModeSwitch(active){
     if(typeof window.renderLyaProfileModeSwitch==='function')return window.renderLyaProfileModeSwitch(active);
-    var label='Бизнес';try{if(localStorage.getItem('lya_professional_kind_v1')==='organization')label='Организация'}catch(e){}
+    var label='Проект';try{var k=localStorage.getItem('lya_professional_kind_v1');if(k==='organization')label='Организация';else if(k==='business')label='Бизнес'}catch(e){}
     return '<div class="lyaProfileModeSwitch" role="group" aria-label="Режим профиля"><button type="button" data-profile-mode="personal" class="'+(active==='personal'?'active':'')+'">Личный</button><button type="button" data-profile-mode="business" class="'+(active==='business'?'active':'')+'">'+label+'</button></div>'
   }
   function localGroups(){try{var x=JSON.parse(localStorage.getItem(GROUPS_KEY)||'[]');return Array.isArray(x)?x:[]}catch(e){return[]}}
