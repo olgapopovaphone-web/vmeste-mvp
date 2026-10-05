@@ -104,51 +104,78 @@
     return ev.future
   }
 
+  function ownerEventRows(items){
+    var now=Date.now(),list=(items||[]).filter(function(e){return Date.parse(e.starts_at)>=now&&e.status!=='cancelled'}).sort(function(a,b){return Date.parse(a.starts_at)-Date.parse(b.starts_at)}).slice(0,4);
+    if(!list.length)return '<div class="businessOwnerEmpty"><b>Пока нет ближайших событий</b><span>Создайте первый повод для аудитории бизнеса.</span></div>';
+    return '<div class="businessOwnerEventList">'+list.map(function(e){
+      return '<button type="button" data-owner-event="'+esc(e.id)+'"><time>'+esc(businessWhen(e.starts_at,true))+'</time><span><b>'+esc(e.title)+'</b><small>'+esc(e.location_name||'Место не указано')+'</small></span><i>›</i></button>'
+    }).join('')+'</div>'
+  }
+  function ownerAttention(d,b){
+    var rows=[];
+    if(b.verification_status==='unverified')rows.push('<button type="button" data-business-verify><span><b>Подтвердить бизнес</b><small>После проверки можно будет публиковать публичные события от имени бизнеса.</small></span><i>→</i></button>');
+    if(!b.description)rows.push('<button type="button" data-business-edit><span><b>Добавить описание</b><small>Коротко расскажите людям, чем занимается проект.</small></span><i>→</i></button>');
+    var pending=(d.claims||[]).filter(function(x){return x.status==='pending'}).length;
+    if(pending)rows.push('<div><span><b>Заявки на места</b><small>'+pending+' '+(pending===1?'заявка ждёт':'заявки ждут')+' подтверждения.</small></span><i>…</i></div>');
+    return rows.length?'<section class="businessOwnerAttention"><span class="ey">ТРЕБУЕТ ВНИМАНИЯ</span>'+rows.join('')+'</section>':''
+  }
+  function ownerOfferingRows(items){
+    var list=(items||[]).filter(function(x){return x.status!=='archived'}).slice(0,4);
+    if(!list.length)return '<div class="businessOwnerEmpty"><b>Предложений пока нет</b><span>Добавьте товар, услугу или специальное предложение.</span></div>';
+    return '<div class="businessOwnerOfferList">'+list.map(function(x){
+      return '<article><span>'+esc(offeringKind(x.kind))+'</span><h3>'+esc(x.title)+'</h3><div><b>'+rub(x.price_minor)+'</b><small>'+esc(x.status==='published'?'Опубликовано':'Черновик')+'</small></div></article>'
+    }).join('')+'</div>'
+  }
+
   function renderAround(){
     var r=root();if(!r)return;
     var d=state.data;if(!d||!d.business){onboarding();return}
-    var b=d.business,ev=eventRows(d.events||[]);
+    var b=d.business,events=(d.events||[]),future=events.filter(function(e){return Date.parse(e.starts_at)>=Date.now()&&e.status!=='cancelled'}).length;
     window.LyaBusinessState={id:b.id,name:b.name,verification_status:b.verification_status,subscription_tier:b.subscription_tier,subscription_status:b.subscription_status};
-    r.innerHTML='<div class="businessHub">'+
-      '<header class="businessHero"><div class="businessHeroTop">'+modeSwitch('business')+'<button type="button" class="businessPreviewButton" data-business-preview>Посмотреть страницу</button></div><span class="ey">ВОКРУГ БИЗНЕСА</span><h1>'+esc(b.name)+'</h1><p>'+esc(b.category||'Бизнес')+(b.city?' · '+esc(b.city):'')+'</p><div class="businessBadges"><span>'+esc(verification(b.verification_status))+'</span><span>'+esc(subscription(b))+'</span></div></header>'+
-      '<section class="businessStats"><div><b>'+Number((d.places||[]).length)+'</b><span>мест</span></div><div><b>'+ev.futureCount+'</b><span>событий</span></div><div><b>'+Number((d.offerings||[]).length)+'</b><span>предложений</span></div><div><b>'+Number((d.communities||[]).length)+'</b><span>сообществ</span></div></section>'+
-      '<section class="businessSection"><div class="businessSectionHead"><div><span class="ey">УПРАВЛЕНИЕ</span><h2>Бизнес-профиль</h2></div><button type="button" data-business-edit>Изменить</button></div><p class="businessLead">'+esc(b.description||'Добавьте короткое описание — оно будет видно пользователям ЛЯ.')+'</p>'+(b.verification_status==='unverified'?'<button type="button" class="businessSoftAction" data-business-verify>Отправить на подтверждение</button>':'')+'</section>'+
-      '<section class="businessSection"><div class="businessSectionHead"><div><span class="ey">МЕСТА</span><h2>Ваши точки</h2></div></div><div class="businessActionPair"><button type="button" data-business-create-place>＋ Создать место</button><button type="button" data-business-claim-place>Это моё место</button></div>'+placeRows(d.places||[])+claimRows(d.claims||[])+'</section>'+
-      '<section class="businessSection"><div class="businessSectionHead"><div><span class="ey">СООБЩЕСТВА</span><h2>Вокруг проекта</h2></div><button type="button" data-business-create-community-top>＋ Создать</button></div>'+communityRows(d.communities||[])+'</section>'+
-      '<section class="businessSection"><div class="businessSectionHead"><div><span class="ey">ЛЕНТА</span><h2>Что увидит клиент</h2></div></div><div class="businessFeedTabs"><button type="button" class="active" data-business-feed="now">Сейчас</button><button type="button" data-business-feed="soon">Скоро</button><button type="button" data-business-feed="offers">Предложения</button><button type="button" data-business-feed="past">Было</button></div><div class="businessFeedGrid" data-business-feed-body>'+feedHtml('now',d,ev)+'</div><div class="businessActionPair businessCreatePair"><button type="button" data-business-create-event>＋ Событие</button><button type="button" data-business-create-community>＋ Сообщество</button></div></section>'+
-      '<section class="businessSection"><div class="businessSectionHead"><div><span class="ey">ПРЕДЛОЖЕНИЯ</span><h2>Товары и услуги</h2></div><button type="button" data-business-create-offering>＋ Добавить</button></div>'+offeringRows(d.offerings||[])+'</section>'+
-      '<section class="businessPlan"><span class="ey">ТАРИФ</span><h2>'+esc(subscription(b))+'</h2><p>Базовый профиль уже работает. Платный ЛЯ Business будет фиксированной ежемесячной подпиской — без процента с каждой продажи.</p></section>'+
+    r.innerHTML='<div class="businessHub businessOwnerHome">'+
+      '<header class="businessHero ownerHero"><div class="businessHeroTop">'+modeSwitch('business')+'<button type="button" class="businessPreviewButton" data-business-preview>Посмотреть как клиент</button></div><span class="ey">ВОКРУГ БИЗНЕСА</span><h1>'+esc(b.name)+'</h1><p>'+esc(b.category||'Бизнес')+(b.city?' · '+esc(b.city):'')+'</p><div class="businessBadges"><span>'+esc(verification(b.verification_status))+'</span></div></header>'+
+      '<section class="businessOwnerProfile">'+
+        '<div class="businessOwnerProfileIcon">'+esc((b.name||'Б').trim().slice(0,1).toUpperCase())+'</div>'+
+        '<div class="businessOwnerProfileCopy"><span class="ey">ПРОФИЛЬ БИЗНЕСА</span><h2>Что видят люди</h2><p>'+esc(b.description||'Описание пока не добавлено.')+'</p></div>'+
+        '<div class="businessOwnerProfileActions"><button type="button" data-business-preview>Посмотреть страницу</button><button type="button" data-business-edit>Изменить</button></div>'+
+      '</section>'+
+      ownerAttention(d,b)+
+      '<section class="businessOwnerManage"><div class="businessSectionHead"><div><span class="ey">УПРАВЛЕНИЕ</span><h2>Ваш бизнес в ЛЯ</h2></div></div>'+
+        '<div class="businessOwnerManageGrid">'+
+          '<button type="button" data-business-jump="places"><span>Места</span><b>'+Number((d.places||[]).length)+'</b><small>Точки бизнеса</small></button>'+
+          '<button type="button" data-business-jump="communities"><span>Сообщества</span><b>'+Number((d.communities||[]).length)+'</b><small>Люди вокруг проекта</small></button>'+
+          '<button type="button" data-business-go="events"><span>События</span><b>'+future+'</b><small>Ближайшие</small></button>'+
+          '<button type="button" data-business-jump="offers"><span>Предложения</span><b>'+Number((d.offerings||[]).filter(function(x){return x.status!=='archived'}).length)+'</b><small>Товары и услуги</small></button>'+
+        '</div>'+
+        '<button type="button" class="businessOwnerStatsLink" data-business-go="stats"><span><b>Статистика бизнеса</b><small>Просмотры, активность и результаты — во «В кругу»</small></span><i>→</i></button>'+
+      '</section>'+
+      '<section class="businessSection businessOwnerSection" data-owner-section="places"><div class="businessSectionHead"><div><span class="ey">МЕСТА</span><h2>Ваши точки</h2></div><button type="button" data-business-create-place>＋ Добавить</button></div>'+
+        '<div class="businessOwnerSecondary"><button type="button" data-business-claim-place>Это моё место</button></div>'+
+        placeRows(d.places||[])+claimRows(d.claims||[])+
+      '</section>'+
+      '<section class="businessSection businessOwnerSection" data-owner-section="communities"><div class="businessSectionHead"><div><span class="ey">СООБЩЕСТВА</span><h2>Вокруг проекта</h2></div><button type="button" data-business-create-community-top>＋ Создать</button></div>'+communityRows(d.communities||[])+'</section>'+
+      '<section class="businessSection businessOwnerSection"><div class="businessSectionHead"><div><span class="ey">СОБЫТИЯ</span><h2>Ближайшие</h2></div><button type="button" data-business-create-event>＋ Создать</button></div>'+ownerEventRows(events)+'<button type="button" class="businessOwnerAllLink" data-business-go="events">Открыть календарь бизнеса →</button></section>'+
+      '<section class="businessSection businessOwnerSection" data-owner-section="offers"><div class="businessSectionHead"><div><span class="ey">ПРЕДЛОЖЕНИЯ</span><h2>Товары и услуги</h2></div><button type="button" data-business-create-offering>＋ Добавить</button></div>'+ownerOfferingRows(d.offerings||[])+'</section>'+
       '</div>';
-    bindAround(r)
+    bindAround(r);syncBusinessNav('home')
   }
 
   function bindAround(r){
-    r.querySelector('[data-profile-mode="personal"]').onclick=openPersonalProfile;
-    r.querySelector('[data-business-edit]').onclick=openEdit;
-    r.querySelector('[data-business-preview]').onclick=openPreview;
-    r.querySelector('[data-business-create-place]').onclick=openCreatePlace;
-    r.querySelector('[data-business-claim-place]').onclick=openClaimPlace;
-    r.querySelector('[data-business-create-offering]').onclick=openOffering;
-    var verify=r.querySelector('[data-business-verify]');if(verify)verify.onclick=async function(){verify.disabled=true;verify.textContent='Отправляю…';try{await call('request_verification',{business_id:state.data.business.id});await load()}catch(e){alert(e.message);verify.disabled=false;verify.textContent='Отправить на подтверждение'}};
+    var personal=r.querySelector('[data-profile-mode="personal"]');if(personal)personal.onclick=openPersonalProfile;
+    r.querySelectorAll('[data-business-edit]').forEach(function(x){x.onclick=openEdit});
+    r.querySelectorAll('[data-business-preview]').forEach(function(x){x.onclick=openPreview});
+    var createPlace=r.querySelector('[data-business-create-place]');if(createPlace)createPlace.onclick=openCreatePlace;
+    var claimPlace=r.querySelector('[data-business-claim-place]');if(claimPlace)claimPlace.onclick=openClaimPlace;
+    var createOffering=r.querySelector('[data-business-create-offering]');if(createOffering)createOffering.onclick=function(){openOffering()};
+    var verify=r.querySelector('[data-business-verify]');if(verify)verify.onclick=async function(){verify.disabled=true;try{await call('request_verification',{business_id:state.data.business.id});await load()}catch(e){alert(e.message);verify.disabled=false}};
     r.querySelectorAll('[data-cancel-claim]').forEach(function(x){x.onclick=async function(){x.disabled=true;try{await call('cancel_claim',{business_id:state.data.business.id,claim_id:x.dataset.cancelClaim});await load()}catch(e){alert(e.message);x.disabled=false}}});
     r.querySelectorAll('[data-business-place]').forEach(function(x){x.onclick=function(){if(typeof window.openPlaceView==='function')window.openPlaceView(x.dataset.businessPlace)}});
     r.querySelectorAll('[data-business-community-row]').forEach(function(x){x.onclick=function(){var c=(state.data.communities||[]).find(function(y){return String(y.id)===String(x.dataset.businessCommunityRow)});if(c&&typeof window.openCommunityDetail==='function')window.openCommunityDetail(c.id,c)}});
-    var createCommunityTop=r.querySelector('[data-business-create-community-top]');if(createCommunityTop)createCommunityTop.onclick=function(){var b=state.data.business;window.LyaBusinessCreateContext={business_id:b.id,business_name:b.name};openView('create');setTimeout(function(){document.querySelector('[data-view="create"] [data-create-action="community"]')?.click()},40)};
-    function bindFeedEvents(){r.querySelectorAll('[data-business-event-card]').forEach(function(x){x.onclick=function(){if(typeof window.openEventView==='function')window.openEventView(x.dataset.businessEventCard,'business')}})}
-    bindFeedEvents();
-    r.querySelectorAll('[data-business-feed]').forEach(function(tab){tab.onclick=function(){
-      r.querySelectorAll('[data-business-feed]').forEach(function(x){x.classList.toggle('active',x===tab)});
-      var body=r.querySelector('[data-business-feed-body]'),ev=eventRows(state.data.events||[]);if(body){body.innerHTML=feedHtml(tab.dataset.businessFeed,state.data,ev);bindFeedEvents()}
-    }});
-    r.querySelector('[data-business-create-event]').onclick=function(){
-      var b=state.data.business;window.LyaBusinessCreateContext={business_id:b.id,business_name:b.name};
-      if(typeof window.openLyaCreateEvent==='function')window.openLyaCreateEvent({business_id:b.id,business_name:b.name,visibility:b.verification_status==='verified'?'public':'open'});
-      else openView('create')
-    };
-    r.querySelector('[data-business-create-community]').onclick=function(){
-      var b=state.data.business;window.LyaBusinessCreateContext={business_id:b.id,business_name:b.name};
-      openView('create');setTimeout(function(){document.querySelector('[data-view="create"] [data-create-action="community"]')?.click()},40)
-    }
+    r.querySelectorAll('[data-owner-event]').forEach(function(x){x.onclick=function(){if(typeof window.openEventView==='function')window.openEventView(x.dataset.ownerEvent,'business')}});
+    r.querySelectorAll('[data-business-jump]').forEach(function(x){x.onclick=function(){var target=r.querySelector('[data-owner-section="'+x.dataset.businessJump+'"]');if(target)target.scrollIntoView({behavior:'smooth',block:'start'})}});
+    r.querySelectorAll('[data-business-go]').forEach(function(x){x.onclick=function(){state.section=x.dataset.businessGo;render()}});
+    var createCommunity=r.querySelector('[data-business-create-community-top]');if(createCommunity)createCommunity.onclick=function(){var b=state.data.business;window.LyaBusinessCreateContext={business_id:b.id,business_name:b.name};openView('create');setTimeout(function(){document.querySelector('[data-view="create"] [data-create-action="community"]')?.click()},40)};
+    var createEvent=r.querySelector('[data-business-create-event]');if(createEvent)createEvent.onclick=function(){var b=state.data.business;window.LyaBusinessCreateContext={business_id:b.id,business_name:b.name};if(typeof window.openLyaCreateEvent==='function')window.openLyaCreateEvent({business_id:b.id,business_name:b.name,visibility:b.verification_status==='verified'?'public':'open'});else openView('create')}
   }
 
   function openEdit(){
