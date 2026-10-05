@@ -1,4 +1,5 @@
 const API='https://nmeoakrpafxhpdrplsuo.supabase.co/functions/v1/vmeste-api';
+const CALENDAR_AFISHA_API='https://nmeoakrpafxhpdrplsuo.supabase.co/functions/v1/vmeste-afisha-api';
 const STORAGE_KEY='vmeste_session_v1';
 const PENDING_INVITE_KEY='vmeste_pending_invite_v1';
 const TZ='Europe/Moscow';
@@ -6,6 +7,8 @@ let session=loadSession();
 let account=null;
 let authMode='signup';
 let calendarEvents=[];
+let calendarSuggestionCache=new Map();
+let calendarSuggestionSeq=0;
 let calendarMode='month';
 let selectedDateKey=todayKey();
 let [calendarYear,calendarMonth]=selectedDateKey.split('-').map(Number);
@@ -179,14 +182,50 @@ function dayEventHtml(ev){
   const own=ev.calendar_kind==='created';const pending=ev.calendar_kind==='invited'&&ev.invitation_status==='pending';
   return `<article class="calendarEvent"><div class="eventKind">${own?'МОЁ СОБЫТИЕ':pending?'МЕНЯ ПРИГЛАСИЛИ':'Я УЧАСТВУЮ'}</div><div class="calendarEventTop"><div><h3>${escapeHtml(ev.title)}</h3><p class="muted">${eventTime(ev.starts_at)}${ev.location_name?' · '+escapeHtml(ev.location_name):''} · ${eventPrice(ev)}</p></div><span class="tag">${eventBadge(ev)}</span></div><div class="calendarEventActions">${own?`<button class="smallPrimary invite-circle-button" data-event-id="${escapeHtml(ev.id)}">Позвать своих</button><button class="repeat invite-link-button" data-event-id="${escapeHtml(ev.id)}" data-event-title="${escapeHtml(ev.title)}">По ссылке</button>`:''}${pending?`<button class="smallPrimary invite-response" data-invitation-id="${escapeHtml(ev.invitation_id)}" data-response="accepted">Принять</button><button class="repeat invite-response" data-invitation-id="${escapeHtml(ev.invitation_id)}" data-response="declined">Отклонить</button>`:''}</div><div class="invite-area" id="invite-${escapeHtml(ev.id)}"></div></article>`;
 }
+const CALENDAR_AFISHA_CATEGORIES={cinema:'Кино',music:'Музыка',theatre:'Театр',humor:'Юмор',exhibition:'Выставка',fair:'Ярмарка',kids:'С детьми',walks:'Прогулка',food:'Еда',sport:'Спорт',lya:'Событие ЛЯ'};
+function calendarSuggestionHtml(ev){
+  const isLya=ev.source_type==='lya'||ev.category==='lya';
+  const meta=[eventTime(ev.starts_at),CALENDAR_AFISHA_CATEGORIES[ev.category]||'Событие',ev.venue||'Место уточняется'].filter(Boolean).join(' · ');
+  const action=isLya
+    ?'<button class="calendarSuggestionAction" data-calendar-lya-event="'+escapeHtml(ev.event_id||ev.id)+'">Открыть</button>'
+    :'<button class="calendarSuggestionAction" data-calendar-afisha-invite="'+escapeHtml(ev.id)+'">Позвать своих</button>';
+  return '<article class="calendarSuggestion"><div class="calendarSuggestionBody"><div class="eventKind">'+escapeHtml(CALENDAR_AFISHA_CATEGORIES[ev.category]||'СОБЫТИЕ')+'</div><h3>'+escapeHtml(ev.title||'Событие')+'</h3><p>'+escapeHtml(meta)+'</p></div>'+action+'</article>';
+}
+async function fetchCalendarSuggestions(key){
+  if(calendarSuggestionCache.has(key))return calendarSuggestionCache.get(key);
+  const opts={method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'feed',city:(account&&account.profile&&account.profile.city)||'Ростов-на-Дону',date:key})};
+  const response=window.lyaAuthedFetch?await window.lyaAuthedFetch(CALENDAR_AFISHA_API,opts,true):await fetch(CALENDAR_AFISHA_API,opts);
+  const data=await response.json().catch(()=>({}));
+  if(!response.ok)throw new Error(data.error||'Не удалось загрузить события дня');
+  const items=(data.events||[]).filter(ev=>dateKey(ev.starts_at)===key);
+  calendarSuggestionCache.set(key,items);
+  return items;
+}
+async function loadCalendarSuggestions(key){
+  const host=document.querySelector('.calendarSuggestions[data-date="'+CSS.escape(key)+'"]');if(!host)return;
+  const seq=++calendarSuggestionSeq;
+  try{
+    const items=await fetchCalendarSuggestions(key);
+    if(seq!==calendarSuggestionSeq||selectedDateKey!==key)return;
+    const current=document.querySelector('.calendarSuggestions[data-date="'+CSS.escape(key)+'"]');if(!current)return;
+    const visible=items.slice(0,5);
+    current.innerHTML=visible.length?visible.map(calendarSuggestionHtml).join(''):'<div class="calendarSuggestionEmpty">На эту дату пока не нашли готовых событий.</div>';
+    bindCalendarActions();
+  }catch(err){
+    const current=document.querySelector('.calendarSuggestions[data-date="'+CSS.escape(key)+'"]');if(current)current.innerHTML='<div class="calendarSuggestionEmpty">'+escapeHtml(err.message)+'</div>';
+  }
+}
 function renderDayEvents(){
   const root=$('#day-events');if(!root)return;
   $('#selected-date-title').textContent=fullDateLabel(selectedDateKey);
   const events=eventsForDate(selectedDateKey);
-  const planned=events.length?events.map(dayEventHtml).join(''):'<div class="emptyDay">На этот день у вас пока ничего не запланировано.</div>';
-  const discover=selectedDateKey>=todayKey()?'<div class="calendarDiscover"><span class="ey">ЕСТЬ СВОБОДНОЕ ВРЕМЯ?</span><h3>Найти повод на этот день</h3><p>Посмотрите события именно на выбранную дату и сразу позовите своих.</p><button class="smallPrimary calendar-discover-button" data-date="'+escapeHtml(selectedDateKey)+'">Что можно сделать вместе</button></div>':'';
+  const planned='<section class="calendarDaySection"><div class="calendarDaySectionHead"><span class="ey">ВАШИ ПЛАНЫ</span><span>'+events.length+'</span></div>'+(events.length?events.map(dayEventHtml).join(''):'<div class="emptyDay">На этот день у вас пока ничего не запланировано.</div>')+'</section>';
+  const discover=selectedDateKey>=todayKey()
+    ?'<section class="calendarDaySection calendarDayDiscovery"><div class="calendarDaySectionHead"><div><span class="ey">СОБЫТИЯ НА ЭТОТ ДЕНЬ</span><h3>Что можно сделать вместе</h3></div></div><div class="calendarSuggestions" data-date="'+escapeHtml(selectedDateKey)+'"><p class="muted">Загружаю события дня…</p></div><button class="repeat calendar-discover-button" data-date="'+escapeHtml(selectedDateKey)+'">Все события дня</button></section>'
+    :'';
   root.innerHTML=planned+discover;
   bindCalendarActions();
+  if(selectedDateKey>=todayKey())loadCalendarSuggestions(selectedDateKey);
 }
 function renderMonth(){
   const firstKey=`${calendarYear}-${pad(calendarMonth+1)}-01`;const firstOffset=weekdayIndex(firstKey);const currentDays=daysInMonth(calendarYear,calendarMonth);const prevMonth=calendarMonth===0?11:calendarMonth-1;const prevYear=calendarMonth===0?calendarYear-1:calendarYear;const prevDays=daysInMonth(prevYear,prevMonth);const cells=[];
@@ -222,6 +261,8 @@ function bindCalendarActions(){
   $('.invite-link-button').forEach(button=>button.onclick=()=>showInviteLink(button.dataset.eventId,button.dataset.eventTitle));
   $('.invite-response').forEach(button=>button.onclick=()=>respondInvitation(button.dataset.invitationId,button.dataset.response));
   $('.calendar-discover-button').forEach(button=>button.onclick=()=>{if(typeof window.openAfishaForDate==='function')window.openAfishaForDate(button.dataset.date)});
+  $('[data-calendar-afisha-invite]').forEach(button=>button.onclick=()=>{if(typeof window.collectAfishaCompany==='function')window.collectAfishaCompany(button.dataset.calendarAfishaInvite);else if(typeof window.openAfishaForDate==='function')window.openAfishaForDate(selectedDateKey)});
+  $('[data-calendar-lya-event]').forEach(button=>button.onclick=()=>{if(typeof openEventView==='function')openEventView(button.dataset.calendarLyaEvent,'calendar')});
 }
 async function showInviteLink(eventId,eventTitle){
   const area=document.getElementById('invite-'+eventId);if(!area)return;area.innerHTML='<div class="inviteBox">Создаю ссылку…</div>';
