@@ -143,3 +143,7 @@ button.businessMiniCard{border:0;text-align:left;color:inherit}
 .businessPaymentMethods>button>i{font:500 18px Manrope,Arial,sans-serif;font-style:normal;color:#939793}
 .businessPayIcon{width:42px;height:42px;border-radius:12px;background:#171815;color:#fff;display:grid;place-items:center;font:800 9px Manrope,Arial,sans-serif}
 .businessPaymentNote{margin:14px 1px 0;color:#8a8e89;font:500 9px/1.45 Manrope,Arial,sans-serif}
+
+.businessPaymentIntro{margin:0 0 12px;color:#666b66;font:500 10px/1.4 Manrope,Arial,sans-serif}
+.businessPaymentContinue{width:100%;margin-top:12px}
+.businessPaymentDemo{margin-top:9px}
