@@ -149,7 +149,7 @@ function openView(name){
   window.scrollTo(0,0);
 }
 $$('.nav').forEach(b=>b.addEventListener('click',()=>openView(b.dataset.go)));
-$$('.js-profile').forEach(b=>b.addEventListener('click',()=>openView('profile')));
+$('.js-profile').forEach(b=>b.addEventListener('click',()=>{const businessMode=typeof window.getLyaProfileMode==='function'&&window.getLyaProfileMode()==='business';if(businessMode&&typeof window.openLyaBusinessHub==='function')window.openLyaBusinessHub();else openView('profile')}));
 $$('.js-home').forEach(b=>b.addEventListener('click',()=>openView('home')));
 
 function updateAvatars(){const letter=(account?.profile?.display_name||account?.user?.email||'В').trim().slice(0,1).toUpperCase()||'В';$$('.avatar').forEach(a=>a.textContent=letter)}
