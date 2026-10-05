@@ -1,11 +1,15 @@
 const API='https://nmeoakrpafxhpdrplsuo.supabase.co/functions/v1/vmeste-api';
 const CALENDAR_AFISHA_API='https://nmeoakrpafxhpdrplsuo.supabase.co/functions/v1/vmeste-afisha-api';
 const STORAGE_KEY='vmeste_session_v1';
+const PIN_KEY='lya_pin_v1';
+const PIN_UNLOCK_KEY='lya_pin_unlocked_v1';
+const PIN_FAIL_KEY='lya_pin_fail_v1';
 const PENDING_INVITE_KEY='vmeste_pending_invite_v1';
 const TZ='Europe/Moscow';
 let session=loadSession();
 let account=null;
 let authMode='signup';
+let recoveryMode=false;
 let calendarEvents=[];
 let calendarSuggestionCache=new Map();
 let calendarSuggestionSeq=0;
@@ -23,6 +27,38 @@ const escapeHtml=s=>String(s??'').replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;"
 function loadSession(){try{return JSON.parse(localStorage.getItem(STORAGE_KEY)||'null')}catch{return null}}
 function saveSession(value){session=value;if(value)localStorage.setItem(STORAGE_KEY,JSON.stringify(value));else localStorage.removeItem(STORAGE_KEY)}
 function clearSession(){saveSession(null);account=null;updateAvatars()}
+function loadPinConfig(){try{return JSON.parse(localStorage.getItem(PIN_KEY)||'null')}catch{return null}}
+function clearPinFailures(){localStorage.removeItem(PIN_FAIL_KEY)}
+function clearPinConfig(){localStorage.removeItem(PIN_KEY);sessionStorage.removeItem(PIN_UNLOCK_KEY);clearPinFailures()}
+function markPinUnlocked(){sessionStorage.setItem(PIN_UNLOCK_KEY,'1')}
+function pinIsUnlocked(){return sessionStorage.getItem(PIN_UNLOCK_KEY)==='1'}
+function currentAuthUserId(){return account?.user?.id||session?.user?.id||''}
+function currentAuthEmail(){return account?.user?.email||session?.user?.email||''}
+function pinMatchesSession(){
+  const cfg=loadPinConfig();if(!cfg||!session?.access_token)return false;
+  const uid=session?.user?.id||'';return !uid||!cfg.user_id||String(cfg.user_id)===String(uid)
+}
+function randomSalt(){
+  const a=new Uint8Array(16);crypto.getRandomValues(a);return Array.from(a,b=>b.toString(16).padStart(2,'0')).join('')
+}
+async function hashPin(pin,salt,userId){
+  if(!crypto?.subtle)throw new Error('Этот браузер не поддерживает быстрый PIN. Используйте вход по паролю.');
+  const bytes=new TextEncoder().encode(String(pin)+'|'+String(salt)+'|'+String(userId||''));
+  const digest=await crypto.subtle.digest('SHA-256',bytes);
+  return Array.from(new Uint8Array(digest),b=>b.toString(16).padStart(2,'0')).join('')
+}
+async function saveLocalPin(pin){
+  const userId=currentAuthUserId();if(!userId)throw new Error('Не удалось определить аккаунт');
+  const salt=randomSalt(),hash=await hashPin(pin,salt,userId);
+  localStorage.setItem(PIN_KEY,JSON.stringify({version:1,user_id:userId,email:currentAuthEmail(),salt,hash,created_at:new Date().toISOString()}));
+  clearPinFailures();markPinUnlocked()
+}
+function pinFailureState(){try{return JSON.parse(localStorage.getItem(PIN_FAIL_KEY)||'null')||{count:0,lock_until:0}}catch{return{count:0,lock_until:0}}}
+function recordPinFailure(){
+  const prev=pinFailureState(),now=Date.now();let count=prev.lock_until>now?prev.count:Number(prev.count||0)+1,lockUntil=Number(prev.lock_until||0);
+  if(count>=5){lockUntil=now+30000;count=5}
+  const state={count,lock_until:lockUntil};localStorage.setItem(PIN_FAIL_KEY,JSON.stringify(state));return state
+}
 function pad(n){return String(n).padStart(2,'0')}
 function keyFromUTCDate(d){return `${d.getUTCFullYear()}-${pad(d.getUTCMonth()+1)}-${pad(d.getUTCDate())}`}
 function utcDateFromKey(key){const [y,m,d]=key.split('-').map(Number);return new Date(Date.UTC(y,m-1,d,12))}
@@ -43,7 +79,9 @@ function captureAuthHash(){
   const params=new URLSearchParams(location.hash.slice(1));
   const access_token=params.get('access_token');
   const refresh_token=params.get('refresh_token');
+  const type=params.get('type')||'';
   if(access_token&&refresh_token){
+    recoveryMode=type==='recovery';
     saveSession({access_token,refresh_token,expires_at:Number(params.get('expires_at')||0),token_type:'bearer'});
     history.replaceState(null,'',location.pathname+location.search);
   }
@@ -71,7 +109,7 @@ async function refreshSession(){
     const refreshToken=session&&session.refresh_token;
     const result=await raw('refresh',{refresh_token:refreshToken});
     if(!result.ok||!result.data.session){
-      if(session&&session.refresh_token===refreshToken)clearSession();
+      if([400,401,403].includes(result.status)&&session&&session.refresh_token===refreshToken)clearSession();
       return false;
     }
     saveSession(result.data.session);
@@ -97,7 +135,7 @@ window.lyaAuthedFetch=async function(url,options={},retry=true){
 async function api(action,payload={},needsAuth=true,retry=true){
   const result=await raw(action,payload,needsAuth?session?.access_token||'':'');
   if((result.status===401||result.status===403)&&needsAuth&&retry&&await refreshSession())return api(action,payload,true,false);
-  if(!result.ok)throw new Error(result.data.error||'Ошибка запроса');
+  if(!result.ok){const err=new Error(result.data.error||'Ошибка запроса');err.status=result.status;throw err}
   return result.data;
 }
 
@@ -117,7 +155,11 @@ $$('.js-home').forEach(b=>b.addEventListener('click',()=>openView('home')));
 function updateAvatars(){const letter=(account?.profile?.display_name||account?.user?.email||'В').trim().slice(0,1).toUpperCase()||'В';$$('.avatar').forEach(a=>a.textContent=letter)}
 async function loadAccount(){
   if(!session?.access_token){account=null;updateAvatars();renderProfile();return false}
-  try{account=await api('me');updateAvatars();renderProfile();return true}catch(e){clearSession();renderProfile();return false}
+  try{account=await api('me');updateAvatars();renderProfile();return true}
+  catch(e){
+    if(e&&[401,403].includes(Number(e.status||0)))clearSession();
+    account=null;updateAvatars();renderProfile();return false
+  }
 }
 function renderProfile(){
   const root=$('#profile-root');if(!root)return;
@@ -130,19 +172,117 @@ async function saveProfile(e){
   e.preventDefault();const status=$('#profile-status');status.hidden=false;status.className='status';status.textContent='Сохраняю…';
   try{const data=await api('update_profile',{display_name:$('#profile-name').value.trim(),birth_date:$('#profile-birth').value||null});account.profile=data.profile;updateAvatars();status.textContent='Сохранено'}catch(err){status.className='status error';status.textContent=err.message}
 }
-async function signOut(){try{if(session?.access_token)await api('logout')}catch{}clearSession();openView('home')}
+async function signOut(){try{if(session?.access_token)await api('logout')}catch{}clearPinConfig();clearSession();openView('home')}
 
-function setAuthMode(mode){authMode=mode;$('#signup-tab').classList.toggle('active',mode==='signup');$('#login-tab').classList.toggle('active',mode==='login');$('#name-field').style.display=mode==='signup'?'grid':'none';$('#auth-name').required=mode==='signup';$('#auth-submit').textContent=mode==='signup'?'Создать аккаунт':'Войти';$('#auth-status').hidden=true}
+function showStandardAuth(){
+  $('#auth-tabs').hidden=false;$('#auth-form').hidden=false;$('#password-reset-request').hidden=true;$('#password-reset-new').hidden=true;$('#auth-title').textContent='Вход'
+}
+function setAuthMode(mode){
+  showStandardAuth();authMode=mode;
+  $('#signup-tab').classList.toggle('active',mode==='signup');$('#login-tab').classList.toggle('active',mode==='login');
+  $('#name-field').style.display=mode==='signup'?'grid':'none';$('#auth-name').required=mode==='signup';
+  $('#auth-submit').textContent=mode==='signup'?'Создать аккаунт':'Войти';
+  $('#forgot-password').hidden=mode!=='login';$('#auth-status').hidden=true
+}
+function showLoginWithEmail(email,message){
+  openView('login');setAuthMode('login');if(email)$('#auth-email').value=email;
+  if(message){const st=$('#auth-status');st.hidden=false;st.className='status';st.textContent=message}
+}
+function openPasswordResetRequest(){
+  $('#auth-tabs').hidden=true;$('#auth-form').hidden=true;$('#password-reset-new').hidden=true;$('#password-reset-request').hidden=false;
+  $('#auth-title').textContent='Восстановить доступ';$('#reset-email').value=$('#auth-email').value||'';
+  $('#reset-request-status').hidden=true;setTimeout(()=>$('#reset-email').focus(),0)
+}
+function openPasswordResetNew(){
+  openView('login');$('#auth-tabs').hidden=true;$('#auth-form').hidden=true;$('#password-reset-request').hidden=true;$('#password-reset-new').hidden=false;
+  $('#auth-title').textContent='Новый пароль';$('#reset-new-status').hidden=true;setTimeout(()=>$('#reset-new-password').focus(),0)
+}
+async function ensurePinSetup(){
+  const cfg=loadPinConfig(),uid=currentAuthUserId();
+  if(cfg&&uid&&String(cfg.user_id)===String(uid)){markPinUnlocked();return true}
+  if(cfg)clearPinConfig();
+  return showPinSetupGate()
+}
+function showPinSetupGate(){
+  return new Promise(function(resolve){
+    const gate=$('#pin-setup-gate'),form=$('#pin-setup-form'),a=$('#pin-setup-input'),b=$('#pin-setup-input-2'),status=$('#pin-setup-status');
+    gate.hidden=false;a.value='';b.value='';status.hidden=true;
+    const submit=async function(e){
+      e.preventDefault();const pin=a.value.trim(),repeat=b.value.trim();
+      status.hidden=true;
+      if(!/^\d{4}$/.test(pin)){status.hidden=false;status.className='status error';status.textContent='PIN — ровно 4 цифры';a.focus();return}
+      if(pin!==repeat){status.hidden=false;status.className='status error';status.textContent='PIN не совпадает';b.value='';b.focus();return}
+      const btn=form.querySelector('button[type="submit"]');btn.disabled=true;btn.textContent='Сохраняю…';
+      try{await saveLocalPin(pin);gate.hidden=true;resolve(true)}
+      catch(err){status.hidden=false;status.className='status error';status.textContent=err.message;btn.disabled=false;btn.textContent='Сохранить PIN'}
+    };
+    form.onsubmit=submit;setTimeout(()=>a.focus(),0)
+  })
+}
+function showPinUnlockGate(){
+  return new Promise(function(resolve){
+    const gate=$('#pin-gate'),form=$('#pin-unlock-form'),input=$('#pin-unlock-input'),status=$('#pin-unlock-status'),forgot=$('#pin-forgot'),cfg=loadPinConfig();
+    if(!cfg){resolve(true);return}
+    gate.hidden=false;input.value='';status.hidden=true;$('#pin-gate-user').textContent=cfg.email?cfg.email:'4 цифры';
+    let settled=false;
+    const finish=function(value){if(settled)return;settled=true;gate.hidden=true;resolve(value)};
+    form.onsubmit=async function(e){
+      e.preventDefault();const pin=input.value.trim(),state=pinFailureState(),now=Date.now();
+      if(Number(state.lock_until||0)>now){const sec=Math.ceil((state.lock_until-now)/1000);status.hidden=false;status.className='status error';status.textContent='Слишком много попыток. Попробуйте через '+sec+' сек.';input.value='';return}
+      if(!/^\d{4}$/.test(pin)){status.hidden=false;status.className='status error';status.textContent='Введите 4 цифры';return}
+      try{
+        const hash=await hashPin(pin,cfg.salt,cfg.user_id);
+        if(hash!==cfg.hash){
+          const fail=recordPinFailure();input.value='';status.hidden=false;status.className='status error';
+          status.textContent=fail.lock_until>Date.now()?'Слишком много попыток. Подождите 30 секунд.':'PIN не подошёл. Осталось '+Math.max(0,5-fail.count)+' попытки.';input.focus();return
+        }
+        clearPinFailures();markPinUnlocked();finish(true)
+      }catch(err){status.hidden=false;status.className='status error';status.textContent=err.message}
+    };
+    input.oninput=function(){input.value=input.value.replace(/\D/g,'').slice(0,4);if(input.value.length===4)form.requestSubmit()};
+    forgot.onclick=function(){
+      const email=cfg.email||session?.user?.email||'';clearPinConfig();clearSession();finish(false);
+      setTimeout(()=>showLoginWithEmail(email,'Введите пароль аккаунта и задайте новый PIN.'),0)
+    };
+    setTimeout(()=>input.focus(),0)
+  })
+}
 $('#signup-tab').onclick=()=>setAuthMode('signup');$('#login-tab').onclick=()=>setAuthMode('login');
+$('#forgot-password').onclick=openPasswordResetRequest;
+$('#reset-request-back').onclick=()=>setAuthMode('login');
+$('#password-reset-request-form').onsubmit=async function(e){
+  e.preventDefault();const status=$('#reset-request-status'),email=$('#reset-email').value.trim(),btn=e.target.querySelector('button[type="submit"]');
+  status.hidden=false;status.className='status';status.textContent='Отправляю письмо…';btn.disabled=true;
+  try{const d=await api('request_password_reset',{email},false);status.textContent=d.message||'Если аккаунт существует, письмо отправлено.'}
+  catch(err){status.className='status error';status.textContent=err.message}
+  finally{btn.disabled=false}
+};
+$('#reset-new-restart').onclick=function(){clearSession();recoveryMode=false;openPasswordResetRequest()};
+$('#password-reset-new-form').onsubmit=async function(e){
+  e.preventDefault();const a=$('#reset-new-password').value,b=$('#reset-new-password-2').value,status=$('#reset-new-status'),btn=e.target.querySelector('button[type="submit"]');
+  status.hidden=false;status.className='status';
+  if(a.length<6){status.className='status error';status.textContent='Пароль должен быть не короче 6 символов';return}
+  if(a!==b){status.className='status error';status.textContent='Пароли не совпадают';return}
+  btn.disabled=true;status.textContent='Сохраняю новый пароль…';
+  try{
+    await api('update_password',{password:a});
+    clearPinConfig();
+    const ok=await loadAccount();if(!ok)throw new Error('Пароль сохранён, но не удалось загрузить профиль. Войдите ещё раз по почте и новому паролю.');
+    await ensurePinSetup();recoveryMode=false;openView('home');
+    document.dispatchEvent(new CustomEvent('vmeste-auth-changed',{detail:{signedIn:true,recovered:true}}))
+  }catch(err){status.className='status error';status.textContent=err.message}
+  finally{btn.disabled=false}
+};
 $('#auth-form').onsubmit=async e=>{
   e.preventDefault();const status=$('#auth-status');status.hidden=false;status.className='status';status.textContent=authMode==='signup'?'Создаю аккаунт…':'Вхожу…';const email=$('#auth-email').value.trim();const password=$('#auth-password').value;
   try{
     if(authMode==='signup'){
       const data=await api('signup',{email,password,display_name:$('#auth-name').value.trim(),invite_token:pendingInviteToken||null},false);
       if(!data.session)throw new Error('Аккаунт создан, но сессия не получена');
-      saveSession(data.session);
+      saveSession(data.session);markPinUnlocked();
       const ok=await loadAccount();
       if(!ok)throw new Error('Аккаунт создан, но профиль не загрузился');
+      await ensurePinSetup();
       status.hidden=false;status.className='status';status.textContent='Готово';
       if(pendingInviteToken)await showPendingInvite();
       else{
@@ -153,9 +293,10 @@ $('#auth-form').onsubmit=async e=>{
       if(!email||password.length<6)throw new Error('Введите почту и пароль');
       const data=await api('login',{email,password},false);
       if(!data.session)throw new Error('Сессия входа не получена');
-      saveSession(data.session);
+      saveSession(data.session);markPinUnlocked();
       const ok=await loadAccount();
       if(!ok)throw new Error('Не удалось загрузить профиль после входа');
+      await ensurePinSetup();
       if(pendingInviteToken)await showPendingInvite();
       else{
         openView('home');
@@ -299,4 +440,22 @@ async function showPendingInvite(){
   }
 }
 
-(async function init(){const ok=await loadAccount();if(ok&&document.querySelector('[data-view="login"].active'))openView('home');await loadEvents();renderCalendar();if(pendingInviteToken)await showPendingInvite()})();
+(async function init(){
+  renderCalendar();
+  if(recoveryMode){
+    clearPinConfig();openPasswordResetNew();return
+  }
+  const startedWithSession=!!session?.access_token;
+  if(startedWithSession&&pinMatchesSession()&&!pinIsUnlocked()){
+    const unlocked=await showPinUnlockGate();
+    if(!unlocked){await loadEvents();renderCalendar();return}
+  }
+  const ok=await loadAccount();
+  if(ok){
+    await ensurePinSetup();
+    if(document.querySelector('[data-view="login"].active'))openView('home')
+  }else if(startedWithSession&&!session?.access_token){
+    showLoginWithEmail(loadPinConfig()?.email||'','Сессия закончилась. Войдите по почте и паролю — все данные аккаунта сохранены.')
+  }
+  await loadEvents();renderCalendar();if(pendingInviteToken)await showPendingInvite()
+})();
