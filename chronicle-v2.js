@@ -49,7 +49,7 @@
     if(Number(ev.photo_count||0))media.push(Number(ev.photo_count)+' фото');
     if(Number(ev.video_count||0))media.push(Number(ev.video_count)+' видео');
     var bg=ev.cover_url?' style="background-image:url(\''+esc(String(ev.cover_url).replace(/'/g,'%27'))+'\')"':'';
-    return '<article class="chronicleV2Card '+(ev.cover_url?'has-cover':'no-cover')+'" data-chronicle-id="'+esc(ev.id)+'" data-kind="'+kind+'"'+bg+'><div class="chronicleV2Shade"></div><div class="chronicleV2CardBody"><time>'+esc(dateLabel(ev.starts_at))+'</time><h2>'+esc(ev.title||'Событие')+'</h2><p>'+meta.map(esc).join(' · ')+'</p>'+(media.length?'<p class="chronicleV2MediaCount">'+media.map(esc).join(' · ')+'</p>':'')+'<div class="chronicleV2Actions"><button type="button" class="chronicleV2Repeat" data-chronicle-repeat="'+esc(ev.id)+'">Повторить</button><button type="button" class="chronicleV2More" data-chronicle-menu="'+esc(ev.id)+'" aria-label="Ещё">•••</button></div></div></article>'
+    return '<article class="chronicleV2Card '+(ev.cover_url?'has-cover':'no-cover')+'" data-chronicle-id="'+esc(ev.id)+'" data-kind="'+kind+'"'+bg+'><div class="chronicleV2Shade"></div><div class="chronicleV2CardBody"><time>'+esc(dateLabel(ev.starts_at))+'</time><h2>'+esc(ev.title||'Событие')+'</h2><p>'+meta.map(esc).join(' · ')+'</p>'+(media.length?'<p class="chronicleV2MediaCount">'+media.map(esc).join(' · ')+'</p>':'')+'<div class="chronicleV2Actions"><button type="button" class="chronicleV2Repeat" data-chronicle-repeat="'+esc(ev.id)+'">Повторить</button>'+(Number(ev.photo_count||0)?'<button type="button" class="chronicleV2ShareMoment" data-chronicle-share-moment="'+esc(ev.id)+'">Поделиться моментом</button>':'')+'<button type="button" class="chronicleV2More" data-chronicle-menu="'+esc(ev.id)+'" aria-label="Ещё">•••</button></div></div></article>'
   }
 
   function visibleEvents(){return events.filter(function(ev){if(activeFilter!=='all'&&typeOf(ev)!==activeFilter)return false;if(query&&!searchable(ev).includes(query))return false;return true})}
@@ -66,6 +66,7 @@
   function bind(){
     root.querySelectorAll('.chronicleV2Card').forEach(function(c){c.onclick=function(e){if(e.target.closest('button'))return;var ev=byId(c.dataset.chronicleId);if(ev&&typeof openEventView==='function')openEventView(ev.id,'chronicle')}});
     root.querySelectorAll('[data-chronicle-repeat]').forEach(function(b){b.onclick=function(e){e.stopPropagation();var ev=byId(b.dataset.chronicleRepeat);if(ev)repeatEvent(ev)}});
+    root.querySelectorAll('[data-chronicle-share-moment]').forEach(function(b){b.onclick=function(e){e.stopPropagation();var ev=byId(b.dataset.chronicleShareMoment);if(ev)openShareMoment(ev)}});
     root.querySelectorAll('[data-chronicle-menu]').forEach(function(b){b.onclick=function(e){e.stopPropagation();var ev=byId(b.dataset.chronicleMenu);if(ev)openMenu(ev)}})
   }
 
@@ -75,11 +76,39 @@
     if(typeof openView==='function')openView('create')
   }
 
+  async function openShareMoment(ev){
+    document.querySelector('.chronicleMomentOverlay')?.remove();
+    var o=document.createElement('div');o.className='chronicleMomentOverlay';
+    o.innerHTML='<div class="chronicleMomentSheet"><div class="chronicleMomentHead"><div><span class="ey">ИЗ ХРОНИКИ</span><h2>Поделиться моментом</h2><p>'+esc(ev.title||'Событие')+'</p></div><button type="button" data-close>×</button></div><div class="chronicleMomentBody"><div class="chronicleMomentLoading">Загружаю ваши фотографии…</div></div></div>';
+    document.body.appendChild(o);
+    var close=function(){o.remove()};o.querySelector('[data-close]').onclick=close;o.onclick=function(e){if(e.target===o)close()};
+    var body=o.querySelector('.chronicleMomentBody');
+    try{
+      var d=await call('moment_candidates',{event_id:ev.id}),photos=d.photos||[];
+      if(!photos.length){body.innerHTML='<div class="chronicleMomentEmpty"><strong>Нет фотографий для публикации</strong><p>В момент можно добавить только фотографии этого события, которые загрузили вы.</p></div>';return}
+      body.innerHTML='<p class="chronicleMomentHint">Выберите до 3 фотографий. Сама Хроника останется приватной.</p><div class="chronicleMomentPhotos">'+photos.map(function(p){return '<label><input type="checkbox" data-moment-photo value="'+esc(p.id)+'"><img src="'+esc(p.url)+'" alt=""><i>✓</i></label>'}).join('')+'</div><label class="chronicleMomentCaption">Короткая фраза<textarea maxlength="180" rows="3" placeholder="Что хочется сохранить из этого момента"></textarea></label><fieldset class="chronicleMomentVisibility"><legend>Кто увидит момент в профиле</legend><label><input type="radio" name="moment-visibility" value="circle" checked><span><b>Моему кругу</b><small>Только людям из вашего круга</small></span></label><label><input type="radio" name="moment-visibility" value="participants"><span><b>Только участникам</b><small>Тем, кто был на этом событии</small></span></label><label><input type="radio" name="moment-visibility" value="profile"><span><b>В профиле</b><small>Всем, кому доступен ваш профиль</small></span></label></fieldset><div class="chronicleMomentStatus" hidden></div><button type="button" class="chronicleMomentPublish" disabled>Поделиться моментом</button>';
+      var publish=body.querySelector('.chronicleMomentPublish'),status=body.querySelector('.chronicleMomentStatus');
+      function selected(){return Array.from(body.querySelectorAll('[data-moment-photo]:checked')).map(function(x){return x.value})}
+      function sync(){var n=selected().length;publish.disabled=n<1;publish.textContent=n?'Поделиться · '+n:'Поделиться моментом'}
+      body.querySelectorAll('[data-moment-photo]').forEach(function(input){input.onchange=function(){var checked=selected();if(checked.length>3){input.checked=false;alert('Можно выбрать не больше 3 фотографий')}sync()}});
+      publish.onclick=async function(){
+        var ids=selected();if(!ids.length)return;publish.disabled=true;publish.textContent='Публикую…';status.hidden=true;
+        try{
+          var visibility=(body.querySelector('input[name="moment-visibility"]:checked')||{}).value||'circle';
+          var caption=(body.querySelector('textarea')||{}).value||'';
+          await call('share_moment',{event_id:ev.id,media_ids:ids,caption:caption,visibility:visibility});
+          status.hidden=false;status.textContent='Момент появился в профиле';status.className='chronicleMomentStatus success';
+          document.dispatchEvent(new CustomEvent('lya-profile-moment-shared'));
+          setTimeout(close,850)
+        }catch(err){status.hidden=false;status.textContent=err.message;status.className='chronicleMomentStatus error';publish.disabled=false;sync()}
+      }
+    }catch(err){body.innerHTML='<div class="chronicleMomentEmpty"><strong>Не удалось открыть фотографии</strong><p>'+esc(err.message)+'</p></div>'}
+  }
+
   function openMenu(ev){
     document.querySelector('.chronicleV2MenuOverlay')?.remove();var o=document.createElement('div');o.className='chronicleV2MenuOverlay';
-    o.innerHTML='<div class="chronicleV2Menu"><div class="chronicleV2MenuHead"><strong>'+esc(ev.title||'Событие')+'</strong><button type="button" data-close>×</button></div><button type="button" data-share>Поделиться</button><button type="button" class="danger" data-hide>Убрать из Хроники</button></div>';
+    o.innerHTML='<div class="chronicleV2Menu"><div class="chronicleV2MenuHead"><strong>'+esc(ev.title||'Событие')+'</strong><button type="button" data-close>×</button></div><button type="button" class="danger" data-hide>Убрать из Хроники</button></div>';
     document.body.appendChild(o);var close=function(){o.remove()};o.querySelector('[data-close]').onclick=close;o.onclick=function(e){if(e.target===o)close()};
-    o.querySelector('[data-share]').onclick=async function(){var text='«'+(ev.title||'Событие')+'» — в ЛЯ';var url='https://vmeste-app-omega.vercel.app/';try{if(navigator.share)await navigator.share({title:ev.title||'ЛЯ',text:text,url:url});else if(navigator.clipboard)await navigator.clipboard.writeText(text+' '+url)}catch(e){}close()};
     o.querySelector('[data-hide]').onclick=async function(){var b=this;b.disabled=true;try{await call('hide',{event_id:ev.id});events=events.filter(function(x){return x.id!==ev.id});close();render();showUndo(ev)}catch(err){alert(err.message);b.disabled=false}}
   }
 
