@@ -2,6 +2,7 @@ const API='https://nmeoakrpafxhpdrplsuo.supabase.co/functions/v1/vmeste-api';
 const CALENDAR_AFISHA_API='https://nmeoakrpafxhpdrplsuo.supabase.co/functions/v1/vmeste-afisha-api';
 const STORAGE_KEY='vmeste_session_v1';
 const PIN_KEY='lya_pin_v1';
+const PIN_DEVICE_SESSION_KEY='lya_pin_device_session_v1';
 const PIN_UNLOCK_KEY='lya_pin_unlocked_v1';
 const PIN_FAIL_KEY='lya_pin_fail_v1';
 const PENDING_INVITE_KEY='vmeste_pending_invite_v1';
@@ -25,19 +26,31 @@ const $$=s=>[...document.querySelectorAll(s)];
 const escapeHtml=s=>String(s??'').replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':'&quot;',"'":'&#39;'}[c]));
 
 function loadSession(){try{return JSON.parse(localStorage.getItem(STORAGE_KEY)||'null')}catch{return null}}
-function saveSession(value){session=value;if(value)localStorage.setItem(STORAGE_KEY,JSON.stringify(value));else localStorage.removeItem(STORAGE_KEY)}
-function clearSession(){saveSession(null);account=null;updateAvatars()}
 function loadPinConfig(){try{return JSON.parse(localStorage.getItem(PIN_KEY)||'null')}catch{return null}}
+function loadPinDeviceSession(){try{return JSON.parse(localStorage.getItem(PIN_DEVICE_SESSION_KEY)||'null')}catch{return null}}
+function savePinDeviceSession(value){
+  const cfg=loadPinConfig();
+  if(!cfg||!value?.refresh_token)return;
+  const user=value.user||{},userId=user.id||cfg.user_id||'',email=user.email||cfg.email||'';
+  localStorage.setItem(PIN_DEVICE_SESSION_KEY,JSON.stringify({version:1,refresh_token:value.refresh_token,user_id:userId,email,updated_at:new Date().toISOString()}))
+}
+function saveSession(value){session=value;if(value){localStorage.setItem(STORAGE_KEY,JSON.stringify(value));savePinDeviceSession(value)}else localStorage.removeItem(STORAGE_KEY)}
+function clearSession(){saveSession(null);account=null;updateAvatars()}
 function clearPinFailures(){localStorage.removeItem(PIN_FAIL_KEY)}
-function clearPinConfig(){localStorage.removeItem(PIN_KEY);sessionStorage.removeItem(PIN_UNLOCK_KEY);clearPinFailures()}
+function clearPinConfig(){localStorage.removeItem(PIN_KEY);localStorage.removeItem(PIN_DEVICE_SESSION_KEY);sessionStorage.removeItem(PIN_UNLOCK_KEY);clearPinFailures();const btn=$('#login-with-pin');if(btn)btn.hidden=true}
 function markPinUnlocked(){sessionStorage.setItem(PIN_UNLOCK_KEY,'1')}
 function pinIsUnlocked(){return sessionStorage.getItem(PIN_UNLOCK_KEY)==='1'}
 function currentAuthUserId(){return account?.user?.id||session?.user?.id||''}
 function currentAuthEmail(){return account?.user?.email||session?.user?.email||''}
-function pinMatchesSession(){
-  const cfg=loadPinConfig();if(!cfg||!session?.access_token)return false;
-  const uid=session?.user?.id||'';return !uid||!cfg.user_id||String(cfg.user_id)===String(uid)
+function canUsePin(){
+  const cfg=loadPinConfig(),device=loadPinDeviceSession();
+  if(!cfg)return false;
+  const hasCredential=!!(session?.access_token||session?.refresh_token||device?.refresh_token);
+  if(!hasCredential)return false;
+  const uid=session?.user?.id||device?.user_id||'';
+  return !uid||!cfg.user_id||String(cfg.user_id)===String(uid)
 }
+function pinMatchesSession(){return canUsePin()}
 function randomSalt(){
   const a=new Uint8Array(16);crypto.getRandomValues(a);return Array.from(a,b=>b.toString(16).padStart(2,'0')).join('')
 }
@@ -51,6 +64,8 @@ async function saveLocalPin(pin){
   const userId=currentAuthUserId();if(!userId)throw new Error('Не удалось определить аккаунт');
   const salt=randomSalt(),hash=await hashPin(pin,salt,userId);
   localStorage.setItem(PIN_KEY,JSON.stringify({version:1,user_id:userId,email:currentAuthEmail(),salt,hash,created_at:new Date().toISOString()}));
+  if(session?.refresh_token)savePinDeviceSession(session);
+  const btn=$('#login-with-pin');if(btn)btn.hidden=false;
   clearPinFailures();markPinUnlocked()
 }
 function pinFailureState(){try{return JSON.parse(localStorage.getItem(PIN_FAIL_KEY)||'null')||{count:0,lock_until:0}}catch{return{count:0,lock_until:0}}}
@@ -104,7 +119,12 @@ async function raw(action,payload={},token=''){
 let refreshSessionPromise=null;
 async function refreshSession(){
   if(refreshSessionPromise)return refreshSessionPromise;
-  if(!session?.refresh_token)return false;
+  const device=loadPinDeviceSession();
+  const availableRefresh=session?.refresh_token||(pinIsUnlocked()&&device?.refresh_token)||'';
+  if(!availableRefresh)return false;
+  if(!session?.refresh_token&&device?.refresh_token){
+    session={refresh_token:device.refresh_token,user:{id:device.user_id||'',email:device.email||''}};
+  }
   refreshSessionPromise=(async()=>{
     const refreshToken=session&&session.refresh_token;
     const result=await raw('refresh',{refresh_token:refreshToken});
@@ -241,7 +261,21 @@ function showPinUnlockGate(){
           const fail=recordPinFailure();input.value='';status.hidden=false;status.className='status error';
           status.textContent=fail.lock_until>Date.now()?'Слишком много попыток. Подождите 30 секунд.':'PIN не подошёл. Осталось '+Math.max(0,5-fail.count)+' попытки.';input.focus();return
         }
-        clearPinFailures();markPinUnlocked();finish(true)
+        clearPinFailures();markPinUnlocked();
+        if(!session?.access_token){
+          const device=loadPinDeviceSession();
+          if(!device?.refresh_token){
+            sessionStorage.removeItem(PIN_UNLOCK_KEY);
+            status.hidden=false;status.className='status error';status.textContent='На этом устройстве не сохранилась сессия. Один раз войдите по паролю — после этого PIN будет работать без него.';return
+          }
+          status.hidden=false;status.className='status';status.textContent='Восстанавливаю вход…';
+          const restored=await refreshSession();
+          if(!restored){
+            sessionStorage.removeItem(PIN_UNLOCK_KEY);
+            status.hidden=false;status.className='status error';status.textContent='Сессия устройства истекла. Один раз войдите по паролю и задайте PIN заново.';return
+          }
+        }
+        finish(true)
       }catch(err){status.hidden=false;status.className='status error';status.textContent=err.message}
     };
     input.oninput=function(){input.value=input.value.replace(/\D/g,'').slice(0,4);if(input.value.length===4)form.requestSubmit()};
@@ -253,6 +287,17 @@ function showPinUnlockGate(){
   })
 }
 $('#signup-tab').onclick=()=>setAuthMode('signup');$('#login-tab').onclick=()=>setAuthMode('login');
+const pinLoginButton=$('#login-with-pin');
+if(pinLoginButton)pinLoginButton.onclick=async function(){
+  pinLoginButton.disabled=true;
+  try{
+    if(!canUsePin())throw new Error('PIN-вход на этом устройстве пока недоступен');
+    const ok=await showPinUnlockGate();if(!ok)return;
+    const loaded=await loadAccount();if(!loaded)throw new Error('Не удалось загрузить профиль после PIN-входа');
+    openView('home');document.dispatchEvent(new CustomEvent('vmeste-auth-changed',{detail:{signedIn:true,pin:true}}))
+  }catch(err){const st=$('#auth-status');st.hidden=false;st.className='status error';st.textContent=err.message}
+  finally{pinLoginButton.disabled=false}
+};
 $('#forgot-password').onclick=openPasswordResetRequest;
 $('#reset-request-back').onclick=()=>setAuthMode('login');
 $('#password-reset-request-form').onsubmit=async function(e){
@@ -450,11 +495,14 @@ async function showPendingInvite(){
   if(recoveryMode){
     clearPinConfig();openPasswordResetNew();return
   }
-  const startedWithSession=!!session?.access_token;
+  if(session?.refresh_token&&loadPinConfig())savePinDeviceSession(session);
+  const pinButton=$('#login-with-pin');if(pinButton)pinButton.hidden=!canUsePin();
+  const startedWithSession=!!(session?.access_token||session?.refresh_token||loadPinDeviceSession()?.refresh_token);
   if(startedWithSession&&pinMatchesSession()&&!pinIsUnlocked()){
     const unlocked=await showPinUnlockGate();
     if(!unlocked){await loadEvents();renderCalendar();return}
   }
+  if(!session?.access_token&&pinIsUnlocked()&&loadPinDeviceSession()?.refresh_token)await refreshSession();
   const ok=await loadAccount();
   if(ok){
     await ensurePinSetup();
