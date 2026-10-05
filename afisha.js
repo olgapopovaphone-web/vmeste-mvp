@@ -207,6 +207,8 @@ window.openAfishaForDate=async function(dateKey){
   await loadAfisha({date:afishaDateFilter});
 };
 
+window.collectAfishaCompany=collectCompany;
+
 async function processPendingAfishaAction(){
   if(!account)return;let pending=null;try{pending=JSON.parse(sessionStorage.getItem(PENDING_AFISHA_KEY)||'null')}catch{}if(!pending)return;sessionStorage.removeItem(PENDING_AFISHA_KEY);await loadAfisha();if(pending.action==='collect')return collectCompany(pending.id);if(pending.action==='like'||pending.action==='compare')return toggleAfisha(pending.action,pending.id);
 }
