@@ -65,8 +65,20 @@
   }
   function eventRows(items){
     var now=Date.now(),future=items.filter(function(e){return Date.parse(e.starts_at)>=now&&e.status!=='cancelled'}),past=items.filter(function(e){return Date.parse(e.starts_at)<now||e.status==='finished'});
-    function cards(list){return list.length?list.slice(0,4).map(function(e){return '<div class="businessMiniCard"><small>'+new Intl.DateTimeFormat('ru-RU',{day:'numeric',month:'short',timeZone:'Europe/Moscow'}).format(new Date(e.starts_at))+'</small><b>'+esc(e.title)+'</b></div>'}).join(''):'<div class="businessEmpty mini">Пока пусто.</div>'}
+    function cards(list){return list.length?list.slice(0,4).map(function(e){return '<button type="button" class="businessMiniCard" data-business-event-card="'+esc(e.id)+'"><small>'+new Intl.DateTimeFormat('ru-RU',{day:'numeric',month:'short',timeZone:'Europe/Moscow'}).format(new Date(e.starts_at))+'</small><b>'+esc(e.title)+'</b></button>'}).join(''):'<div class="businessEmpty mini">Пока пусто.</div>'}
     return {future:cards(future),past:cards(past),futureCount:future.length,pastCount:past.length}
+  }
+  function offeringMini(items){
+    var list=(items||[]).filter(function(x){return x.status==='published'});
+    return list.length?list.slice(0,4).map(function(x){return '<div class="businessMiniCard"><small>'+esc(offeringKind(x.kind))+' · '+rub(x.price_minor)+'</small><b>'+esc(x.title)+'</b></div>'}).join(''):'<div class="businessEmpty mini">Пока нет активных предложений.</div>'
+  }
+  function feedHtml(mode,d,ev){
+    if(mode==='soon')return ev.future;
+    if(mode==='offers')return offeringMini(d.offerings||[]);
+    if(mode==='past')return ev.past;
+    var active=(d.offerings||[]).filter(function(x){return x.status==='published'}).slice(0,2);
+    if(active.length)return offeringMini(active);
+    return ev.future
   }
 
   function render(){
@@ -79,7 +91,7 @@
       '<section class="businessStats"><div><b>'+Number((d.places||[]).length)+'</b><span>мест</span></div><div><b>'+ev.futureCount+'</b><span>событий</span></div><div><b>'+Number((d.offerings||[]).length)+'</b><span>предложений</span></div><div><b>'+Number((d.communities||[]).length)+'</b><span>сообществ</span></div></section>'+
       '<section class="businessSection"><div class="businessSectionHead"><div><span class="ey">УПРАВЛЕНИЕ</span><h2>Бизнес-профиль</h2></div><button type="button" data-business-edit>Изменить</button></div><p class="businessLead">'+esc(b.description||'Добавьте короткое описание — оно будет видно пользователям ЛЯ.')+'</p>'+(b.verification_status==='unverified'?'<button type="button" class="businessSoftAction" data-business-verify>Отправить на подтверждение</button>':'')+'</section>'+
       '<section class="businessSection"><div class="businessSectionHead"><div><span class="ey">МЕСТА</span><h2>Ваши точки</h2></div></div><div class="businessActionPair"><button type="button" data-business-create-place>＋ Создать место</button><button type="button" data-business-claim-place>Это моё место</button></div>'+placeRows(d.places||[])+claimRows(d.claims||[])+'</section>'+
-      '<section class="businessSection"><div class="businessSectionHead"><div><span class="ey">ЛЕНТА</span><h2>Что увидит клиент</h2></div></div><div class="businessFeedTabs"><button type="button" class="active">Сейчас</button><button type="button">Скоро</button><button type="button">Предложения</button><button type="button">Было</button></div><div class="businessFeedGrid">'+ev.future+'</div><div class="businessActionPair businessCreatePair"><button type="button" data-business-create-event>＋ Событие</button><button type="button" data-business-create-community>＋ Сообщество</button></div></section>'+
+      '<section class="businessSection"><div class="businessSectionHead"><div><span class="ey">ЛЕНТА</span><h2>Что увидит клиент</h2></div></div><div class="businessFeedTabs"><button type="button" class="active" data-business-feed="now">Сейчас</button><button type="button" data-business-feed="soon">Скоро</button><button type="button" data-business-feed="offers">Предложения</button><button type="button" data-business-feed="past">Было</button></div><div class="businessFeedGrid" data-business-feed-body>'+feedHtml('now',d,ev)+'</div><div class="businessActionPair businessCreatePair"><button type="button" data-business-create-event>＋ Событие</button><button type="button" data-business-create-community>＋ Сообщество</button></div></section>'+
       '<section class="businessSection"><div class="businessSectionHead"><div><span class="ey">ПРЕДЛОЖЕНИЯ</span><h2>Товары и услуги</h2></div><button type="button" data-business-create-offering>＋ Добавить</button></div>'+offeringRows(d.offerings||[])+'</section>'+
       '<section class="businessPlan"><span class="ey">ТАРИФ</span><h2>'+esc(subscription(b))+'</h2><p>Базовый профиль уже работает. Платный ЛЯ Business будет фиксированной ежемесячной подпиской — без процента с каждой продажи.</p></section>'+
       '</div>';
@@ -96,6 +108,12 @@
     var verify=r.querySelector('[data-business-verify]');if(verify)verify.onclick=async function(){verify.disabled=true;verify.textContent='Отправляю…';try{await call('request_verification',{business_id:state.data.business.id});await load()}catch(e){alert(e.message);verify.disabled=false;verify.textContent='Отправить на подтверждение'}};
     r.querySelectorAll('[data-cancel-claim]').forEach(function(x){x.onclick=async function(){x.disabled=true;try{await call('cancel_claim',{business_id:state.data.business.id,claim_id:x.dataset.cancelClaim});await load()}catch(e){alert(e.message);x.disabled=false}}});
     r.querySelectorAll('[data-business-place]').forEach(function(x){x.onclick=function(){if(typeof window.openPlaceView==='function')window.openPlaceView(x.dataset.businessPlace)}});
+    function bindFeedEvents(){r.querySelectorAll('[data-business-event-card]').forEach(function(x){x.onclick=function(){if(typeof window.openEventView==='function')window.openEventView(x.dataset.businessEventCard,'business')}})}
+    bindFeedEvents();
+    r.querySelectorAll('[data-business-feed]').forEach(function(tab){tab.onclick=function(){
+      r.querySelectorAll('[data-business-feed]').forEach(function(x){x.classList.toggle('active',x===tab)});
+      var body=r.querySelector('[data-business-feed-body]'),ev=eventRows(state.data.events||[]);if(body){body.innerHTML=feedHtml(tab.dataset.businessFeed,state.data,ev);bindFeedEvents()}
+    }});
     r.querySelector('[data-business-create-event]').onclick=function(){
       var b=state.data.business;window.LyaBusinessCreateContext={business_id:b.id,business_name:b.name};
       if(typeof window.openLyaCreateEvent==='function')window.openLyaCreateEvent({business_id:b.id,business_name:b.name,visibility:b.verification_status==='verified'?'public':'open'});
