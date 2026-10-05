@@ -13,11 +13,11 @@
     if(prev!==mode)document.dispatchEvent(new CustomEvent('lya-profile-mode-changed',{detail:{mode:mode}}));
     return mode
   }
-  function rememberedKind(){try{return localStorage.getItem(KIND_KEY)==='organization'?'organization':'business'}catch(e){return'business'}}
+  function rememberedKind(){try{var k=localStorage.getItem(KIND_KEY);return k==='organization'?'organization':k==='business'?'business':null}catch(e){return null}}
   function rememberKind(b){var k=b&&b.account_kind==='organization'?'organization':'business';try{localStorage.setItem(KIND_KEY,k)}catch(e){}return k}
   function isOrganization(b){return !!(b&&b.account_kind==='organization')}
-  function professionalLabel(b){return isOrganization(b)||(!b&&rememberedKind()==='organization')?'Организация':'Бизнес'}
-  function professionalTitle(b){return isOrganization(b)||(!b&&rememberedKind()==='organization')?'Организация Free':'ЛЯ Business'}
+  function professionalLabel(b){if(b)return isOrganization(b)?'Организация':'Бизнес';var k=rememberedKind();return k==='organization'?'Организация':k==='business'?'Бизнес':'Проект'}
+  function professionalTitle(b){if(b)return isOrganization(b)?'Организация Free':'ЛЯ Business';var k=rememberedKind();return k==='organization'?'Организация Free':k==='business'?'ЛЯ Business':'ЛЯ'}
   function canPublishPublic(b){return !!(b&&(b.verification_status==='verified'||(b.account_kind==='organization'&&b.legal_status==='informal')))}
   function publicVisibilityFor(b){return canPublishPublic(b)?'public':'open'}
   function modeSwitch(active){
