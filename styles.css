@@ -38,3 +38,7 @@
 .authPinLogin{width:100%;margin:0 0 14px;padding:12px 14px;border-color:#171815;background:#fff;color:#171815;font:800 11px/1 Manrope,Arial,sans-serif}
 .authPinLogin[hidden]{display:none}
 .authPinLogin:disabled{opacity:.55}
+
+.lyaPasswordField{position:relative;display:block}
+.lyaPasswordField input{width:100%;padding-right:78px}
+.lyaPasswordToggle{position:absolute;right:10px;top:50%;transform:translateY(-50%);border:0;background:transparent;color:#5f665f;font:700 10px/1 Manrope,Arial,sans-serif;padding:8px;z-index:2}
