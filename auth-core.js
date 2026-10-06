@@ -194,6 +194,7 @@
     if(!pinConfig()||String(pinConfig()?.user_id||'')!==String(s.user?.id||''))setTimeout(()=>offerPinSetup(),120);
   }
   function bind(){
+    setMode('login');
     const signup=document.getElementById('signup-tab'),login=document.getElementById('login-tab');
     if(signup)signup.onclick=()=>setMode('signup');
     if(login)login.onclick=()=>setMode('login');
