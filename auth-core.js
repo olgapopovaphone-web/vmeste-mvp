@@ -193,8 +193,19 @@
     showView('home');emit({source});
     if(!pinConfig()||String(pinConfig()?.user_id||'')!==String(s.user?.id||''))setTimeout(()=>offerPinSetup(),120);
   }
+  function enhancePasswordFields(){
+    ['auth-password','reset-new-password','reset-new-password-2'].forEach(id=>{
+      const input=document.getElementById(id);if(!input||input.parentElement?.querySelector('.lyaPasswordToggle'))return;
+      const wrap=document.createElement('div');wrap.className='lyaPasswordField';
+      input.parentNode.insertBefore(wrap,input);wrap.appendChild(input);
+      const btn=document.createElement('button');btn.type='button';btn.className='lyaPasswordToggle';btn.setAttribute('aria-label','Показать пароль');btn.textContent='Показать';
+      btn.onclick=()=>{const show=input.type==='password';input.type=show?'text':'password';btn.textContent=show?'Скрыть':'Показать';btn.setAttribute('aria-label',show?'Скрыть пароль':'Показать пароль')};
+      wrap.appendChild(btn);
+    });
+  }
   function bind(){
     setMode('login');
+    enhancePasswordFields();
     const signup=document.getElementById('signup-tab'),login=document.getElementById('login-tab');
     if(signup)signup.onclick=()=>setMode('signup');
     if(login)login.onclick=()=>setMode('login');
@@ -239,7 +250,6 @@
     };
   }
   async function ensure(){
-    try{if(typeof account!=='undefined'&&account)return true}catch(e){}
     const s=storedSession();
     if(s?.access_token){
       try{if(await hydrate(s))return true}catch(e){}
@@ -248,6 +258,7 @@
       clearNormalSession();
       const ok=await pinUnlock();if(ok)return true;
     }
+    setAccount(null);
     openLogin(pinConfig()?.email||deviceSession()?.email||'');
     return false;
   }
