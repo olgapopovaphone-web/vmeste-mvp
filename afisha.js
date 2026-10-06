@@ -122,8 +122,14 @@ async function saveAfishaPreferences(){
 function requireAfishaLogin(action,id){
   sessionStorage.setItem(PENDING_AFISHA_KEY,JSON.stringify({action,id}));openView('login');
 }
+
+async function ensureAfishaAccount(){
+  try{if(typeof account!=='undefined'&&account)return true}catch(e){}
+  if(typeof window.lyaEnsureAccount==='function')return await window.lyaEnsureAccount();
+  try{return !!(session&&session.access_token)}catch(e){return false}
+}
 async function toggleAfisha(kind,id,forcedActive){
-  if(!account){requireAfishaLogin(kind,id);return}
+  if(!(await ensureAfishaAccount())){requireAfishaLogin(kind,id);return}
   const key=kind+':'+id;
   if(afishaActionLocks.has(key))return;
   afishaActionLocks.add(key);
@@ -139,7 +145,7 @@ async function toggleAfisha(kind,id,forcedActive){
   finally{setTimeout(()=>afishaActionLocks.delete(key),700)}
 }
 async function collectCompany(id){
-  if(!account){requireAfishaLogin('collect',id);return}
+  if(!(await ensureAfishaAccount())){requireAfishaLogin('collect',id);return}
   const button=document.querySelector(`.collectCompany[data-id="${CSS.escape(id)}"]`);
   if(button){button.disabled=true;button.textContent='Выберите своих…'}
   try{
@@ -166,7 +172,7 @@ function renderAfishaCompareBar(){
   const btn=document.querySelector('#open-afisha-compare');if(btn)btn.onclick=openAfishaComparison;
 }
 async function openAfishaComparison(){
-  if(!account)return;
+  if(!(await ensureAfishaAccount()))return;
   const modal=document.querySelector('#afisha-compare-modal');const body=document.querySelector('#afisha-compare-body');modal.hidden=false;body.innerHTML='<p class="muted">Собираю сравнение…</p>';
   try{const data=await afRaw('compare',{},true);body.innerHTML=`<div class="compareGrid">${(data.events||[]).map(e=>`<article class="compareItem"><span class="ey">${afEsc(AFISHA_CATEGORIES[e.category]||'СОБЫТИЕ')}</span><h3>${afEsc(e.title)}</h3><dl><div><dt>КОГДА</dt><dd>${afEsc(afDate(e.starts_at))}</dd></div><div><dt>ГДЕ</dt><dd>${afEsc(e.venue||'Не указано')}</dd></div><div><dt>СТОИМОСТЬ</dt><dd>${afEsc(e.price_text||'У организатора')}</dd></div></dl><a href="${afEsc(e.source_url)}" target="_blank" rel="noopener">Источник ↗</a><button class="primary compareCollect" data-id="${afEsc(e.id)}" style="margin-top:10px">Позвать своих</button></article>`).join('')}</div>`;document.querySelectorAll('.compareCollect').forEach(b=>b.onclick=()=>{modal.hidden=true;collectCompany(b.dataset.id)})}catch(err){body.innerHTML=`<div class="status error">${afEsc(err.message)}</div>`}
 }
@@ -225,5 +231,6 @@ const afishaBaseOpenView=openView;
 openView=function(name){afishaBaseOpenView(name);if(name==='home')loadAfisha();if(account&&sessionStorage.getItem(PENDING_AFISHA_KEY)&&name!=='login')setTimeout(processPendingAfishaAction,0)};
 
 loadAfisha();setTimeout(()=>{if(account)loadAfisha()},700);
+document.addEventListener('vmeste-auth-changed',()=>loadAfisha());
 
 window.addEventListener('lya:default-covers-ready',()=>decorateLyaAfishaCovers(document));
