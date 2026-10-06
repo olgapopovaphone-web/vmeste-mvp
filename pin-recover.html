@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>ЛЯ · Восстановление входа</title>
+  <style>
+    :root{font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#111;background:#f7f7f4}
+    *{box-sizing:border-box}
+    body{margin:0;min-height:100vh;display:grid;place-items:center;padding:24px}
+    .card{width:min(440px,100%);background:#fff;border-radius:28px;padding:28px;box-shadow:0 8px 30px rgba(0,0,0,.06)}
+    .ey{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:#707070}
+    h1{font-size:34px;line-height:1.05;margin:14px 0 10px}
+    p{color:#666;line-height:1.45}
+    .email{font-size:14px;color:#333;margin:8px 0 20px}
+    form{display:grid;gap:14px}
+    input{width:100%;font-size:26px;letter-spacing:.35em;text-align:center;padding:16px;border:1px solid #cfcfc9;border-radius:16px;background:#fff}
+    button{border:0;border-radius:16px;padding:16px 18px;font-size:17px;font-weight:700;background:#0f4f3e;color:#fff}
+    button:disabled{opacity:.45}
+    .status{margin-top:14px;padding:14px;border-radius:14px;background:#f1f1ed;color:#333}
+    .status.error{background:#f8e8e4;color:#8a352d}
+    .muted{font-size:13px;color:#8b8b84}
+    .back{display:inline-block;margin-top:16px;color:#333;text-decoration:none}
+  </style>
+</head>
+<body>
+  <main class="card">
+    <div class="ey">ЛЯ · аварийный вход</div>
+    <h1>Войти по PIN</h1>
+    <p id="intro">Проверяю сохранённый PIN на этом устройстве…</p>
+    <div class="email" id="email"></div>
+    <form id="pin-form" hidden>
+      <input id="pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" aria-label="PIN" placeholder="••••">
+      <button id="submit" type="submit">Войти</button>
+    </form>
+    <div id="status" class="status" hidden></div>
+    <p class="muted">Страница использует только данные, уже сохранённые в этом браузере. Пароль не нужен.</p>
+    <a class="back" href="/">← Вернуться в ЛЯ</a>
+  </main>
+<script>
+(function(){
+  const API='https://nmeoakrpafxhpdrplsuo.supabase.co/functions/v1/vmeste-api';
+  const PIN_KEY='lya_pin_v1';
+  const DEVICE_KEY='lya_pin_device_session_v1';
+  const SESSION_KEY='vmeste_session_v1';
+  const UNLOCK_KEY='lya_pin_unlocked_v1';
+  const FAIL_KEY='lya_pin_fail_v1';
+
+  const $=s=>document.querySelector(s);
+  function read(key){try{return JSON.parse(localStorage.getItem(key)||'null')}catch{return null}}
+  function show(message,error=false){const s=$('#status');s.hidden=false;s.className=error?'status error':'status';s.textContent=message}
+  function maskEmail(v){
+    if(!v||!v.includes('@'))return '';
+    const [a,b]=v.split('@');return (a.slice(0,2)||'')+'***@'+b;
+  }
+  async function hashPin(pin,salt,userId){
+    const bytes=new TextEncoder().encode(String(pin)+'|'+String(salt)+'|'+String(userId||''));
+    const digest=await crypto.subtle.digest('SHA-256',bytes);
+    return Array.from(new Uint8Array(digest),b=>b.toString(16).padStart(2,'0')).join('');
+  }
+  async function refresh(refreshToken){
+    const r=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'refresh',refresh_token:refreshToken})});
+    const d=await r.json().catch(()=>({}));
+    if(!r.ok||!d.session)throw new Error(d.error||'Не удалось восстановить сессию');
+    return d.session;
+  }
+
+  const cfg=read(PIN_KEY),device=read(DEVICE_KEY);
+  if(!cfg){
+    $('#intro').textContent='Сохранённый PIN на этом устройстве не найден.';
+    show('PIN-сессия отсутствует. Понадобится восстановление пароля.',true);
+    return;
+  }
+  $('#intro').textContent='PIN найден. Введите 4 цифры.';
+  $('#email').textContent=maskEmail(cfg.email||device?.email||'');
+  $('#pin-form').hidden=false;
+  setTimeout(()=>$('#pin').focus(),0);
+
+  $('#pin').addEventListener('input',e=>{
+    e.target.value=e.target.value.replace(/\D/g,'').slice(0,4);
+    if(e.target.value.length===4)$('#pin-form').requestSubmit();
+  });
+
+  $('#pin-form').addEventListener('submit',async e=>{
+    e.preventDefault();
+    const btn=$('#submit'),input=$('#pin'),pin=input.value.trim();
+    if(!/^\d{4}$/.test(pin)){show('Введите 4 цифры.',true);return}
+    btn.disabled=true;
+    try{
+      const hash=await hashPin(pin,cfg.salt,cfg.user_id);
+      if(hash!==cfg.hash){
+        input.value='';input.focus();show('PIN не подошёл.',true);return;
+      }
+      if(!device?.refresh_token){
+        show('PIN верный, но сохранённая сессия устройства отсутствует. Нужен сброс пароля.',true);return;
+      }
+      show('PIN верный. Восстанавливаю вход…');
+      const session=await refresh(device.refresh_token);
+      localStorage.setItem(SESSION_KEY,JSON.stringify(session));
+      localStorage.setItem(DEVICE_KEY,JSON.stringify({
+        version:1,
+        refresh_token:session.refresh_token,
+        user_id:session.user?.id||cfg.user_id||device.user_id||'',
+        email:session.user?.email||cfg.email||device.email||'',
+        updated_at:new Date().toISOString()
+      }));
+      sessionStorage.setItem(UNLOCK_KEY,'1');
+      localStorage.removeItem(FAIL_KEY);
+      show('Готово. Возвращаю в ЛЯ…');
+      setTimeout(()=>location.replace('/'),350);
+    }catch(err){
+      show(err?.message||'Не удалось восстановить вход.',true);
+    }finally{btn.disabled=false}
+  });
+})();
+</script>
+</body>
+</html>
