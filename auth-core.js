@@ -317,7 +317,13 @@ var account=null;
     const s=storedSession();
     if(s?.access_token){
       try{
-        if(await hydrate(s))return;
+        if(await hydrate(s)){
+          if(sessionStorage.getItem('lya_offer_pin_once_v1')==='1'){
+            sessionStorage.removeItem('lya_offer_pin_once_v1');
+            setTimeout(()=>offerPinSetup(),120);
+          }
+          return;
+        }
       }catch(e){
         if(Number(e.status||0)===0)return;
       }
