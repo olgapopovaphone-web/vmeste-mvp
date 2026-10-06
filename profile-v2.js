@@ -489,7 +489,7 @@
 
   async function getDetail(userId){return circle('get_person_profile',{user_id:userId})}
   async function renderSelf(){
-    var root=document.getElementById('profile-root');if(!root)return;var profileView=document.querySelector('[data-view="profile"]');if(profileView&&profileView.classList.contains('active')&&typeof window.setLyaProfileMode==='function')window.setLyaProfileMode('personal');if(!token()){root.innerHTML='<div class="profileV2Guest"><h2>Войдите в ЛЯ</h2><button type="button">Войти</button></div>';root.querySelector('button').onclick=function(){if(typeof openView==='function')openView('login')};return}
+    var root=document.getElementById('profile-root');if(!root)return;var profileView=document.querySelector('[data-view="profile"]');if(profileView&&profileView.classList.contains('active')&&typeof window.setLyaProfileMode==='function')window.setLyaProfileMode('personal');if(!token()){if(window.LyaAuth&&typeof window.LyaAuth.openLogin==='function'){window.LyaAuth.openLogin();return}root.innerHTML='<div class="profileV2Guest"><h2>Войдите в ЛЯ</h2><button type="button">Войти</button></div>';root.querySelector('button').onclick=function(){if(typeof openView==='function')openView('login')};return}
     root.innerHTML='<div class="profileV2Loading">Собираю вашу страницу…</div>';
     try{var detail=await getDetail(myId());root.innerHTML=profileMarkup(detail,true);bindProfile(root,detail,true,null)}catch(e){root.innerHTML='<div class="profileV2Loading">'+esc(e.message)+'</div>'}
   }
@@ -501,6 +501,7 @@
   }
 
   document.addEventListener('lya-profile-moment-shared',function(){var root=document.getElementById('profile-root');if(root&&document.querySelector('[data-view="profile"]')?.classList.contains('active'))renderSelf()});
+  document.addEventListener('vmeste-auth-changed',function(){var root=document.getElementById('profile-root');if(root&&document.querySelector('[data-view="profile"]')?.classList.contains('active'))renderSelf()});
 
   window.openLyaPublicProfileV2=openPublicProfile;
   window.openLyaPersonProfile=openPublicProfile;
