@@ -22,9 +22,10 @@
 .authLink{border:0;background:transparent;color:#5f665f;font:700 10px/1.2 Manrope,Arial,sans-serif;padding:5px 0;text-align:left}
 .authBackLink{display:block;margin-top:10px;text-align:center;width:100%}
 .authIntro{margin:0 0 14px;color:#6e746f;font-size:11px;line-height:1.5}
-.pinGate{position:fixed;inset:0;z-index:1200;background:#FAFAF8;display:grid;place-items:center;padding:24px}
+.pinGate{position:fixed;inset:0;z-index:1200;background:#FAFAF8;display:flex;align-items:center;justify-content:center;padding:max(12px,env(safe-area-inset-top)) 14px max(12px,env(safe-area-inset-bottom));overflow:auto}
 .pinGate[hidden]{display:none}
-.pinGateCard{width:min(100%,380px);background:#fff;border:1px solid #e2ddd5;border-radius:24px;padding:24px;box-shadow:0 24px 70px #00000014}
+.pinGateCard{width:min(100%,380px);max-height:calc(100dvh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom));overflow:auto;overscroll-behavior:contain;background:#fff;border:1px solid #e2ddd5;border-radius:24px;padding:clamp(16px,4vw,24px);box-shadow:0 24px 70px #00000014}
+@media (max-height:620px){.pinGate{align-items:flex-start}.pinGateCard{margin:auto 0}.pinGateCard h2{font-size:24px}.pinGateCard>p{margin-bottom:10px}.pinInput{height:48px}}
 .pinGateCard h2{font:700 28px/1.05 Manrope,Arial,sans-serif;margin:8px 0 7px}
 .pinGateCard>p{color:#747a75;font-size:11px;line-height:1.5;margin:0 0 18px}
 .pinGateCard form{display:grid;gap:10px}
