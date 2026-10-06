@@ -1,3 +1,5 @@
+var session=(function(){try{return JSON.parse(localStorage.getItem('vmeste_session_v1')||'null')}catch(e){return null}})();
+var account=null;
 (function(){
   if(window.__lyaAuthCoreV2)return;
   window.__lyaAuthCoreV2=true;
@@ -14,12 +16,12 @@
   function pinConfig(){return readJson(PIN_KEY)}
   function deviceSession(){return readJson(DEVICE_KEY)}
   function setSession(value){
-    try{session=value}catch(e){}
+    session=value;
     if(value)localStorage.setItem(SESSION_KEY,JSON.stringify(value));
     else localStorage.removeItem(SESSION_KEY);
   }
   function setAccount(value){
-    try{account=value}catch(e){}
+    account=value;
     if(typeof updateAvatars==='function')try{updateAvatars()}catch(e){}
   }
   function clearNormalSession(){setSession(null);setAccount(null)}
@@ -54,6 +56,54 @@
     }
     return d;
   }
+  async function refreshSession(){
+    const current=storedSession();
+    const unlocked=sessionStorage.getItem(PIN_UNLOCK_KEY)==='1';
+    const dev=deviceSession();
+    const refreshToken=current?.refresh_token||(unlocked&&dev?.refresh_token)||'';
+    if(!refreshToken)return false;
+    try{
+      const d=await request('refresh',{refresh_token:refreshToken},'');
+      if(!d.session)return false;
+      setSession(d.session);
+      if(dev?.refresh_token&&pinConfig()){
+        localStorage.setItem(DEVICE_KEY,JSON.stringify({
+          version:2,
+          refresh_token:d.session.refresh_token,
+          user_id:d.session.user?.id||dev.user_id||'',
+          email:d.session.user?.email||dev.email||'',
+          updated_at:new Date().toISOString()
+        }));
+      }
+      document.dispatchEvent(new CustomEvent('vmeste-session-refreshed',{detail:{session:d.session}}));
+      return true;
+    }catch(err){
+      if([400,401,403].includes(Number(err.status||0)))clearNormalSession();
+      return false;
+    }
+  }
+  async function api(action,payload={},needsAuth=true,retry=true){
+    let s=storedSession();
+    let token=needsAuth?(s?.access_token||''):'';
+    try{return await request(action,payload,token)}
+    catch(err){
+      if(needsAuth&&retry&&[401,403].includes(Number(err.status||0))&&await refreshSession()){
+        s=storedSession();return request(action,payload,s?.access_token||'');
+      }
+      throw err;
+    }
+  }
+  window.api=api;
+  window.refreshSession=refreshSession;
+  window.getLyaAccessToken=function(){return storedSession()?.access_token||''};
+  window.lyaAuthedFetch=async function(url,options={},retry=true){
+    const opts=Object.assign({},options);opts.headers=Object.assign({},options.headers||{});
+    const token=storedSession()?.access_token||'';if(token)opts.headers.Authorization='Bearer '+token;
+    const response=await fetch(url,opts);
+    if((response.status===401||response.status===403)&&retry&&await refreshSession())return window.lyaAuthedFetch(url,options,false);
+    return response;
+  };
+
   async function hydrate(s){
     s=s||storedSession();
     if(!s||!s.access_token)return false;
@@ -281,6 +331,27 @@
     }
   }
 
-  window.LyaAuth={ensure,openLogin,offerPinSetup,hasSession:()=>!!storedSession()?.access_token,hydrate,boot};
+  async function loadAccount(){
+    const s=storedSession();
+    if(!s?.access_token){setAccount(null);return false}
+    return hydrate(s);
+  }
+  async function signOut(){
+    try{if(storedSession()?.access_token)await api('logout')}catch(e){}
+    localStorage.removeItem(SESSION_KEY);
+    localStorage.removeItem(PIN_KEY);
+    localStorage.removeItem(DEVICE_KEY);
+    localStorage.removeItem(PIN_FAIL_KEY);
+    sessionStorage.removeItem(PIN_UNLOCK_KEY);
+    try{localStorage.removeItem('lya_profile_mode_v1');localStorage.removeItem('lya_professional_kind_v1')}catch(e){}
+    window.LyaBusinessState=null;
+    setSession(null);setAccount(null);
+    showView('home');
+    emit({signedIn:false,logout:true});
+  }
+  window.loadAccount=loadAccount;
+  window.signOut=signOut;
+  window.clearSession=clearNormalSession;
+  window.LyaAuth={ensure,openLogin,offerPinSetup,hasSession:()=>!!storedSession()?.access_token,hydrate,boot,signOut};
   document.addEventListener('DOMContentLoaded',boot,{once:true});
 })();
